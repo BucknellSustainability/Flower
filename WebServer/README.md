@@ -19,10 +19,10 @@ execute commands available in Atom, including those added through packages.
 Open Atom. Navigate to `Packages->Settings View->Install Packages/Themes`.
 Search for `atom-live-server` and install the package of the same name.
 Use `File->Open Folder...` to open a new Atom window which only has the `WebServer`
-folder as it's project root. (Note: `atom-live-server` defaults to treating the
+folder as it's project root. (__Note:__ `atom-live-server` defaults to treating the
 root of the window's main project as the server root, so having another project
-Open might take precedence). Use `Packages->atom-live-server->Start server` to
-start the server on port *3000*. Your browser will automatically open the root
+open might take precedence). Use `Packages->atom-live-server->Start server` to
+start the server on port __3000__. Your browser will automatically open the root
 of the live server, defaulting to `index.html` if present.
 
 Pages modified and saved while the server is running will cause the page to
