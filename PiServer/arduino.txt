@@ -1,0 +1,32 @@
+
+
+These are the instructions to get an arduino with a thermristor running.
+
+1) Open the arduino IDE (Arduino Genuino)
+2) Open the .ino file. The IDE may complain about it not being in its own folder;
+clock "ok" to any prompt.
+3) Check and compile the file with the "Verify" button. It's the green circular checkmark
+button in the upper left corner.
+4) Connect the arduino to a breadboard / pinboard.
+5) Put a 10k resistor between the `A0` pin and the Ground pin. They're labeled on the board
+itself (the ground pin is named `GND`).
+6) Connect a thermristor between the `AO` pin and the 3.3V pin. They're labeled on the board
+itself (the 3.3V pin is named `3V3`; it's sometimes partially coverd in soder if it's close to
+the power port).
+7) Connect the board to the computer via USB.
+8) In the IDE, go to Tools > Board and select the appropriate board name.
+9) In the IDE, go to Tools > Port and select the port. For the nano, it's usually port `/dev/ttyUSB0`. 
+For other boards, it's usually `/dev/ttyAMK` followed by something.
+10) Press the "Upload" button. It's the green circular arrow button in the upper left corner.
+11) If the upload had errors, then the bottom bar will be red / orange with the error message.
+12) If the upload was successful, then go to Tools > Serial Monitor.
+14) If you see sensible text, and not just a bunch of random ascii or a blank screen, you're done! Else, continue
+on.
+15) Look at the source code; find the `setup()` function. In the setup function, look for `Serial.begin(<number>);`.
+If you find it, go to the serial monitor window, and click on the drop-down menu next to "Baud Rate" in the lower
+right corner. Select the given number.
+If you didn't find any line like that, select "9600" in the Baud Rate drop-down menu.
+16) If it still doesn't work, ask for help.
+
+
+
