@@ -29,3 +29,19 @@ Pages modified and saved while the server is running will cause the page to
 automatically refresh to reflect those changes.
 
 Use `Packages->atom-live-server->Stop...` to stop the server.
+
+
+## API Keys
+API Keys should not be committed to the repo so  we've made a way for each developer to use their own.
+1. Create a file called `config.js` in the `Webserver` directory.
+2. Add this code:
+```
+var config = {
+  GOOGLE_MAPS_KEY : 'YOUR_API_KEY_HERE'
+}
+```
+3. Replace all instances of `YOUR_API_KEY_HERE` with your appropriate API keys
+4. In your page that uses the key, create a script tag `<script type='text/javascript' src='config.js'></script>` before the JS that uses the API key
+5. To access the API key in JS, use the config JS object (ex. `config.GOOGLE_MAPS_KEY`)
+
+This config.js won't get committed because it is in the `.gitignore` so you will need to do this for each clone of the repo, but it should persist unless you delete the file.
