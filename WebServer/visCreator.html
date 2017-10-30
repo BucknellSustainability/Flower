@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <title>Hello, world!</title>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <style>
+      #selectors {
+        width: 50%;
+      }
+    </style>
+
+    <!-- Bootstrap CSS -->
+    <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/css/bootstrap.min.css" integrity="sha384-PsH8R72JQ3SOdhVi3uxftmaW6Vc51MKb0q5P2rRUpPvrszuE4W1povHYgTpBfshb" crossorigin="anonymous"> -->
+    <!-- Include Required Prerequisites -->
+    <script type="text/javascript" src="//cdn.jsdelivr.net/jquery/1/jquery.min.js"></script>
+    <script type="text/javascript" src="//cdn.jsdelivr.net/momentjs/latest/moment.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap/3/css/bootstrap.css" />
+
+    <!-- Include Date Range Picker -->
+    <script type="text/javascript" src="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.js"></script>
+    <link rel="stylesheet" type="text/css" href="//cdn.jsdelivr.net/bootstrap.daterangepicker/2/daterangepicker.css" />
+
+  </head>
+  <body>
+    <h1>Choose your data!</h1>
+
+    <!-- Data Selection -->
+    <!--These should be populated by the DB in the future.-->
+    <!--The values of the ddl should be the id in the DB-->
+    <div id="selectors">
+        <select id="siteSelector" class="form-control">
+            <option value="one">Energy Hill</option>
+            <option value="two">Turbines</option>
+            <option value="three">Solar Arrays</option>
+        </select>
+        <select id="projectSelector" class="form-control">
+            <option value="one">Ben's Lettuce 1</option>
+            <option value="two">Ben's Lettuce 2</option>
+            <option value="three">Jordan's Turnips</option>
+        </select>
+        <select id="sensorSelector" class="form-control">
+            <option value="one">Soil Temperature</option>
+            <option value="two">Air Temperature</option>
+            <option value="three">Soil Moisture</option>
+        </select>
+    </div>
+
+    <!-- Date Range Picker -->
+    <input type="text" name="daterange" value="01/01/2015 - 01/31/2015" />
+    <script>
+    $('input[name="daterange"]').daterangepicker(
+      {
+        locale: {
+          format: 'YYYY-MM-DD'
+        },
+        startDate: '2013-01-01',
+        endDate: '2013-12-31'
+      },
+      function(start, end, label) {
+        alert("A new date range was chosen: " + start.format('YYYY-MM-DD') + ' to ' + end.format('YYYY-MM-DD'));
+      });
+    </script>
+
+    <!-- Buttons -->
+    <div>
+      <button type="button" class="btn btn-primary">Create Visualization</button>
+      <button type="button" class="btn btn-primary">Download Data</button>
+    </div>
+
+    <!-- Optional JavaScript -->
+    <!-- jQuery first, then Popper.js, then Bootstrap JS -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.3/umd/popper.min.js" integrity="sha384-vFJXuSJphROIrBnz7yo7oB41mKfc8JzQZiCq4NCceLEaO4IHwicKwpJf9c9IpFgh" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.2/js/bootstrap.min.js" integrity="sha384-alpBpkh1PFOepccYVYDB4do5UnbKysX5WZXm3XxPqe5iKTfUKjNkCk9SaVuEZflJ" crossorigin="anonymous"></script>
+
+
+  </body>
+</html>
