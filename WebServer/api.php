@@ -2,27 +2,25 @@
 
 $link = mysqli_connect("digitalgreens.cixglou4nxxh.us-east-1.rds.amazonaws.com", "jvoves", "digitalgreens", "energyhill");
 
-/* check connection */
+//make sure connection is established
 if (mysqli_connect_errno()) {
     printf("Connect failed: %s\n", mysqli_connect_error());
     exit();
 }
 
+//get name, description, longitude, latitude, link from site table
 $query = "SELECT name, description, longitude, latitude, link FROM site;";
 
+//put al sites in an array and output as json
 if ($result = mysqli_query($link, $query)) {
     $rows = Array();
-    /* fetch associative array */
     while ($row = mysqli_fetch_assoc($result)) {
         $rows[] = $row;
-        //printf ("%s \n", $row["name"]);
     }
-    /* free result set */
     echo json_encode($rows);
     mysqli_free_result($result);
 }
 
-/* close connection */
 mysqli_close($link);
 
 

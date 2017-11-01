@@ -28,7 +28,7 @@ function readSites(){
 var sites = [];
 $.ajax({
   type: 'GET',
-  url: 'http://localhost:8000/api.php',
+  url: 'api.php',
   success: function(json) {
     $.each(JSON.parse(json), function(key,value) {
       sites.push(value); //value = json object for site
@@ -64,14 +64,16 @@ function initMap() {
 
         var location = {lat: parseFloat(currSite.latitude), lng: parseFloat(currSite.longitude)};
         contents[site] = '<div id="content">'+
-          '<div id="siteNotice">'+'</div>'+ '<h1 id="firstHeading" class="firstHeading">'+ currSite.name + '</h1>'+
+          '<div id="siteNotice">'+'</div>'+'<h1 id="firstHeading" class="firstHeading">'+ currSite.name + '</h1>'+
           '<div id="bodyContent">' + '<p>' + currSite.description +'</p>' +
           '<p>Site: <a href=' + currSite.link+  '>Current ' + currSite.name + ' Projects</a></p>'+
-          '</div>'+'</div>';
+          '</div>'+
+          '</div>';
 
         markers[site] = new google.maps.Marker({
           position: location,
-          map: map
+          map: map,
+          title: 'Energy Hill',
         });
         markers[site].index = site;
 
