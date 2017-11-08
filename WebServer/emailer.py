@@ -2,6 +2,7 @@
 
 import smtplib
 import MySQLdb
+from email.mime.text import MIMEText
 
 def main():
     # Open database connection
@@ -23,27 +24,31 @@ def main():
         print "Error: unable to fecth data"
 
     for row in unhandled:
+        body = "You are receiving this because an alert has been made"
+        subject = "Warning: {}".format(row[1])
+        # sendEnergyHillEmail("bdm015@bucknell.edu", subject, body)
         print(row)
 
     # disconnect from server
     db.close()
 
 
-def sendEnergyHillEmail(receiver, body):
+def sendEnergyHillEmail(receiver, subject, body):
     sender = 'energyhill@bucknell.edu'
-    receivers = [receiver]
 
-    message = """From: Energy Hill <{}>
-    To: Ben Matase <{}>
-    Subject: SMTP e-mail test
+    msg = MIMEText(body)
 
-    This is a test e-mail message.
-    """.format(sender, receivers[0])
+    # me == the sender's email address
+    # you == the recipient's email address
+    msg['Subject'] = subject
+    msg['From'] = sender
+    msg['To'] = receiver
 
     try:
         smtpObj = smtplib.SMTP('smtp.bucknell.edu')
-        smtpObj.sendmail(sender, receivers, message)
+        smtpObj.sendmail(sender, [receiver], msg.as_string())
         print "Successfully sent email"
+        smtpObj.quit()
     except SMTPException:
         print "Error: unable to send email"
 
