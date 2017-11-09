@@ -20,21 +20,31 @@ def main():
 
     sql = "SELECT * FROM alerts WHERE handled != 1;"
 
-    unhandled = None
-
     try:
         # Execute the SQL command
         cursor.execute(sql)
         # Fetch all the rows in a list of lists.
         unhandled = cursor.fetchall()
     except:
-        print "Error: unable to fecth data"
+        print("Error: unable to fecth data")
 
     for row in unhandled:
         body = "You are receiving this because an alert has been made"
         subject = "Warning: {}".format(row[1])
-        # sendEnergyHillEmail("bdm015@bucknell.edu", subject, body)
-        print(row)
+        sendEnergyHillEmail("bdm015@bucknell.edu", subject, body)
+
+    # updates each row that email was sent for
+    if(unhandled is not ()):
+        sql = """UPDATE alerts SET handled = 1 WHERE alertId IN ({});""".format(
+            ",".join([str(x[0]) for x in unhandled])
+        )
+
+        try:
+            # Execute the SQL command
+            cursor.execute(sql)
+            db.commit()
+        except:
+            print("Error: unable to update data")
 
     # disconnect from server
     db.close()
