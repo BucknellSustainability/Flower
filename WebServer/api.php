@@ -1,6 +1,6 @@
 <?php
-
-$link = mysqli_connect("digitalgreens.cixglou4nxxh.us-east-1.rds.amazonaws.com", "jvoves", "digitalgreens", "energyhill");
+$config = json_decode(file_get_contents("config.json"));
+$link = mysqli_connect($config->DB_URL, $config->DB_USERNAME, $config->DB_PASSWORD, $config->DB_NAME);
 
 //make sure connection is established
 if (mysqli_connect_errno()) {

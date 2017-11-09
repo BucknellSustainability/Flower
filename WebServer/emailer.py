@@ -2,11 +2,18 @@
 
 import smtplib
 import MySQLdb
+import json
 from email.mime.text import MIMEText
 
 def main():
+    with open("config.json", 'r') as f:
+        config = json.load(f)
+
     # Open database connection
-    db = MySQLdb.connect("digitalgreens.cixglou4nxxh.us-east-1.rds.amazonaws.com", "jvoves", "digitalgreens", "energyhill")
+    db = MySQLdb.connect(config["DB_URL"],
+                         config["DB_USERNAME"],
+                         config["DB_PASSWORD"],
+                         config["DB_NAME"])
 
     # prepare a cursor object using cursor() method
     cursor = db.cursor()
