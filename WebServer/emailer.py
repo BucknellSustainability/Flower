@@ -3,6 +3,7 @@
 import smtplib
 import MySQLdb
 import json
+import os
 from email.mime.text import MIMEText
 
 def main():
@@ -69,6 +70,28 @@ def sendEnergyHillEmail(receiver, subject, body):
     except SMTPException:
         print "Error: unable to send email"
 
+def prepareChartExport():
+    eServerPath = "./node_modules/bin/highcharts-export-server"
+    eServerName = "highcharts-export-server"
+    if (not os.path.isfile(eServerPath)):
+        try:
+            os.system("export ACCEPT_HIGHCHARTS_LICENSE=TRUE")
+            if (0 != os.system("npm install " + eServerName)):
+                raise ImportError("Could not install chart export server")
+        except ImportError:
+            return 1
+    return 0
+
+"""
+Generates a PNG image from a JSON Object
+Assumes highcharts-export-server is present in the working directory
+param chartJSON: A JSON object representing the chart being exported.
+returns: A PNG image file object
+"""
+def exportChart(chartJSON):
+    os. # TODO: Write JSON to temp file
+    os.system(eServerPath + " -infile chart.json -outfile chart.png")
+    os. # TODO: Read PNG into python object
 
 if __name__ == "__main__":
     main()
