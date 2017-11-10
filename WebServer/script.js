@@ -62,26 +62,31 @@ function initMap() {
           position: location,
           map: map,
           title: 'Energy Hill',
+          animation: google.maps.Animation.DROP
         });
         markers[site].index = site;
 
         iWindows[site] = new google.maps.InfoWindow({
-          content: contents[site]
+          content: contents[site],
+          pixelOffset: new google.maps.Size(0,-20)
         });
 
         google.maps.event.addListener(markers[site], 'click', function () {
             for (var i in iWindows){
                 iWindows[i].close()
+                markers[i].setAnimation(null);
             }
             iWindows[this.index].open(map,markers[this.index]);
             map.panTo(markers[this.index].getPosition());
+            markers[this.index].setAnimation(google.maps.Animation.BOUNCE);
         });
   }
 
   //close info windows on click off
   google.maps.event.addListener(map, 'click', function() {
     for (var i in iWindows){
-      iWindows[i].close()
+      iWindows[i].close();
+      markers[i].setAnimation(null);
     }
   });
 }

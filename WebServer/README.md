@@ -43,3 +43,18 @@ API Keys should not be committed to the repo so  we've made a way for each devel
       printf("%s", $config->DB_USERNAME);
       ```
 This config.json won't get committed because it is in the `.gitignore` so you will need to do this for each clone of the repo, but it should persist unless you delete the file.
+
+## PHP with Bucknell Apache Hosting
+### Introduction
+Bucknell linux accounts have a public-facing `~\public_html` which can be accessed
+by navigating to `https://eg.bucknell.edu/~username` where `username` is the
+user's username. Accessing a PHP file by navigating to it relative to this URL
+will run the script on the server which will return the output of the PHP script
+to the browser. (e.g. `public_html/index.html` can be found at
+  `eg.bucknell.edu/~username/index.html`)
+### Setup
+By default, files are not readable by just anybody, so they won't be served
+until you add the read permission to the 'Other' group for any files you want to
+serve. Clone the repo into your `~\public_html` directory and use
+`chmod o=r ./WebServer/*` __or__ cd into `WebServer` and run `./WebServer/setup.sh`
+to make all the files in the `WebServer` directory accessible over http.
