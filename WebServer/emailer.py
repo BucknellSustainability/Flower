@@ -89,9 +89,9 @@ param chartJSON: A JSON object representing the chart being exported.
 returns: A PNG image file object
 """
 def exportChart(chartJSON):
-    os. # TODO: Write JSON to temp file
+    #os. # TODO: Write JSON to temp file
     os.system(eServerPath + " -infile chart.json -outfile chart.png")
-    os. # TODO: Read PNG into python object
+    #os. # TODO: Read PNG into python object
 
 if __name__ == "__main__":
     main()
