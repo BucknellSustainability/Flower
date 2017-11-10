@@ -65,10 +65,10 @@ def sendEnergyHillEmail(receiver, subject, body):
     try:
         smtpObj = smtplib.SMTP('smtp.bucknell.edu')
         smtpObj.sendmail(sender, [receiver], msg.as_string())
-        print "Successfully sent email"
+        print("Successfully sent email")
         smtpObj.quit()
     except SMTPException:
-        print "Error: unable to send email"
+        print("Error: unable to send email")
 
 def prepareChartExport():
     eServerPath = "./node_modules/bin/highcharts-export-server"

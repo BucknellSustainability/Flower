@@ -13,20 +13,20 @@ double Thermistor(int RawADC) {
   v_out = (RawADC / 1024.0) * 3.3;
   Temp = 10000.0 * ( (3.3 / v_out) - 1);
   //Temp = log(10000.0*((1024.0/RawADC-1))); // Gets resistance of thermistor
-  Serial.print("Resistance: ");
-  Serial.print(Temp);
+  //Serial.print("Resistance: ");
+  //Serial.print(Temp);
   
   //Temp = 1/(0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp))*Temp);
   Temp = 1 / (0.001129148 + (0.000234125 * log(Temp)) + (0.0000000876741 * pow(log(Temp), 3)));
-  Serial.print(", Kelvin: ");
-  Serial.print(Temp);
+  //Serial.print(", Kelvin: ");
+  //Serial.print(Temp);
   
   Temp = Temp - 273.15; // Convert K to C
-  Serial.print(", Celsius: ");
-  Serial.print(Temp);
+  //Serial.print(", Celsius: ");
+  //Serial.print(Temp);
   
   Temp = (Temp * 9.0)/ 5.0 + 32.0; // Convert C to F
-  Serial.print(", Fahrenheit: ");
+  //Serial.print(", Fahrenheit: ");
   Serial.print(Temp);
   
   return Temp;
