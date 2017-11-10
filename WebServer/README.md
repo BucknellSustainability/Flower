@@ -23,7 +23,6 @@ API Keys should not be committed to the repo so  we've made a way for each devel
 2. Add this code:
 ```
 {
-  "GOOGLE_MAPS_KEY" : "",
   "DB_URL" : "",
   "DB_USERNAME" : "",
   "DB_PASSWORD" : "",
@@ -32,14 +31,6 @@ API Keys should not be committed to the repo so  we've made a way for each devel
 ```
 3. Fill out all values of the empty strings with information for your DB/API key info
 4. Access the values where needed:
-    * JS: Add this code to the top of your JS file
-        ```
-        var GOOGLE_MAPS_KEY;
-        $.getJSON('config.json', function(response){
-               GOOGLE_MAPS_KEY = response["GOOGLE_MAPS_KEY"];
-               // your code that runs after getting the values
-        }
-        ```
     * Python:
        ```
        import json

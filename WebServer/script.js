@@ -1,14 +1,11 @@
 // This example displays a marker at the center of Australia.
 // When the user clicks the marker, an info window opens.
-
-$.getJSON('config.json', function(response){
-       GOOGLE_MAPS_KEY = response["GOOGLE_MAPS_KEY"];
+       GOOGLE_MAPS_KEY = "AIzaSyDhCHwOpcFGA9t6yMul0XCEhhg2mKyJ5mM";
        var url = "https://maps.googleapis.com/maps/api/js?key=" + GOOGLE_MAPS_KEY + "&callback=initMap";
        var JSElement = document.createElement('script');
            JSElement.src = url;
            JSElement.onload = OnceLoaded;
            document.getElementsByTagName('body')[0].appendChild(JSElement);
- })
 
 function OnceLoaded() {
     // Once loaded.. load other JS or CSS or call objects of version.js
