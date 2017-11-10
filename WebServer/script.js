@@ -1,23 +1,11 @@
 // This example displays a marker at the center of Australia.
 // When the user clicks the marker, an info window opens.
-
-
-
-  
-
-  //object.onload = function (){
-    //-----------------------------------------------------------------------
-    // 2) Send a http request with AJAX http://api.jquery.com/jQuery.ajax/
-    //-----------------------------------------------------------------------
-
-//  }
-
-var url = "https://maps.googleapis.com/maps/api/js?key=" + config.GOOGLE_MAPS_KEY + "&callback=initMap";
-var JSElement = document.createElement('script');
-    JSElement.src = url;
-    JSElement.onload = OnceLoaded;
-    document.getElementsByTagName('body')[0].appendChild(JSElement);
-
+       GOOGLE_MAPS_KEY = "AIzaSyDhCHwOpcFGA9t6yMul0XCEhhg2mKyJ5mM";
+       var url = "https://maps.googleapis.com/maps/api/js?key=" + GOOGLE_MAPS_KEY + "&callback=initMap";
+       var JSElement = document.createElement('script');
+           JSElement.src = url;
+           JSElement.onload = OnceLoaded;
+           document.getElementsByTagName('body')[0].appendChild(JSElement);
 
 function OnceLoaded() {
     // Once loaded.. load other JS or CSS or call objects of version.js
@@ -58,7 +46,7 @@ function initMap() {
     var contents = [];    //content for the markers
     var iWindows = [];    //windows to hold content for onclick
 
-    //iterate through sites in the db 
+    //iterate through sites in the db
     for (var site in siteList) {
         var currSite = siteList[site]
 

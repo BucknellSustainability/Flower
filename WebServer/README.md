@@ -19,15 +19,27 @@ of the live server, defaulting to `index.html` if present.
 
 ## API Keys
 API Keys should not be committed to the repo so  we've made a way for each developer to use their own.
-1. Create a file called `config.js` in the `Webserver` directory.
+1. Create a file called `config.json` in the `Webserver` directory.
 2. Add this code:
 ```
-var config = {
-  GOOGLE_MAPS_KEY : 'YOUR_API_KEY_HERE'
+{
+  "DB_URL" : "",
+  "DB_USERNAME" : "",
+  "DB_PASSWORD" : "",
+  "DB_NAME": ""
 }
 ```
-3. Replace all instances of `YOUR_API_KEY_HERE` with your appropriate API keys
-4. In your page that uses the key, create a script tag `<script type='text/javascript' src='config.js'></script>` before the JS that uses the API key
-5. To access the API key in JS, use the config JS object (ex. `config.GOOGLE_MAPS_KEY`)
-
-This config.js won't get committed because it is in the `.gitignore` so you will need to do this for each clone of the repo, but it should persist unless you delete the file.
+3. Fill out all values of the empty strings with information for your DB/API key info
+4. Access the values where needed:
+    * Python:
+       ```
+       import json
+       with open(filename, 'r') as f:
+           datastore = json.load(f)
+       ```
+    * PHP:
+      ```
+      $config = json_decode(file_get_contents("config.json"));
+      printf("%s", $config->DB_USERNAME);
+      ```
+This config.json won't get committed because it is in the `.gitignore` so you will need to do this for each clone of the repo, but it should persist unless you delete the file.
