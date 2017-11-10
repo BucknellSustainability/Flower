@@ -70,6 +70,11 @@ def sendEnergyHillEmail(receiver, subject, body):
     except SMTPException:
         print("Error: unable to send email")
 
+"""
+Installs highcharts-export-server if not already installed.
+Returns 0 if successful, returns 1 if export server is not installed at the
+expected path and could not be installed.
+"""
 def prepareChartExport():
     eServerPath = "./node_modules/bin/highcharts-export-server"
     eServerName = "highcharts-export-server"
@@ -85,13 +90,17 @@ def prepareChartExport():
 """
 Generates a PNG image from a JSON Object
 Assumes highcharts-export-server is present in the working directory
-param chartJSON: A JSON object representing the chart being exported.
+param chartJSON: A JSON string representing the chart being exported.
 returns: A PNG image file object
 """
-def exportChart(chartJSON):
-    #os. # TODO: Write JSON to temp file
+def exportChart(chartJSON): # TODO: Handle errors
+    fp = open('chart.json', 'w')
+    fp.write(chartJSON)
     os.system(eServerPath + " -infile chart.json -outfile chart.png")
-    #os. # TODO: Read PNG into python object
+    fp = open('chart.png', 'rb') # Open in read binary mode
+    chartImage = MIMEImage(fp.read())
+    fp.close()
+    return chartImage
 
 if __name__ == "__main__":
     main()
