@@ -91,7 +91,7 @@ def prepareChartExport():
 Generates a PNG image from a JSON Object
 Assumes highcharts-export-server is present in the working directory
 param chartJSON: A JSON string representing the chart being exported.
-returns: A PNG image file object
+returns: A PNG MIMEImage object
 """
 def exportChart(chartJSON): # TODO: Handle errors
     fp = open('chart.json', 'w')
