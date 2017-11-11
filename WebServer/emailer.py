@@ -5,6 +5,36 @@ import MySQLdb
 import json
 import os
 from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+
+testChartJSON = '{\n\
+    "xAxis": {\n\
+        "categories": [\n\
+            "Jan",\n\
+            "Feb",\n\
+            "Mar",\n\
+            "Apr",\n\
+            "May",\n\
+            "Jun",\n\
+            "Jul",\n\
+            "Aug",\n\
+            "Sep",\n\
+            "Oct",\n\
+            "Nov",\n\
+            "Dec"\n\
+        ]\n\
+    },\n\
+    "series": [\n\
+        {\n\
+            "data": [1,3,2,4],\n\
+            "type": "line"\n\
+        },\n\
+        {\n\
+            "data": [5,3,4,2],\n\
+            "type":"line"\n\
+        }\n\
+    ]\n\
+}'
 
 def main():
     with open("config.json", 'r') as f:
@@ -75,9 +105,9 @@ Installs highcharts-export-server if not already installed.
 Returns 0 if successful, returns 1 if export server is not installed at the
 expected path and could not be installed.
 """
+eServerPath = "./node_modules/.bin/highcharts-export-server"
+eServerName = "highcharts-export-server"
 def prepareChartExport():
-    eServerPath = "./node_modules/bin/highcharts-export-server"
-    eServerName = "highcharts-export-server"
     if (not os.path.isfile(eServerPath)):
         try:
             os.system("export ACCEPT_HIGHCHARTS_LICENSE=TRUE")
@@ -97,7 +127,7 @@ def exportChart(chartJSON): # TODO: Handle errors
     fp = open('chart.json', 'w')
     fp.write(chartJSON)
     os.system(eServerPath + " -infile chart.json -outfile chart.png")
-    fp = open('chart.png', 'rb') # Open in read binary mode
+    fp = open('chart.png', 'rb') # Open in write binary mode
     chartImage = MIMEImage(fp.read())
     fp.close()
     return chartImage
