@@ -2,3 +2,6 @@ config.json
 node_modules
 package-lock.json
 emailer.log
+chart.json
+chart.png
+Chart.html
