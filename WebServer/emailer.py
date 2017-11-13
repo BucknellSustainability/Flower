@@ -6,35 +6,8 @@ import json
 import os
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
 
-testChartJSON = '{\n\
-    "xAxis": {\n\
-        "categories": [\n\
-            "Jan",\n\
-            "Feb",\n\
-            "Mar",\n\
-            "Apr",\n\
-            "May",\n\
-            "Jun",\n\
-            "Jul",\n\
-            "Aug",\n\
-            "Sep",\n\
-            "Oct",\n\
-            "Nov",\n\
-            "Dec"\n\
-        ]\n\
-    },\n\
-    "series": [\n\
-        {\n\
-            "data": [1,3,2,4],\n\
-            "type": "line"\n\
-        },\n\
-        {\n\
-            "data": [5,3,4,2],\n\
-            "type":"line"\n\
-        }\n\
-    ]\n\
-}'
 
 def main():
     with open("config.json", 'r') as f:
@@ -59,32 +32,124 @@ def main():
     except:
         print("Error: unable to fecth data")
 
-    for row in unhandled:
-        body = "You are receiving this because an alert has been made"
-        subject = "Warning: {}".format(row[1])
-        sendEnergyHillEmail("bdm015@bucknell.edu", subject, body)
-
     # updates each row that email was sent for
     if(unhandled is not ()):
-        sql = """UPDATE alerts SET handled = 1 WHERE alertId IN ({});""".format(
-            ",".join([str(x[0]) for x in unhandled])
-        )
+        #sort alerts based on sensorId
+        unhandled = [list(x) for x in unhandled]
+        unhandled.sort(key=lambda x: x[4])
 
+        sensorIds = []
+        alertMessages = []
+        for x in unhandled:
+            #add sensorIds only once
+            if x[4] not in sensorIds:
+                sensorIds.append(x[4])
+                alertMessages.append(x[1]) #store corresponding alert message. 
+                                           #TODO: move alert messages and parameters into sensor table.
         try:
-            # Execute the SQL command
-            cursor.execute(sql)
-            db.commit()
+            # Execute the SQL command to updated "handeled" value from 0 -> 1            
+            updateHandled = """UPDATE alerts SET handled = 1 WHERE alertId IN ({});""".format(
+                ",".join([str(x[0]) for x in unhandled])) 
+            cursor.execute(updateHandled)
         except:
             print("Error: unable to update data")
 
+        try:
+            # Get info for each sensor
+            getSensorInfo = """SELECT sensor.sensorId, sensor.name, sensor.units, p.projectId, p.name, s.siteId, s.name  FROM 
+                                    ((sensor inner join project as p on sensor.projectId = p.projectId) inner join site as s on p.siteId = s.siteId)
+                                WHERE sensorId IN ({}) ORDER BY sensorId ASC;""".format(",".join([str(x) for x in sensorIds]))
+            cursor.execute(getSensorInfo)
+            sensorInfo = cursor.fetchall()
+        except:
+            print("Error: could not fetch sensor ifno")
+
+        if(sensorInfo is not ()):
+            prepareChartExport()
+            #iterate through all sensors with alerts
+            for i in range(len(sensorIds)):
+                    #get data for that sensor
+                    getSensorData = """SELECT * FROM datahourly WHERE sensorId = {};""".format(str(sensorIds[i]))
+
+                    try:
+                        #get aggregated data for sensor in sensorList
+                        cursor.execute(getSensorData)
+                        aggData = cursor.fetchall()
+                    except:
+                        print("Error: no aggregated data to fetch")
+
+                    if(aggData is not ()):
+                        #format data into json string
+                        jsonData = getDataJSON(aggData, sensorInfo[i])
+                        #create the chart image 
+                        chart = exportChart(jsonData)
+                        body = "You are receiving this because of alert '{}' from Sensor: {} @ {}/{}".format(alertMessages[i], sensorInfo[i][1], sensorInfo[i][6], sensorInfo[i][4])
+                        subject = "Warning: '{}' from Sensor: {} @ {}/{}  ".format(alertMessages[i], sensorInfo[i][1], sensorInfo[i][6], sensorInfo[i][4])
+                        sendEnergyHillEmail("bdm015@bucknell.edu", subject, body, chart)
+
+            # Commit Queries
+            db.commit()
     # disconnect from server
     db.close()
 
 
-def sendEnergyHillEmail(receiver, subject, body):
+
+"""
+Formats and generates json string based on parameters from alerts/sensors
+returns: JSON string used to build charts
+"""
+def getDataJSON(data, sensorInfo):
+    sensorName = sensorInfo[1]
+    projectName = sensorInfo[4]
+    siteName = sensorInfo[6]
+    units = sensorInfo[2]
+    startDate = data[0][3].strftime('%B %d, %Y')
+    endDate = data[0][3].strftime('%B %d, %Y')
+
+    #use labels for ever hour
+    dates = ['"' + data[i][3].strftime('%I:%M %p') + '"' if i % 6 == 0 else '""' for i in range(len(data))]
+    values = [str(x[1]) for x in data]
+
+    dataChartJSON = """
+    {{
+        "title": {{
+            "text": "{} @ {}/{}"
+        }},
+        "xAxis": {{
+            "categories": [{}],
+            "title": {{
+                "text": "{} - {}"
+            }}
+        }},
+        "yAxis": {{
+            "title": {{
+                "text": "Sensor Data ({})"
+            }}
+        }},
+        "series": [
+            {{
+                "data": [{}],
+                "fillOpacity": 0.5,
+                "threshold": null
+            }}
+        ]
+    }}""".format(sensorName, siteName, projectName, ','.join(dates), startDate, endDate, units, ','.join(values)) #join values
+
+    return dataChartJSON
+
+
+"""
+Send Email with attached chart and text
+"""
+def sendEnergyHillEmail(receiver, subject, body, chart):
     sender = 'energyhill@bucknell.edu'
 
-    msg = MIMEText(body)
+    msg = MIMEMultipart()
+    text = MIMEText(body)
+
+    #attach elements to email
+    msg.attach(text)
+    msg.attach(chart)
 
     # me == the sender's email address
     # you == the recipient's email address
@@ -99,6 +164,7 @@ def sendEnergyHillEmail(receiver, subject, body):
         smtpObj.quit()
     except SMTPException:
         print("Error: unable to send email")
+
 
 """
 Installs highcharts-export-server if not already installed.
@@ -126,6 +192,7 @@ returns: A PNG MIMEImage object
 def exportChart(chartJSON): # TODO: Handle errors
     fp = open('chart.json', 'w')
     fp.write(chartJSON)
+    fp.close()
     os.system(eServerPath + " -infile chart.json -outfile chart.png")
     fp = open('chart.png', 'rb') # Open in write binary mode
     chartImage = MIMEImage(fp.read())
