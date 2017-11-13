@@ -68,7 +68,7 @@ def main():
             #iterate through all sensors with alerts
             for i in range(len(sensorIds)):
                     #get data for that sensor
-                    getSensorData = """SELECT * FROM datahourly WHERE sensorId = {} AND dateTime > (CURRENT_TIMESTAMP - INTERVAL 1 DAY);;""".format(str(sensorIds[i]))
+                    getSensorData = """SELECT * FROM datahourly WHERE sensorId = {} AND dateTime > (CURRENT_TIMESTAMP - INTERVAL 1 DAY);""".format(str(sensorIds[i]))
 
                     try:
                         #get aggregated data for sensor in sensorList
@@ -82,6 +82,7 @@ def main():
                         jsonData = getDataJSON(aggData, sensorInfo[i])
                         #create the chart image 
                         chart = exportChart(jsonData)
+                        
                         body = "You are receiving this because of alert '{}' from Sensor: {} @ {}/{}".format(sensorInfo[i][7], sensorInfo[i][1], sensorInfo[i][6], sensorInfo[i][4])
                         subject = "Warning: '{}' from Sensor: {} @ {}/{}  ".format(sensorInfo[i][7], sensorInfo[i][1], sensorInfo[i][6], sensorInfo[i][4])
                         sendEnergyHillEmail(sensorInfo[i][8], subject, body, chart)
@@ -103,7 +104,7 @@ def getDataJSON(data, sensorInfo):
     siteName = sensorInfo[6]
     units = sensorInfo[2]
     startDate = data[0][3].strftime('%B %d, %Y')
-    endDate = data[0][3].strftime('%B %d, %Y')
+    endDate = data[-1][3].strftime('%B %d, %Y')
 
     #use labels for ever hour
     dates = ['"' + data[i][3].strftime('%I:%M %p') + '"'  for i in range(len(data))]
