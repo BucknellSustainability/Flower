@@ -104,7 +104,7 @@ def getDataJSON(data, sensorInfo):
     siteName = sensorInfo[6]
     units = sensorInfo[2]
     startDate = data[0][3].strftime('%B %d, %Y')
-    endDate = data[0][3].strftime('%B %d, %Y')
+    endDate = data[-1][3].strftime('%B %d, %Y')
 
     #use labels for ever hour
     dates = ['"' + data[i][3].strftime('%I:%M %p') + '"' if i % 6 == 0 else '""' for i in range(len(data))]
