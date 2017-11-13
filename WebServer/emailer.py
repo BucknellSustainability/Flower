@@ -62,14 +62,14 @@ def main():
             cursor.execute(getSensorInfo)
             sensorInfo = cursor.fetchall()
         except:
-            print("Error: could not fetch sensor ifno")
+            print("Error: could not fetch sensor info")
 
         if(sensorInfo is not ()):
             prepareChartExport()
             #iterate through all sensors with alerts
             for i in range(len(sensorIds)):
                     #get data for that sensor
-                    getSensorData = """SELECT * FROM datahourly WHERE sensorId = {};""".format(str(sensorIds[i]))
+                    getSensorData = """SELECT * FROM datahourly WHERE sensorId = {} AND dateTime > (CURRENT_TIMESTAMP - INTERVAL 1 DAY);""".format(str(sensorIds[i]))
 
                     try:
                         #get aggregated data for sensor in sensorList
@@ -85,7 +85,7 @@ def main():
                         chart = exportChart(jsonData)
                         body = "You are receiving this because of alert '{}' from Sensor: {} @ {}/{}".format(alertMessages[i], sensorInfo[i][1], sensorInfo[i][6], sensorInfo[i][4])
                         subject = "Warning: '{}' from Sensor: {} @ {}/{}  ".format(alertMessages[i], sensorInfo[i][1], sensorInfo[i][6], sensorInfo[i][4])
-                        sendEnergyHillEmail("bdm015@bucknell.edu", subject, body, chart)
+                        #sendEnergyHillEmail("bdm015@bucknell.edu", subject, body, chart)
 
             # Commit Queries
             db.commit()
