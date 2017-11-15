@@ -1,0 +1,11 @@
+# Lines starting with '#' are comments.
+# Each line is a file pattern followed by one or more owners.
+# ORDER MATTERS
+
+CODEOWNERS    @BenMatase @DTV96Calibre @JAV04 @tomficcadenti @Phlosioneer
+
+# Matt's domain
+ArduinoLib/*  @Phlosioneer
+PiServer/*    @Phlosioneer
+
+WebServer/*             @BenMatase @DTV96Calibre @JAV04 @tomficcadenti
