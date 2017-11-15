@@ -16,8 +16,18 @@ double Thermistor(int RawADC) {
   //Serial.print("Resistance: ");
   //Serial.print(Temp);
   
-  //Temp = 1/(0.001129148 + (0.000234125 + (0.0000000876741 * Temp * Temp))*Temp);
-  Temp = 1 / (0.001129148 + (0.000234125 * log(Temp)) + (0.0000000876741 * pow(log(Temp), 3)));
+  // Steinhart-Hart equation
+  // 1/Temp = a + b * ln(R) + c * (ln(R)) ^ 3
+  // Data points:
+  //   At 0C, R=40,000
+  //   At 21.1C, R=10,000
+  //   At 100C, R=800
+  //
+  // Values from http://www.thinksrs.com/downloads/programs/Therm%20Calc/NTCCalibrator/NTCcalculator.htm
+  float A = -0.1202735605 * pow(10, -3);
+  float B = 4.599159055 * pow(10, -4);
+  float C = -9.179861304 * pow(10, -7);
+  Temp = 1 / (A + B * log(Temp) + C * pow(log(Temp), 3));
   //Serial.print(", Kelvin: ");
   //Serial.print(Temp);
   

@@ -59,9 +59,10 @@ def pushToDB(connection, number, sensor):
 def findSerialPort():
 	"""Looks at the list of tty ports, and returns the first arduino tty it finds."""
 	# TODO: Return an array of all arduino tty ports, to support multiple arduinos.
+	# Wildcards from https://github.com/sudar/Arduino-Makefile/blob/bc5092f25bd330051b377c13b317a25870413a24/Arduino.mk#L1121
 	
 	# Set up the tty regex for arduinos. They connect as either ttyUSB* or ttyACM*
-	pattern = re.compile("tty(USB|ACM).*")
+	pattern = re.compile("tty(USB|ACM|\.usb(serial|modem)|\.wchusbserial).*")
 
 	# Check every tty port available.
 	ttyDirPath = "/dev"
