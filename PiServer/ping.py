@@ -31,23 +31,24 @@ def pollArduino(arduino):
 	# Get the next line of input from the arduino. It's in the form of a
 	# binary string, with /r/n characters at the end.
 	data = arduino.readline()
-		
+
 	# Chop off the last two characters (/r/n)
 	data = data[0:-2];
 	
 	# Convert the string from binary to utf-8.
 	data = data.decode("ascii")
+	return data
 
 def pushToDB(connection, number, sensor):
 	"""connection is the I/O object with the database. number is the number to insert, sensor is the sensor ID number."""
 	# Check that number and sensor are both integers, and not strings.
 	# Normally this is avoided in python, but this check ensures that no funnybusiness
 	# happens with the SQL command.
-	assert(isinstance(number, int))
+	assert(isinstance(number, float))
 	assert(isinstance(sensor, int))
 	with connection.cursor() as cursor:
 			# Form the command.
-			command = "INSERT INTO data (sensorId, value) VALUES (" + sensor + ", " + data + ");"
+			command = "INSERT INTO data (sensorId, value) VALUES (" + str(sensor) + ", " + str(number) + ");"
 			cursor.execute(command)
 
 			# Send the command.
@@ -63,7 +64,8 @@ def findSerialPort():
 	
 	# Set up the tty regex for arduinos. They connect as either ttyUSB* or ttyACM*
 	pattern = re.compile("tty(USB|ACM|\.usb(serial|modem)|\.wchusbserial).*")
-
+	# FIXME
+	return "/dev/ttyUSB0"
 	# Check every tty port available.
 	ttyDirPath = "/dev"
 	filesAndDirs = listdir(ttyDirPath)
@@ -71,28 +73,32 @@ def findSerialPort():
 
 		# Form the full path.
 		ttyPath = join(ttyDirPath, tty)
+		print("Looking at port: " + ttyPath)
 
 		# Check that this is a file, not a directory. Just in case.
-		if !isfile(ttyPath):
+		if not isfile(ttyPath):
 			continue
 		
 		# Check if this is an arduino tty port.
-		if !pattern.match(tty):
+		if not pattern.match(tty):
 			continue
-		
+
+		print("found arduino port: " + ttyPath)
 		# Return the full path to the port.
 		return ttyPath
 
 
 
 def main():
+	connection = connectToDB()
 	# Find the serial port for the arduino.
 	serialPort = findSerialPort()
 
 	# Open up the arduino. This assumes a baud rate of 115200.
 	with serial.Serial(serialPort, 115200, timeout=5) as arduino:
+		# TODO: Flush serial port before reading.	
 		# Discard the first line of input, because the reading could start in the middle of a string.
-		print("discarding: " + pollArduino(arduino))
+		print("discarding partial reading: " + pollArduino(arduino))
 
 		# Read from this arduino while it's available.
 		while (arduino.is_open):
@@ -106,10 +112,10 @@ def main():
 			pushToDB(connection, data, 1)
 
 # Infinitely try to read from arduinos.
-while (true):
+while (True):
 	try:
 		main()
-	except:
-		pass
+	except Exception as e:
+		print(e)
 
 
