@@ -42,19 +42,19 @@ def main():
         for x in unhandled:
             #add sensorIds only once
             if x[3] not in sensorIds:
-                sensorIds.append(x[3]) 
+                sensorIds.append(x[3])
 
         try:
-            # Execute the SQL command to updated "handeled" value from 0 -> 1            
+            # Execute the SQL command to updated "handeled" value from 0 -> 1
             updateHandled = """UPDATE alerts SET handled = 1 WHERE alertId IN ({});""".format(
-                ",".join([str(x[0]) for x in unhandled])) 
+                ",".join([str(x[0]) for x in unhandled]))
             cursor.execute(updateHandled)
         except:
             print("Error: unable to update data")
 
         try:
             # Get info for each sensor
-            getSensorInfo = """SELECT sensor.sensorId, sensor.name, sensor.units, p.projectId, p.name, s.siteId, s.name, sensor.alertMessage, sensor.alertEmail  FROM 
+            getSensorInfo = """SELECT sensor.sensorId, sensor.name, sensor.units, p.projectId, p.name, s.siteId, s.name, sensor.alertMessage, sensor.alertEmail  FROM
                                     ((sensor inner join project as p on sensor.projectId = p.projectId) inner join site as s on p.siteId = s.siteId)
                                 WHERE sensorId IN ({}) ORDER BY sensorId ASC;""".format(",".join([str(x) for x in sensorIds]))
             cursor.execute(getSensorInfo)
@@ -79,9 +79,9 @@ def main():
                     if(aggData is not ()):
                         #format data into json string
                         jsonData = getDataJSON(aggData, sensorInfo[i])
-                        #create the chart image 
+                        #create the chart image
                         chart = exportChart(jsonData)
-                        
+
                         body = "You are receiving this because of alert '{}' from Sensor: {} @ {}/{}".format(sensorInfo[i][7], sensorInfo[i][1], sensorInfo[i][6], sensorInfo[i][4])
                         subject = "Warning: '{}' from Sensor: {} @ {}/{}  ".format(sensorInfo[i][7], sensorInfo[i][1], sensorInfo[i][6], sensorInfo[i][4])
                         sendEnergyHillEmail(sensorInfo[i][8], subject, body, chart)
@@ -118,7 +118,7 @@ def getDataJSON(data, sensorInfo):
             "categories": [{}],
             "title": {{
                 "text": "{} - {}"
-            }},  
+            }},
             "tickInterval": 6
         }},
         "yAxis": {{
