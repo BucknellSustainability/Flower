@@ -21,7 +21,6 @@ def main():
 
     # prepare a cursor object using cursor() method
     cursor = db.cursor()
-
     sql = "SELECT * FROM alerts WHERE handled != 1;"
 
     try:
@@ -36,7 +35,7 @@ def main():
     if(unhandled is not ()):
         #sort alerts based on sensorId
         unhandled = [list(x) for x in unhandled]
-        unhandled.sort(key=lambda x: x[3])
+        unhandled.sort(key=lambda x: x[3]) #sort on sensorId
 
         sensorIds = []
         alertMessages = []
