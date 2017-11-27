@@ -11,29 +11,9 @@ function OnceLoaded() {
     // Once loaded.. load other JS or CSS or call objects of version.js
 }
 
-//Reads sites from amazon rds
-function readSites(){
-var sites = [];
-$.ajax({
-  type: 'GET',
-  url: 'api.php',
-  success: function(json) {
-    $.each(JSON.parse(json), function(key,value) {
-      sites.push(value); //value = json object for site
-    });
-    console.log("Sucessfully Read from DB");
-  },
-  error: function() {
-    alert('Error Reading from DB');
-  },
-  async: false  //important. Makes sure init map waits till this is done.
-  });
-  return sites;
-}
-
 function initMap() {
     //get sites from db
-    var siteList = readSites(function(){});
+    var siteList = readDB("site","","*");
 
     console.log("Initializing Map");
     var energyHill = {lat: 40.950409, lng: -76.882382}; //Energy Hill: 40.950409, -76.882382
