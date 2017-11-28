@@ -1,3 +1,10 @@
+# Dependencies
+In order to use some of the scripts in this project, dependencies must be satisfied.
+
+| Script     | Dependencies | Installation          |
+|------------|--------------|-----------------------|
+| emailer.py | MySQLdb      | `pip install mysqldb` |
+
 # Getting Started (Local Development)
 Navigate to the WebServer directory with your terminal. Both of these options
 assume `index.html` is located in WebServer. This is the page that is served
