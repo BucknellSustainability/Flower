@@ -18,8 +18,8 @@ double Thermistor(int RawADC) {
   v_out = (RawADC / 1024.0) * v_supply;
   Temp = 10000.0 * ( (v_in / v_out) - 1);
   //Temp = log(10000.0*((1024.0/RawADC-1))); // Gets resistance of thermistor
-  Serial.print("Resistance: ");
-  Serial.print(Temp);
+  //Serial.print("Resistance: ");
+  //Serial.print(Temp);
   
   // Beta equation: T = 1/((1/B)ln(R/R0) + 1/T0)
   // Where:
@@ -42,11 +42,11 @@ double Thermistor(int RawADC) {
   //Serial.print(Temp);
   
   Temp = Temp - 273.15; // Convert K to C
-  Serial.print(", Celsius: ");
-  Serial.print(Temp);
+  //Serial.print(", Celsius: ");
+  //Serial.print(Temp);
   
   Temp = (Temp * 9.0)/ 5.0 + 32.0; // Convert C to F
-  Serial.print(", Fahrenheit: ");
+  //Serial.print(", Fahrenheit: ");
   Serial.print(Temp);
   
   return Temp;
