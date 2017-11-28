@@ -33,14 +33,14 @@ def main():
 
     # updates each row that email was sent for
     if(unhandled is not ()):
-        #sort alerts based on sensorId
+        # sort alerts based on sensorId
         unhandled = [list(x) for x in unhandled]
-        unhandled.sort(key=lambda x: x[3]) #sort on sensorId
+        unhandled.sort(key=lambda x: x[3])  # sort on sensorId
 
         sensorIds = []
         alertMessages = []
         for x in unhandled:
-            #add sensorIds only once
+            # add sensorIds only once
             if x[3] not in sensorIds:
                 sensorIds.append(x[3])
 
@@ -64,27 +64,30 @@ def main():
 
         if(sensorInfo is not ()):
             prepareChartExport()
-            #iterate through all sensors with alerts
+            # iterate through all sensors with alerts
             for i in range(len(sensorIds)):
-                    #get data for that sensor
-                    getSensorData = """SELECT * FROM datahourly WHERE sensorId = {} AND dateTime > (CURRENT_TIMESTAMP - INTERVAL 1 DAY);""".format(str(sensorIds[i]))
+                # get data for that sensor
+                getSensorData = """SELECT * FROM datahourly WHERE sensorId = {} AND dateTime > (CURRENT_TIMESTAMP - INTERVAL 1 DAY);""".format(
+                    str(sensorIds[i]))
 
-                    try:
-                        #get aggregated data for sensor in sensorList
-                        cursor.execute(getSensorData)
-                        aggData = cursor.fetchall()
-                    except:
-                        print("Error: no aggregated data to fetch")
+                try:
+                    # get aggregated data for sensor in sensorList
+                    cursor.execute(getSensorData)
+                    aggData = cursor.fetchall()
+                except:
+                    print("Error: no aggregated data to fetch")
 
-                    if(aggData is not ()):
-                        #format data into json string
-                        jsonData = getDataJSON(aggData, sensorInfo[i])
-                        #create the chart image
-                        chart = exportChart(jsonData)
+                if(aggData is not ()):
+                    # format data into json string
+                    jsonData = getDataJSON(aggData, sensorInfo[i])
+                    # create the chart image
+                    chart = exportChart(jsonData)
 
-                        body = "You are receiving this because of alert '{}' from Sensor: {} @ {}/{}".format(sensorInfo[i][7], sensorInfo[i][1], sensorInfo[i][6], sensorInfo[i][4])
-                        subject = "Warning: '{}' from Sensor: {} @ {}/{}  ".format(sensorInfo[i][7], sensorInfo[i][1], sensorInfo[i][6], sensorInfo[i][4])
-                        sendEnergyHillEmail(sensorInfo[i][8], subject, body, chart)
+                    body = "You are receiving this because of alert '{}' from Sensor: {} @ {}/{}".format(
+                        sensorInfo[i][7], sensorInfo[i][1], sensorInfo[i][6], sensorInfo[i][4])
+                    subject = "Warning: '{}' from Sensor: {} @ {}/{}  ".format(
+                        sensorInfo[i][7], sensorInfo[i][1], sensorInfo[i][6], sensorInfo[i][4])
+                    sendEnergyHillEmail(sensorInfo[i][8], subject, body, chart)
 
             # Commit Queries
             db.commit()
@@ -92,11 +95,12 @@ def main():
     db.close()
 
 
-
 """
 Formats and generates json string based on parameters from alerts/sensors
 returns: JSON string used to build charts
 """
+
+
 def getDataJSON(data, sensorInfo):
     sensorName = sensorInfo[1]
     projectName = sensorInfo[4]
@@ -105,8 +109,9 @@ def getDataJSON(data, sensorInfo):
     startDate = data[0][3].strftime('%B %d, %Y')
     endDate = data[-1][3].strftime('%B %d, %Y')
 
-    #use labels for ever hour
-    dates = ['"' + data[i][3].strftime('%I:%M %p') + '"'  for i in range(len(data))]
+    # use labels for ever hour
+    dates = ['"' + data[i]
+             [3].strftime('%I:%M %p') + '"' for i in range(len(data))]
     values = [str(x[1]) for x in data]
 
     dataChartJSON = """
@@ -134,7 +139,7 @@ def getDataJSON(data, sensorInfo):
                 "name": "{}"
             }}
         ]
-    }}""".format(sensorName, siteName, projectName, ','.join(dates), startDate, endDate, units, ','.join(values), sensorName) #join values
+    }}""".format(sensorName, siteName, projectName, ','.join(dates), startDate, endDate, units, ','.join(values), sensorName)  # join values
 
     return dataChartJSON
 
@@ -142,13 +147,15 @@ def getDataJSON(data, sensorInfo):
 """
 Send Email with attached chart and text
 """
+
+
 def sendEnergyHillEmail(receiver, subject, body, chart):
     sender = 'energyhill@bucknell.edu'
 
     msg = MIMEMultipart()
     text = MIMEText(body)
 
-    #attach elements to email
+    # attach elements to email
     msg.attach(text)
     msg.attach(chart)
 
@@ -174,6 +181,8 @@ expected path and could not be installed.
 """
 eServerPath = "./node_modules/.bin/highcharts-export-server"
 eServerName = "highcharts-export-server"
+
+
 def prepareChartExport():
     if (not os.path.isfile(eServerPath)):
         try:
@@ -183,21 +192,25 @@ def prepareChartExport():
             return 1
     return 0
 
+
 """
 Generates a PNG image from a JSON Object
 Assumes highcharts-export-server is present in the working directory
 param chartJSON: A JSON string representing the chart being exported.
 returns: A PNG MIMEImage object
 """
-def exportChart(chartJSON): # TODO: Handle errors
+
+
+def exportChart(chartJSON):  # TODO: Handle errors
     fp = open('chart.json', 'w')
     fp.write(chartJSON)
     fp.close()
     os.system(eServerPath + " -infile chart.json -outfile chart.png")
-    fp = open('chart.png', 'rb') # Open in write binary mode
+    fp = open('chart.png', 'rb')  # Open in write binary mode
     chartImage = MIMEImage(fp.read())
     fp.close()
     return chartImage
+
 
 if __name__ == "__main__":
     main()

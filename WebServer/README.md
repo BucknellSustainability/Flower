@@ -68,3 +68,16 @@ until you add the read permission to the 'Other' group for any files you want to
 serve. Clone the repo into your `~\public_html` directory and use
 `chmod o=r ./WebServer/*` __or__ cd into `WebServer` and run `./WebServer/setup.sh`
 to make all the files in the `WebServer` directory accessible over http.
+
+##Linters
+
+### Python - autopep8
+To install autopep8 run
+```
+pip install autopep8
+```
+Install the `python-autopep8` package in Atom with either `apm install python-autopep8` or through the built in Atom package manager.
+
+Then to run the linter in Atom, highlight all of the text you want to format and then press `Ctrl-shift-p` and type in `autopep8` and then press `Enter` to format the Python code.
+
+You can also run it from the command line with `autopep8 [--in-place] [other-options] filename`.
