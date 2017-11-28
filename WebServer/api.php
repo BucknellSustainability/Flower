@@ -8,8 +8,12 @@ if (mysqli_connect_errno()) {
     exit();
 }
 
+$table = $_GET['table'];
+$condition = $_GET['condition'];
+$fields = $_GET['fields'];
+
 //get name, description, longitude, latitude, link from site table
-$query = "SELECT name, description, longitude, latitude, link FROM site;";
+$query = "SELECT $fields FROM $table $condition;";
 
 //put al sites in an array and output as json
 if ($result = mysqli_query($link, $query)) {
@@ -22,36 +26,4 @@ if ($result = mysqli_query($link, $query)) {
 }
 
 mysqli_close($link);
-
-
-
-
-
-
-
-
-
-
-/*
-    //open connection to mysql db
-    $connection = mysqli_connect("digitalgreens.cixglou4nxxh.us-east-1.rds.amazonaws.com","jvoves","digitalgreens");
-
-    $sql = "select name from site";
-    $result = mysqli_query($connection, $sql);
-
-
-    $emparray = array();
-    while($row = mysqli_fetch_assoc($result))
-    {
-        $emparray[] = $row;
-    }
-
-
-    echo json_encode($emparray);
-
-    //close the db connection
-    mysqli_close($connection);
-    */
-
-
 ?>
