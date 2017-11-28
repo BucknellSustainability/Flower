@@ -5,6 +5,7 @@
   margin: 0;
   padding: 0;
 }
+
 html {
   height: 100%;
   background: #0e0e0e;
@@ -12,6 +13,14 @@ html {
 body {
   font-family: "Open Sans", arial, verdana;
 }
+
+input[type=radio],
+input.radio {
+  width: 5px;
+  margin-top: 10px;
+  margin-bottom: 0px;
+}
+
 /*form styles*/
 #msform {0
   width: 100%;
