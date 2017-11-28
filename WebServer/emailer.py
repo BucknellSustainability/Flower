@@ -186,8 +186,7 @@ eServerName = "highcharts-export-server"
 def prepareChartExport():
     if (not os.path.isfile(eServerPath)):
         try:
-            os.system("export ACCEPT_HIGHCHARTS_LICENSE=TRUE")
-            if (0 != os.system("npm install " + eServerName)):
+            if (0 != os.system("export ACCEPT_HIGHCHARTS_LICENSE=TRUE && npm install " + eServerName)):
                 raise ImportError("Could not install chart export server")
         except ImportError:
             return 1

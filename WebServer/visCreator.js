@@ -17,7 +17,7 @@ $(".next").click(function(){
 	if(animating) return false;
 	animating = true;
 
-	current_fs = $(this).parent(); 
+	current_fs = $(this).parent();
 	next_fs = $(this).parent().next(); //new field set after clicked next
 
 	var currFieldSet = $('fieldset').index(next_fs);
@@ -48,6 +48,9 @@ $(".next").click(function(){
 
 		//generate the iframe based on current url
 		var url = document.URL.substr(0,document.URL.lastIndexOf('/')) + "/visualize.html?id=" + sensors;
+		if (-1 != url.search("http://")){
+			url = url.slice(0,4) + 's' + url.slice(4,url.length+1); // Turn http to https
+		}	// TODO: This is hacky
 		var iframe = document.createElement('iframe');
 		iframe.id="iframe1";
 		iframe.setAttribute("src", url);
@@ -56,10 +59,12 @@ $(".next").click(function(){
 
 		//place iframe into html container
 		document.getElementById("viewBox").appendChild(iframe);
-
 		//add iframe text element
-		var iframeTextP = document.getElementById("iframeTxt");
-		iframeTextP.textContent = iframe.outerHTML;
+		var iframeTextareaHTML = document.getElementById("iframeTxtHTML");
+		iframeTextareaHTML.textContent = iframe.outerHTML;
+
+		var iframeTextareaWP = document.getElementById("iframeTxtWP");
+		iframeTextareaWP.textContent = "[iframe id=iframe1 src=" + url + " width=100% height=400px]";
 	}
 
 	//activate next step on progressbar using the index of next_fs
@@ -179,10 +184,3 @@ $(document).on('click', '[name="projectRadios"]', function () {
 $(document).on('click', '[name="sensorRadios"]', function () {
     document.getElementById("sensorNext").disabled = false;
 });
-
-
-
-
-
-
-

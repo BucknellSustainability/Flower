@@ -1,3 +1,13 @@
+# Dependencies
+In order to use some of the scripts in this project, dependencies must be satisfied.
+
+| Script     | Dependencies | Installation          |
+|------------|--------------|-----------------------|
+| emailer.py | Python3.6 MySQLdb      | `pip install mysqldb` |
+
+On the Bucknell linux systems, `module load python/3.6` satisfies the python3.6
+dependency.
+
 # Getting Started (Local Development)
 Navigate to the WebServer directory with your terminal. Both of these options
 assume `index.html` is located in WebServer. This is the page that is served
