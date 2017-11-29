@@ -1,3 +1,5 @@
+/* eslint guard-for-in: "warn" */
+
 // This example displays a marker at the center of Australia.
 // When the user clicks the marker, an info window opens.
 GOOGLE_MAPS_KEY = 'AIzaSyDhCHwOpcFGA9t6yMul0XCEhhg2mKyJ5mM';
@@ -7,13 +9,12 @@ JSElement = document.createElement('script');
     JSElement.onload = initMap;
     document.getElementsByTagName('body')[0].appendChild(JSElement);
 
-function OnceLoaded() {
-    // Once loaded.. load other JS or CSS or call objects of version.js
-}
-
+/**
+ * Initializes the Google Map
+ */
 function initMap() {
-    //get sites from db
-    var siteList = readDB("site","","*");
+    // get sites from db
+    siteList = readDB('site', '', '*');
 
     markers = []; // array of google map markers
     contents = []; // content for the markers
@@ -23,7 +24,7 @@ function initMap() {
     for (site in siteList) {
         currSite = siteList[site];
 
-        var location = {
+        location = {
             lat: parseFloat(currSite.latitude),
             lng: parseFloat(currSite.longitude),
         };
