@@ -1,3 +1,13 @@
+# Dependencies
+In order to use some of the scripts in this project, dependencies must be satisfied.
+
+| Script     | Dependencies | Installation          |
+|------------|--------------|-----------------------|
+| emailer.py | Python3.6 MySQLdb      | `pip install mysqldb` |
+
+On the Bucknell linux systems, `module load python/3.6` satisfies the python3.6
+dependency.
+
 # Getting Started (Local Development)
 Navigate to the WebServer directory with your terminal. Both of these options
 assume `index.html` is located in WebServer. This is the page that is served
@@ -90,3 +100,14 @@ To run eslint from the command line:
 node node_modules/eslint/bin/eslint.js <file>
 ```
 Where <file> is the file you want to lint.
+
+### Python - autopep8
+To install autopep8 run
+```
+pip install autopep8
+```
+Install the `python-autopep8` package in Atom with either `apm install python-autopep8` or through the built in Atom package manager.
+
+Then to run the linter in Atom, highlight all of the text you want to format and then press `Ctrl-shift-p` and type in `autopep8` and then press `Enter` to format the Python code.
+
+You can also run it from the command line with `autopep8 [--in-place] [other-options] filename`.

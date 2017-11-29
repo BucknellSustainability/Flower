@@ -7,43 +7,13 @@ JSElement = document.createElement('script');
     JSElement.onload = initMap;
     document.getElementsByTagName('body')[0].appendChild(JSElement);
 
-/**
-Reads sites from amazon rds
-@return {array} sites
-*/
-function readSites() {
-    sites = [];
-    $.ajax({
-        type: 'GET',
-        url: 'api.php',
-        success: function(json) {
-            $.each(JSON.parse(json), function(key, value) {
-                sites.push(value); // value = json object for site
-            });
-            console.log('Sucessfully Read from DB');
-        },
-        error: function() {
-            alert('Error Reading from DB');
-        },
-        async: false, // important. Makes sure init map waits till this is done.
-    });
-    return sites;
+function OnceLoaded() {
+    // Once loaded.. load other JS or CSS or call objects of version.js
 }
 
-/**
-    Initialized Google Map
-*/
 function initMap() {
-    // get sites from db
-    siteList = readSites(function() {});
-
-    console.log('Initializing Map');
-    // Energy Hill: 40.950409, -76.882382
-    energyHill = {lat: 40.950409, lng: -76.882382};
-    map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 16,
-        center: energyHill,
-    }); // define map & starting location
+    //get sites from db
+    var siteList = readDB("site","","*");
 
     markers = []; // array of google map markers
     contents = []; // content for the markers
