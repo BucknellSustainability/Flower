@@ -67,7 +67,7 @@ To keep all code looking as if one person wrote it, there are linters for all
 languages used in the project.
 
 ### JS - eslint
-To install and just eslint, run the following commands.
+To install eslint, run the following commands.
 ```
 cd WebServer
 npm install eslint
@@ -84,3 +84,9 @@ node bin/eslint.js --init
 //Use the up and down arrows to naviage to Prexisting->Google->JS and hit enter
 //The .eslintrc.js file will be in the dir you are currently in
 ```
+
+To run eslint from the command line:
+```
+node node_modules/eslint/bin/eslint.js <file>
+```
+Where <file> is the file you want to lint.
