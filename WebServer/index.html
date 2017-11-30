@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
   <head>
     <title>Bucknell Sustainability</title>
 
@@ -7,41 +8,33 @@
     <meta charset="utf-8">
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
-	  <script src="BootstrapCore/js/bootstrap.min.js"></script>
-    <script type="text/javascript" src="db.js"></script>
 
-	<link href="BootstrapCore/css/bootstrap.min.css" rel="stylesheet">
-
-    <style>
-      /* Always set the map height explicitly to define the size of the div
-       * element that contains the map. */
-      #map {
-        height: 50%;
-        width: 90%;
-        margin: 0 auto;
-      }
-
-      /* Optional: Makes the sample page fill the window. */
-      html, body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-      }
-    </style>
-
+	<link href="https://fonts.googleapis.com/css?family=Lato|Lora" rel="stylesheet">
+    <link href="Style/css/style.css" rel="stylesheet"/>
   </head>
+
+  <style>
+    #map {
+      height: 80%;
+      width: 100%;
+    }
+  </style>
+
   <body>
-    <div>
-      <h1>Bucknell Sustainability</h1>
-    </div>
+
+    <header class="site-header">
+      <span class="title1">Sustainability at Bucknell</span>
+      <p class="title2">Learn about being green at Bucknell</p>
+    </header>
+
     <div id="map"></div>
-    <div>
-      <p>This is some information about ECST and RES.</p>
-      <!--Will want this unordered list be proceduraly generatted from the DB-->
-      <ul>
-        <li><a href="https://sustainable.scholar.bucknell.edu/2017/10/24/hello-world/">Energy Hill</a></li>
-      </ul>
-    </div>
-    <script type='text/javascript' src='script.js'></script>
+
+    <div class="site-footer">
+      <p>Developed by Digital Greens</p>
+	</div>
+
+	<script type="text/javascript" src="script.js"></script>
   </body>
+
+
 </html>
