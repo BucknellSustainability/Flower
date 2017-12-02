@@ -6,7 +6,7 @@
     <title>Info windows</title>
     
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
-    <script src = "https://code.highcharts.com/highcharts.js"></script>
+    <script src="http://code.highcharts.com/stock/highstock.js"></script>
     <script src="db.js"></script>
     <script src="theme.js"></script>
 
@@ -44,7 +44,7 @@
             var projectInfo = readDB("project",condition,"*")[0];
 
             //create chart
-            chart = new Highcharts.Chart({
+            chart = Highcharts.stockChart('graphView', {
                 chart: {
                      renderTo: "graphView", 
                      zoomType: 'x'
@@ -56,26 +56,40 @@
                     text: projectInfo.name 
                 },
                 subtitle: {
-                    text: "Highlight Region to Zoom - Click Series to Toggle On/Off"
+                    text: projectInfo.description
                 },
                 xAxis: {
-                    type: 'datetime',
-                    labels: {
-                        formatter: function() {
-                          return Highcharts.dateFormat('%e %b', this.value); // format label of xAxis
-                        },
-                        step: 2
-                    }
+                    type: 'datetime'
                 },
                 yAxis: {
                     title: {
                         text: "Sensor Data"
-                    },
-                    scrollbar: {
-                        enabled: true
-                    },
+                    }
+                },
+                dateTimeLabelFormats: {
+                    millisecond: '%H:%M:%S.%L',
+                    second: '%H:%M:%S',
+                    minute: '%H:%M',
+                    hour: '%H:%M',
+                    day: '%e. %b',
+                    week: '%e. %b',
+                    month: '%b \'%y',
+                    year: '%Y'
+                },
+
+                rangeSelector:{
+                    enabled:true,
+                    floating: true,
+                    y: -65,
+            verticalAlign: 'bottom'
+                },
+                navigator: {
+                    margin: 60
                 }
-            });
+
+            })
+
+    
 
             //iterate through sensors requested and add corresponding data
             for(var i=0; i< sensorIds.length; i++) {
