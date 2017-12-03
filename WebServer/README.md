@@ -27,8 +27,8 @@ start the server on port __8000__. Your browser will automatically open the root
 of the live server, defaulting to `index.html` if present.
 
 
-## API Keys
-API Keys should not be committed to the repo so  we've made a way for each developer to use their own.
+## DB Info
+DB info should not be committed to the repo so  we've made a way for each developer to use their own.
 1. Create a file called `config.json` in the `Webserver` directory.
 2. Add this code:
 ```
@@ -39,7 +39,7 @@ API Keys should not be committed to the repo so  we've made a way for each devel
   "DB_NAME": ""
 }
 ```
-3. Fill out all values of the empty strings with information for your DB/API key info
+3. Fill out all values of the empty strings with information for your DB
 4. Access the values where needed:
     * Python:
        ```
@@ -52,7 +52,9 @@ API Keys should not be committed to the repo so  we've made a way for each devel
       $config = json_decode(file_get_contents("config.json"));
       printf("%s", $config->DB_USERNAME);
       ```
-This config.json won't get committed because it is in the `.gitignore` so you will need to do this for each clone of the repo, but it should persist unless you delete the file.
+This config.json won't get committed because it is in the `.gitignore` so you
+will need to do this for each clone of the repo, but it should persist unless
+you delete the file.
 
 ## PHP with Bucknell Apache Hosting
 ### Introduction
@@ -69,7 +71,35 @@ serve. Clone the repo into your `~\public_html` directory and use
 `chmod o=r ./WebServer/*` __or__ cd into `WebServer` and run `./WebServer/setup.sh`
 to make all the files in the `WebServer` directory accessible over http.
 
-##Linters
+## Linters
+### Introduction
+To keep all code looking as if one person wrote it, there are linters for all
+languages used in the project.
+
+### JS - eslint
+To install eslint, run the following commands.
+```
+cd WebServer
+npm install eslint
+```
+Then install "linter-eslint" for Atom or use `node bin/eslint.js <file>` to run
+the linter.
+
+If you want to generate the .eslintrc.js file for whatever reason:
+```
+cd WebServer
+npm install eslint
+cd node_modules/eslint
+node bin/eslint.js --init
+//Use the up and down arrows to naviage to Prexisting->Google->JS and hit enter
+//The .eslintrc.js file will be in the dir you are currently in
+```
+
+To run eslint from the command line:
+```
+node node_modules/eslint/bin/eslint.js <file>
+```
+Where <file> is the file you want to lint.
 
 ### Python - autopep8
 To install autopep8 run
