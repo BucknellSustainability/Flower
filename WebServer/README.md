@@ -44,12 +44,12 @@ API Keys should not be committed to the repo so  we've made a way for each devel
     * Python:
        ```
        import json
-       with open(filename, 'r') as f:
+       with open('path/to/config.json', 'r') as f:
            datastore = json.load(f)
        ```
     * PHP:
       ```
-      $config = json_decode(file_get_contents("config.json"));
+      $config = json_decode(file_get_contents("path/to/config.json"));
       printf("%s", $config->DB_USERNAME);
       ```
 This config.json won't get committed because it is in the `.gitignore` so you will need to do this for each clone of the repo, but it should persist unless you delete the file.
