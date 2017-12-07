@@ -11,14 +11,19 @@ import serial
 # sudo apt-get install python3-pip
 # sudo pip3 install pyserial
 
+
 from os import listdir
 from os.path import isfile, join
 import re
 import json
 
 def connectToDB():
-    	with open('../config.json', 'r') as f:
-        	config = json.load(f)
+	try:
+		with open('../config.json', 'r') as f:
+			config = json.load(f)
+	except ValueError as e:
+		# Catch and re-raise with a better error message.
+		raise type(e)('Error while parsing json file "../config.json": ' + e.message)
 
 	connection = pymysql.connect(host=config['DB_URL'], user=config['DB_USERNAME'], password=config['DB_PASSWORD'], db=config['DB_NAME'])
 	return connection
