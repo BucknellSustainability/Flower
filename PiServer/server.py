@@ -14,9 +14,13 @@ import serial
 from os import listdir
 from os.path import isfile, join
 import re
+import json
 
 def connectToDB():
-	connection = pymysql.connect(host="digitalgreens.cixglou4nxxh.us-east-1.rds.amazonaws.com", user="jvoves", password="digitalgreens", db="energyhill")
+    	with open('../config.json', 'r') as f:
+        	config = json.load(f)
+
+	connection = pymysql.connect(host=config['DB_URL'], user=config['DB_USERNAME'], password=config['DB_PASSWORD'], db=config['DB_NAME'])
 	return connection
 
 def pollArduino(arduino):
