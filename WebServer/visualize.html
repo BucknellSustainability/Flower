@@ -98,7 +98,7 @@
 
                     var time = data[j].dateTime.split(/[- :]/);; //formatting date for highcharts to understand
 
-                    var nodeDate = new Date(Date.UTC(time[0], time[1], time[2], time[3], time[4]));
+                    var nodeDate = new Date(Date.UTC(time[0], time[1]-1, time[2], time[3], time[4]));
                     var timezoneOffset = nodeDate.getTimezoneOffset() * 60000;
                   
                     //individual datapoint (x,y)
