@@ -4,7 +4,8 @@
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
     <title>Info windows</title>
-    
+   
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
 	<script src="https://code.highcharts.com/highcharts.js"></script>
 	<script src="https://code.highcharts.com/highcharts-more.js"></script>
 	<script src="https://code.highcharts.com/modules/solid-gauge.js"></script>
@@ -48,145 +49,121 @@
             var condition = "WHERE projectId = " + sensorInfo[0].projectId + " LIMIT 1;"
             var projectInfo = readDB("project",condition,"*")[0];
 
-			var gaugeOptions = {
 
-			    chart: {
-			        type: 'solidgauge'
-			    },
+            var gaugeOptions = {
+                    chart: {
+                        type: 'solidgauge'
+                            },
+                    title: null,
+                    pane: {
+                        center: ['50%',  '85%'],                                                      
+                        size: '140%',
+                        startAngle: -90,
+                        endAngle: 90,
+                        background: {
+                            backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+                            innerRadius: '60%',
+                            outerRadius:'100%',  
+                            shape: 'arc',
+                              }
+                         },
+                    tooltip: {
+                            enabled: false                                                                     
+                             },
+                                // the value axis
+                    yAxis: {   
+                                stops: [ [0.1, '#55BF3B'],
+                                        [0.5, '#DDDF0D'], // yellow
+                                        [0.9, '#DF5353']],
+                                                                                                                                             lineWidth: 0,
+                                                                                                                                             minorTickInterval: null,
+                                                                                                                                                                                        tickAmount: 2,
+                                                                                                                                                                                        title: {
+                                                                                                                                                                                        y: -70
+                                                                                                                                                                                                                                                                                                                                    },
+                                                                                                                                                  labels: {
+                                                                                                                                                                                                                                        y: 16
+                                                                                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                },
+                                                                                                                                    plotOptions: {
+                                                                                                                                                                        solidgauge: {
+                                                                                                                                                                                                                dataLabels: {
+                                                                                                                                                                                                                                                            y: 5,
+                                                                                                                                                                                                                                                                                        borderWidth: 0,
+                                                                                                                                                                                                                                                                                                                                        useHTML: true                                                                                                                                                                                                                                                                                                           }
+                    }                                                                                                                                                              }                                                                                                          }
+            };
 
-			    title: null,
-			    pane: {
-			        center: ['50%', '85%'],
-			        size: '140%',
-			        startAngle: -90,
-			        endAngle: 90,
-			        background: {
-			            backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
-			            innerRadius: '60%',
-			            outerRadius: '100%',
-			            shape: 'arc'
-			        }
-			    },
-			    tooltip: {
-			        enabled: false
-			    },
-			    // the value axis
-			    yAxis: {
-			        stops: [
-			            [0.1, '#55BF3B'], // green
-			            [0.5, '#DDDF0D'], // yellow
-			            [0.9, '#DF5353'] // red
-			        ],
-			        lineWidth: 0,
-			        minorTickInterval: null,
-			        tickAmount: 2,
-			        title: {
-			            y: -70
-			        },
-			        labels: {
-			            y: 16
-			        }
-			    },
-			    plotOptions: {
-			        solidgauge: {
-			            dataLabels: {
-			                y: 5,
-			                borderWidth: 0,
-			                useHTML: true
-			            }
-			        }
-			    }
-			};
 
-			// The speed gauge
-			var chartSpeed = Highcharts.chart('container-speed', Highcharts.merge(gaugeOptions, {
-			    yAxis: {
-			        min: 0,
-			        max: 200,
-			        title: {
-			            text: 'Speed'
-			        }
-			    },
 
-			    credits: {
-			        enabled: false
-			    },
-
-			    series: [{
-			        name: 'Speed',
-			        data: [80],
-			        dataLabels: {
-			            format: '<div style="text-align:center"><span style="font-size:25px;color:' +
-			                ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
-			                   '<span style="font-size:12px;color:silver">km/h</span></div>'
-			        },
-			        tooltip: {
-			            valueSuffix: ' km/h'
-			        }
-			    }]
-
-			}));
-
-			/*
-            //iterate through sensors requested and add corresponding data
+            var gaugeCharts = [];
             for(var i=0; i< sensorIds.length; i++) {
-                var condition = "WHERE sensorId = " + sensorIds[i] + " ORDER BY dateTime ASC;";
-                var data = readDB("datahourly",condition,"sensorId, averageValue, sampleRate, dateTime");
+                var condition = "WHERE sensorId = " + sensorIds[i] + " ORDER BY dateTime DESC LIMIT 1;";
+                var initVal = readDB("data",condition,"value")[0];
 
-                var nodes = [] //holds all datapoints for a given series
-                for(var j=0; j<data.length; j++) { 
+			    // The speed gauge
 
-                    var time = data[j].dateTime.split(/[- :]/);; //formatting date for highcharts to understand
-                    var nodeDate = new Date(Date.UTC(time[0], time[1], time[2], time[3], time[4]));
-                    
-                    //individual datapoint (x,y)
-                    var node = [];
-                    node.push(nodeDate.getTime()+(5*60*60*1000)); //add 5 hours to correct time
-                    node.push(parseFloat(Math.round(data[j].averageValue * 100) / 100));
+                var container = "";
 
-                    nodes.push(node);
-                }
+                if(i==0) container == 'container-speed';
+                if(i==1) container == 'container-rpm';
 
-                //add sensor[i] data as a series
-                chart.addSeries({                        
-                    name: sensorInfo[i].name + " (" + sensorInfo[i].units + ")",
-                    data: nodes
-                });
+
+			    var chart = Highcharts.chart('container-speed', Highcharts.merge(gaugeOptions, {
+			        yAxis: {
+			            min: 0,
+			            max: 100,
+			            title: {
+			                text: sensorInfo[0].name
+			            }
+			        },
+			        credits: {
+			            enabled: false
+			        },
+
+			        series: [{
+			            name: sensorInfo[0].name,
+                        data: [initVal],
+			            dataLabels: {
+			                format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+			                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
+			                       '<span style="font-size:12px;color:silver">degrees F</span></div>'
+			         },
+                       tooltip: {
+                            valueSuffix: sensorInfo[0].units
+                            },
+			    
+                                    
+
+			        }]
+
+		    	}));
+
+                gaugeCharts.push(chart);
+
+
+
             }
-            */
+            
 
-			            // Bring life to the dials
-			setInterval(function () {
+setInterval(function () {
 			    // Speed
 			    var point,
 			        newVal,
 			        inc;
 
-			    if (chartSpeed) {
-			        point = chartSpeed.series[0].points[0];
-			        inc = Math.round((Math.random() - 0.5) * 100);
-			        newVal = point.y + inc;
-
-			        if (newVal < 0 || newVal > 200) {
-			            newVal = point.y - inc;
-			        }
-
-			        point.update(newVal);
-			    }
-
-			    // RPM
-			    if (chartRpm) {
-			        point = chartRpm.series[0].points[0];
-			        inc = Math.random() - 0.5;
-			        newVal = point.y + inc;
-
-			        if (newVal < 0 || newVal > 5) {
-			            newVal = point.y - inc;
-			        }
-
-			        point.update(newVal);
-			    }
-			}, 2000);
+                    for(var i=0; i<gaugeCharts.length; i++){
+                        if(gaugeCharts[i]){
+                            point = chartSpeed.series[i].points[0];
+                            var condition = "WHERE sensorId = " + sensorIds[i] + " ORDER BY dateTime DESC LIMIT 1;";
+                            var data = readDB("data",condition,"value");
+                            for(var j=0; j< data.length; j++){
+                                point.update(Math.round(data[j].value * 100) / 100);
+                            }
+                            console.log("UPDTING");
+                        }
+                    }
+            }, 2500);
         </script>
   </body>
 </html>
