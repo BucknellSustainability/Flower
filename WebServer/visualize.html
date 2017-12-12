@@ -17,8 +17,6 @@
         <div id="graphView" name="graphView">
         </div>
 
-        <script type="text/javascript">
-        </script>
             <script type="text/javascript">
 
             //get params from URL
@@ -99,11 +97,13 @@
                 for(var j=0; j<data.length; j++) { 
 
                     var time = data[j].dateTime.split(/[- :]/);; //formatting date for highcharts to understand
+
                     var nodeDate = new Date(Date.UTC(time[0], time[1], time[2], time[3], time[4]));
-                    
+                    var timezoneOffset = nodeDate.getTimezoneOffset() * 60000;
+                  
                     //individual datapoint (x,y)
                     var node = [];
-                    node.push(nodeDate.getTime());
+                    node.push(nodeDate.getTime() + timezoneOffset);
                     node.push(parseFloat(Math.round(data[j].averageValue * 100) / 100));
 
                     nodes.push(node);

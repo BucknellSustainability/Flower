@@ -4,13 +4,14 @@ import smtplib
 import MySQLdb
 import json
 import os
+import subprocess
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 
 
 def main():
-    with open("config.json", 'r') as f:
+    with open("../config.json", 'r') as f:
         config = json.load(f)
 
     # Open database connection
@@ -202,10 +203,16 @@ returns: A PNG MIMEImage object
 
 
 def exportChart(chartJSON):  # TODO: Handle errors
+    # Write chartJSON into chart.json
     fp = open('chart.json', 'w')
     fp.write(chartJSON)
     fp.close()
-    os.system(eServerPath + " -infile chart.json -outfile chart.png")
+
+    # Run export server to create chart.png file
+    eServerCommand = ". $HOME/.bashrc && " + eServerPath + " -infile chart.json -outfile chart.png"
+    subprocess.check_output(eServerCommand, shell=True)
+
+    # Return chart.png image
     fp = open('chart.png', 'rb')  # Open in write binary mode
     chartImage = MIMEImage(fp.read())
     fp.close()
