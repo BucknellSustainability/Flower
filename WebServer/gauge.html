@@ -4,7 +4,7 @@
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
     <meta charset="utf-8">
     <title>Info windows</title>
-   
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
 	<script src="https://code.highcharts.com/highcharts.js"></script>
 	<script src="https://code.highcharts.com/highcharts-more.js"></script>
@@ -14,146 +14,143 @@
 
   </head>
   <body>
-        <script type="text/javascript">
-        </script>
-            <script type="text/javascript">
-
-            //get params from URL
-            var parseQueryString = function(url) {
-                  var params = {};
-                  url.replace(
-                    new RegExp("([^?=&]+)(=([^&]*))?", "g"),
-                    function($0, $1, $2, $3) {
-                      params[$1] = $3;
-                    }
-                  );
-                  return params;
-                }
-
-            //get sennsorId parameter from url string (?id=...)
-            var result = parseQueryString(location.search);
-            var sensorIds = JSON.parse("[" + result.id + "]");  
-
-            //get info for each sensor selected
-            var condition = "WHERE sensorId in (" + result.id + ") ORDER BY sensorId ASC;"
-            var sensorInfo = readDB("sensor",condition,"*");
-
-            //get project info for sensors selected (take first because all sensors will be associated with same project)
-            var condition = "WHERE projectId = " + sensorInfo[0].projectId + " LIMIT 1;"
-            var projectInfo = readDB("project",condition,"*")[0];
-
-			var gaugeOptions = {
-
-			    chart: {
-			        type: 'solidgauge'
-			    },
-
-			    title: null,
-
-			    pane: {
-			        center: ['50%', '85%'],
-			        size: '140%',
-			        startAngle: -90,
-			        endAngle: 90,
-			        background: {
-			            backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
-			            innerRadius: '60%',
-			            outerRadius: '100%',
-			            shape: 'arc'
-			        }
-			    },
-
-			    tooltip: {
-			        enabled: false
-			    },
-
-			    // the value axis
-			    yAxis: {
-			        stops: [
-			            [0.1, '#55BF3B'], // green
-			            [0.5, '#DDDF0D'], // yellow
-			            [0.9, '#DF5353'] // red
-			        ],
-			        lineWidth: 0,
-			        minorTickInterval: null,
-			        tickAmount: 2,
-			        title: {
-			            y: -70
-			        },
-			        labels: {
-			            y: 16
-			        }
-			    },
-
-			    plotOptions: {
-			        solidgauge: {
-			            dataLabels: {
-			                y: 5,
-			                borderWidth: 0,
-			                useHTML: true
-			            }
-			        }
-			    }
-			};
-
-            var gaugeCharts = [];
-            for(var i=0; i< sensorIds.length; i++) {
-                //read data
-                var condition = "WHERE sensorId = " + sensorIds[i] + " AND dataId = (select MAX(dataId) from data where sensorId = " + sensorIds[i] + ");";
-                var initVal = readDB("data",condition,"value")[0];
-
-                //create div element
-                var iDiv = document.createElement('div');
-                iDiv.id = sensorInfo[i].name;
-                iDiv.style = "width: 300px; height: 200px; float: left";
-                document.getElementsByTagName('body')[0].appendChild(iDiv);
-
-                //create chart for sensor
-			    var chart = Highcharts.chart(sensorInfo[i].name, Highcharts.merge(gaugeOptions, {
-			        yAxis: {
-			            min: 0,
-			            max: 100,
-			            title: {
-			                text: sensorInfo[i].name
-			            }
-			        },
-			        credits: {
-			            enabled: false
-			        },
-
-			        series: [{
-			            name: sensorInfo[i].name,
-                        data: [initVal],
-			            dataLabels: {
-			                format: '<div style="text-align:center"><span style="font-size:25px;color:' +
-			                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
-			                       '<span style="font-size:12px;color:silver">degrees F</span></div>'
-			         },
-                       tooltip: {
-                            valueSuffix: sensorInfo[i].units
-                            }, 
-			        }]
-
-		    	}));
-                gaugeCharts.push(chart);
+    <script type="text/javascript">
+        //get params from URL
+        var parseQueryString = function(url) {
+            var params = {};
+            url.replace(
+            new RegExp("([^?=&]+)(=([^&]*))?", "g"),
+            function($0, $1, $2, $3) {
+              params[$1] = $3;
             }
-            
+            );
+            return params;
+        }
 
-setInterval(function () {
-			    // Speed
-			    var point
-                for(var i=0; i<gaugeCharts.length; i++){
-                    if(gaugeCharts[i]){
-                        point = gaugeCharts[i].series[0].points[0];
+        //get sennsorId parameter from url string (?id=...)
+        var result = parseQueryString(location.search);
+        var sensorIds = JSON.parse("[" + result.id + "]");
 
-                        if(point){
-                            var condition = "WHERE sensorId = " + sensorIds[i] + " ORDER BY dateTime DESC LIMIT 1;";
-                            var data = readDB("data",condition,"value")[0];
-                            point.update(Math.round(data.value * 100) / 100);
-                            }
-                        }
+        //get info for each sensor selected
+        var condition = "WHERE sensorId in (" + result.id + ") ORDER BY sensorId ASC;"
+        var sensorInfo = readDB("sensor",condition,"*");
+
+        //get project info for sensors selected (take first because all sensors will be associated with same project)
+        var condition = "WHERE projectId = " + sensorInfo[0].projectId + " LIMIT 1;"
+        var projectInfo = readDB("project",condition,"*")[0];
+
+		var gaugeOptions = {
+
+		    chart: {
+		        type: 'solidgauge'
+		    },
+
+		    title: null,
+
+		    pane: {
+		        center: ['50%', '85%'],
+		        size: '140%',
+		        startAngle: -90,
+		        endAngle: 90,
+		        background: {
+		            backgroundColor: (Highcharts.theme && Highcharts.theme.background2) || '#EEE',
+		            innerRadius: '60%',
+		            outerRadius: '100%',
+		            shape: 'arc'
+		        }
+		    },
+
+		    tooltip: {
+		        enabled: false
+		    },
+
+		    // the value axis
+		    yAxis: {
+		        stops: [
+		            [0.1, '#55BF3B'], // green
+		            [0.5, '#DDDF0D'], // yellow
+		            [0.9, '#DF5353'] // red
+		        ],
+		        lineWidth: 0,
+		        minorTickInterval: null,
+		        tickAmount: 2,
+		        title: {
+		            y: -70
+		        },
+		        labels: {
+		            y: 16
+		        }
+		    },
+
+		    plotOptions: {
+		        solidgauge: {
+		            dataLabels: {
+		                y: 5,
+		                borderWidth: 0,
+		                useHTML: true
+		            }
+		        }
+		    }
+		};
+
+        var gaugeCharts = [];
+        for(var i=0; i< sensorIds.length; i++) {
+            //read data
+            var condition = "WHERE sensorId = " + sensorIds[i] + " AND dataId = (select MAX(dataId) from data where sensorId = " + sensorIds[i] + ");";
+            var initVal = readDB("data",condition,"value")[0];
+
+            //create div element
+            var iDiv = document.createElement('div');
+            iDiv.id = sensorInfo[i].name;
+            iDiv.style = "width: 300px; height: 200px; float: left";
+            document.getElementsByTagName('body')[0].appendChild(iDiv);
+
+            //create chart for sensor
+		    var chart = Highcharts.chart(sensorInfo[i].name, Highcharts.merge(gaugeOptions, {
+		        yAxis: {
+		            min: 0,
+		            max: 100,
+		            title: {
+		                text: sensorInfo[i].name
+		            }
+		        },
+		        credits: {
+		            enabled: false
+		        },
+
+		        series: [{
+		            name: sensorInfo[i].name,
+                    data: [initVal],
+		            dataLabels: {
+		                format: '<div style="text-align:center"><span style="font-size:25px;color:' +
+		                    ((Highcharts.theme && Highcharts.theme.contrastTextColor) || 'black') + '">{y}</span><br/>' +
+		                       '<span style="font-size:12px;color:silver">degrees F</span></div>'
+		         },
+                   tooltip: {
+                        valueSuffix: sensorInfo[i].units
+                        },
+		        }]
+
+	    	}));
+            gaugeCharts.push(chart);
+        }
+
+
+        setInterval(function () {
+		    // Speed
+		    var point
+            for(var i=0; i<gaugeCharts.length; i++){
+                if(gaugeCharts[i]){
+                    point = gaugeCharts[i].series[0].points[0];
+
+                    if(point){
+                        var condition = "WHERE sensorId = " + sensorIds[i] + " ORDER BY dateTime DESC LIMIT 1;";
+                        var data = readDB("data",condition,"value")[0];
+                        point.update(Math.round(data.value * 100) / 100);
                     }
-            }, 2500);
-        </script>
+                }
+            }
+        }, 2500);
+    </script>
   </body>
 </html>
