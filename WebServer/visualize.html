@@ -103,7 +103,7 @@
                     
                     //individual datapoint (x,y)
                     var node = [];
-                    node.push(nodeDate.getTime()+(5*60*60*1000)); //add 5 hours to correct time
+                    node.push(nodeDate.getTime());
                     node.push(parseFloat(Math.round(data[j].averageValue * 100) / 100));
 
                     nodes.push(node);
