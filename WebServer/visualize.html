@@ -7,6 +7,8 @@
     
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
     <script src="https://code.highcharts.com/stock/highstock.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/offline-exporting.js"></script>
     <script src="db.js"></script>
     <script src="theme.js"></script>
 
@@ -15,8 +17,6 @@
         <div id="graphView" name="graphView">
         </div>
 
-        <script type="text/javascript">
-        </script>
             <script type="text/javascript">
 
             //get params from URL
@@ -68,9 +68,9 @@
                 },
                 dateTimeLabelFormats: {
                     millisecond: '%H:%M:%S.%L',
-                    second: '%H:%M:%S',
-                    minute: '%H:%M',
-                    hour: '%H:%M',
+                    second: '%l:%M:%S %p',
+                    minute: '%l:%M %p',
+                    hour: '%l:%M %p',
                     day: '%e. %b',
                     week: '%e. %b',
                     month: '%b \'%y',
@@ -83,28 +83,27 @@
                     y: -65,
             verticalAlign: 'bottom'
                 },
-                navigator: {
+            navigator: {
                     margin: 60
-                }
-
+                },
             })
-
-    
 
             //iterate through sensors requested and add corresponding data
             for(var i=0; i< sensorIds.length; i++) {
                 var condition = "WHERE sensorId = " + sensorIds[i] + " ORDER BY dateTime ASC;";
-                var data = readDB("datahourly",condition,"*");
+                var data = readDB("datahourly",condition,"sensorId, averageValue, sampleRate, dateTime");
 
                 var nodes = [] //holds all datapoints for a given series
                 for(var j=0; j<data.length; j++) { 
 
                     var time = data[j].dateTime.split(/[- :]/);; //formatting date for highcharts to understand
+
                     var nodeDate = new Date(Date.UTC(time[0], time[1]-1, time[2], time[3], time[4]));
-                    
+                    var timezoneOffset = nodeDate.getTimezoneOffset() * 60000;
+                  
                     //individual datapoint (x,y)
                     var node = [];
-                    node.push(nodeDate.getTime());
+                    node.push(nodeDate.getTime() + timezoneOffset);
                     node.push(parseFloat(Math.round(data[j].averageValue * 100) / 100));
 
                     nodes.push(node);
@@ -115,8 +114,6 @@
                     name: sensorInfo[i].name + " (" + sensorInfo[i].units + ")",
                     data: nodes
                 });
-
-
             }
         </script>
   </body>
