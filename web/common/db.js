@@ -4,7 +4,7 @@ function readDB(readTable, condition, fields){
 
 	$.ajax({
 	  type: 'GET',
-	  url: 'api.php',
+	  url: 'php/api.php',
 	  data: {
 	  	table: readTable,
 	  	condition: condition,
