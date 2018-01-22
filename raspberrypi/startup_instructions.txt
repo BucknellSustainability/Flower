@@ -1,0 +1,44 @@
+
+
+To get the pi to boot into the command line:
+
+1) sudo raspi-config
+2) Go to Boot Options > Desktop/CLI > Console Autologin
+
+To return it to GUI mode:
+
+1) sudo raspi-config
+2) Go to Boot Options > Desktop/CLI > Desktop Autologin
+
+If autologin is ever disabled, the credentials are:
+username: "pi"
+password: ""		(empty)
+
+Server.py was made executable using #!/usr/bin/python3. To set up cron, do:
+1) cd ~/Flower/PiServer
+2) chmod +x server.py
+3) sudo crontab -e
+	3.1) If it asks you for an editor, choose vim or nano.
+4) add the line "@reboot /home/pi/Flower/PiServer/server.py"
+6) reboot
+
+To see the status of the server, do:
+1) ps -A | grep py
+2) Note the Process ID of server.py
+3) cd /proc/<ID>/fd		where <ID> is the Process ID of server.py
+4) sudo cat 1 | tail
+	Use 1 to see stdout, use 0 to see stderr
+	NOTE: The output is buffered. It can take some time for the output
+		to update.
+
+Troubleshooting the server:
+
+	Error: "Can't connect to MySQL server on..."
+	Fix: Check your internet connection.
+
+	Error: "[Errono 2] could not open port /dev/ttyUSB0..."
+	Fix: First check that you're using an Arduino Nano. Currently, that
+		model of arduino is hardcoded. Then check that it's plugged
+		in. Finally, check if the TX light on the arduino is blinking.
+		If it is not blinking, unplug the arduino and plug it back in. 
+
