@@ -1,5 +1,5 @@
 <?php
-$config = json_decode(file_get_contents("../config.json"));
+$config = json_decode(file_get_contents("../../../config.json"));
 $link = mysqli_connect($config->DB_URL, $config->DB_USERNAME, $config->DB_PASSWORD, $config->DB_NAME);
 
 //make sure connection is established

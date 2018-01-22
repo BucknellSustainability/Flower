@@ -11,7 +11,7 @@ from email.mime.multipart import MIMEMultipart
 
 
 def main():
-    with open("../config.json", 'r') as f:
+    with open("../../config.json", 'r') as f:
         config = json.load(f)
 
     # Open database connection
