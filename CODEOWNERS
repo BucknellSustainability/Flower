@@ -6,7 +6,8 @@ CODEOWNERS    @BenMatase @DTV96Calibre @JAV04 @tomficcadenti @Phlosioneer
 
 # Matt's domain - Benevolent Dictator for Life!
 # Ben also, because github breaks when there's only one owner but the owner needs a code review.
-ArduinoLib/*  @Phlosioneer @BenMatase
-PiServer/*    @Phlosioneer @BenMatase
+arduino/*  @Phlosioneer @BenMatase
+raspberrypi/*    @Phlosioneer @BenMatase
 
-WebServer/*             @BenMatase @DTV96Calibre @JAV04 @tomficcadenti
+web/*             @BenMatase @DTV96Calibre @JAV04 @tomficcadenti
+backend/*	@JAV04 @DTV96Calibre
