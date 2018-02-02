@@ -13,7 +13,6 @@ function OnceLoaded() {
 
 function initMap() {
     //get sites from db
-    var siteList = readDB("site","","*");
 
     console.log("Initializing Map");
     var energyHill = {lat: 40.950409, lng: -76.882382}; //Energy Hill: 40.950409, -76.882382
@@ -22,12 +21,32 @@ function initMap() {
       center: energyHill
     }); //define map & starting location
 
+
+    var siteList = [];
+    $.when(readDB("site","","*")).then(
+        function successHandler(json){
+          //get data from ajax request
+          $.each(JSON.parse(json), function(key,value) {
+            siteList.push(value); //value = json object for site
+          });
+
+          //populate map when data is ready
+          fillMap(map, siteList);
+
+        },  
+        function errorHandler(){
+          console.log("Error reading from db");}
+          );
+}
+
+function fillMap(map, siteList){
+
     var markers = [];     //array of google map markers
     var contents = [];    //content for the markers
     var iWindows = [];    //windows to hold content for onclick
 
-    //iterate through sites in the db
     for (var site in siteList) {
+        console.log("NEW SITE")
         var currSite = siteList[site]
 
         var location = {lat: parseFloat(currSite.latitude), lng: parseFloat(currSite.longitude)};
@@ -70,3 +89,8 @@ function initMap() {
     }
   });
 }
+
+
+
+
+

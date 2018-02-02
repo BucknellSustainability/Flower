@@ -1,12 +1,11 @@
 {
-  "name": "control-panel",
+  "name": "react-web",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "axios": "^0.17.1",
-    "react": "^16.2.0",
-    "react-bootstrap": "^0.32.1",
-    "react-dom": "^16.2.0",
+    "immutability-helper": "^2.6.4",
+    "react": "^15.6.0",
+    "react-dom": "^15.6.0",
     "react-scripts": "1.1.0"
   },
   "scripts": {

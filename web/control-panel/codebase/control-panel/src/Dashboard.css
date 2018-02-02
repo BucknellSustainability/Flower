@@ -1,0 +1,11 @@
+.col-md-2{
+    position: relative;
+    height: 100%;
+    padding: 0;
+}
+
+.col-md-10{
+    position: relative;
+    height: 100%;
+    background-color: black;
+}
