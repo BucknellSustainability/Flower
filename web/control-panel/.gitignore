@@ -1,4 +1,4 @@
-#gitignores the production build
+#gitignore for the production build ONLY
 .DS_Store
 asset-manifest.json
 favicon.ico
