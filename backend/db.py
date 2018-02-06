@@ -34,6 +34,7 @@ with open("../config.json", 'r') as f:
 
 class S(BaseHTTPRequestHandler):
     def _set_headers(self):
+
         self.send_response(200)
         self.send_header('Content-type', 'text/html')
         self.end_headers()
@@ -165,6 +166,7 @@ def validate_user(id_token):
     else:
         pass
 
+#
 def run(server_class=HTTPServer, handler_class=S, port=80):
     server_address = ('localhost', port)
     httpd = server_class(server_address, handler_class)
