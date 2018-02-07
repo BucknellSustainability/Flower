@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {Button, Panel, Form, FormGroup, FormControl, ControlLabel, Row, Col} from 'react-bootstrap'
+import {Button, Panel, Form, FormGroup, FormControl, HelpBlock, ControlLabel, Row, Col} from 'react-bootstrap'
 
 export class SensorForm extends React.Component {
   constructor(props, context) {
