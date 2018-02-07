@@ -21,7 +21,6 @@ export class DeviceContainer extends React.Component {
     this.state = {
       index: 0,
       direction: null,
-      deviceId: 1
     };
   }
 
