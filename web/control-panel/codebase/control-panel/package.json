@@ -2,8 +2,9 @@
   "name": "control-panel",
   "version": "0.1.0",
   "private": true,
-  "homepage": ".",
   "dependencies": {
+    "axios": "^0.17.1",
+    "package.json": "^2.0.1",
     "react": "^16.2.0",
     "react-bootstrap": "^0.32.1",
     "react-dom": "^16.2.0",
