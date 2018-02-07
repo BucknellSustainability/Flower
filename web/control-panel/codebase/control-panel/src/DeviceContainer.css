@@ -9,3 +9,7 @@ Panel{
 .sendAlerts{
 	margin: 10px;
 }
+
+.sensorRow{
+	margin: auto;
+}
