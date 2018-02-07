@@ -1,15 +1,8 @@
 import React, { Component } from 'react';
 import logo from './images/logo.svg';
 import './DeviceContainer.css';
-import Button from 'react-bootstrap/lib/Button';
-import Panel from 'react-bootstrap/lib/Panel';
-import PanelGroup from 'react-bootstrap/lib/PanelGroup';
-import Form from 'react-bootstrap/lib/Form';
-import FormGroup from 'react-bootstrap/lib/FormGroup';
-import FormControl from 'react-bootstrap/lib/FormControl';
-import ControlLabel from 'react-bootstrap/lib/ControlLabel';
-import Checkbox from 'react-bootstrap/lib/Checkbox'
-import Col from 'react-bootstrap/lib/Col'
+import {SensorForm} from './sensorForm.js'
+import {Button, Panel, PanelGroup, Form, FormGroup, FormControl, ControlLabel, Checkbox, Row, Col} from 'react-bootstrap'
 import axios from 'axios';
 
 
@@ -40,30 +33,13 @@ export class DeviceContainer extends React.Component {
         onSelect={this.handleSelect}
       >
 
-      {this.props.device.sensors.map((sensor, i) =>
+      {this.props.device.sensors.map((sensor_i, i) =>
         <Panel eventKey={i} id={i} bsStyle="info">
           <Panel.Heading>
-            <Panel.Title componentClass="h2" toggle>{sensor.name}</Panel.Title>
+            <Panel.Title componentClass="h2" toggle>{sensor_i.name}</Panel.Title>
           </Panel.Heading>
           <Panel.Body collapsible>
-            <Form inline>
-                <FormGroup controlId="basicSensorInfo">
-                    <ControlLabel>Sensor Name</ControlLabel>{' '}
-                    <FormControl type="text" placeholder={sensor.name} />
-                </FormGroup>{' '}
-                <FormGroup controlId="formInlineUnits">
-                    <ControlLabel>Units</ControlLabel>{' '}
-                    <FormControl type="text" placeholder={sensor.id} />
-                </FormGroup>
-                <FormGroup controlId="sensorRanges">
-                    <ControlLabel>Lower Limit</ControlLabel>{' '}
-                    <FormControl type="number" placeholder="0" />
-                </FormGroup>{' '}
-                <FormGroup controlId="formInlineUnits">
-                    <ControlLabel>Upper Limit</ControlLabel>{' '}
-                    <FormControl type="number" placeholder="100" />
-                </FormGroup>
-            </Form>
+            <SensorForm sensor = {sensor_i}/>
             <br/>
             <Button type="submit">Submit Changes</Button>
           </Panel.Body>

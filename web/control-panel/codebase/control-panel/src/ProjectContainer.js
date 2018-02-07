@@ -43,7 +43,7 @@ export class ProjectContainer extends React.Component {
           <Panel.Heading>
             <Panel.Title componentClass="h3">{currProject.name}</Panel.Title>
           </Panel.Heading>
-          
+
           <Panel.Body>
 
             <Row>
