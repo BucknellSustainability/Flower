@@ -76,6 +76,7 @@ export class SensorForm extends React.Component {
                   value={this.state.name}
                   onChange={this.handleChangeName}/>
                 <FormControl.Feedback />
+                <HelpBlock>{this.state.maxLength} character limit</HelpBlock>
             </FormGroup>{' '}
             <FormGroup
               controlId="formInlineUnits"
@@ -86,6 +87,7 @@ export class SensorForm extends React.Component {
                   value={this.state.units}
                   onChange={this.handleChangeUnits}/>
                 <FormControl.Feedback />
+                <HelpBlock>{this.state.maxLength} character limit</HelpBlock>
             </FormGroup>
           </Col>
           <Col md={6}>
