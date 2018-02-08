@@ -1,17 +1,22 @@
-# export FLASK_DEBUG=0
+# module load python/3.6
 # export FLASK_APP=api.py
-# flask run
+# flask run --host=0.0.0.0
 
 import json
 
-from google.oauth2 import id_token
+# pip install --user --upgrade google-auth
+from google.oauth2 import id_token as id_token_lib
 from google.auth.transport import requests
 
+# pip install --user --upgrade flask-mysql
 from flask import Flask, request
+from flask_cors import CORS
 from flaskext.mysql import MySQL
-app = Flask(__name__)
 
-CLIENT_ID = '438120227370-lb3gicq14kf8nl6gh6d0rgtnqassqoej'
+app = Flask(__name__)
+CORS(app, supports_credentials=True)
+
+CLIENT_ID = '438120227370-65o4j0kmk9mbij1bp3dqvnts9dh4kfrf.apps.googleusercontent.com'
 
 # load config (db info)
 with open("../config.json", 'r') as f:
@@ -25,7 +30,7 @@ app.config.update(
     MYSQL_DATABASE_DB = config['DB_NAME']
 )
 
-# Intialize mysql flask plugin and get cursor
+# Intialize mysql flask plugin
 mysql = MySQL()
 mysql.init_app(app)
 
@@ -34,85 +39,82 @@ def get():
     # TODO: assert that there are those parameters in dict and nothing else
     # TODO: sanitize all parts
     sql_string = 'SELECT {} FROM {} WHERE {};'.format(
-        request.args.get('fields'),
-        request.args.get('table'),
-        request.args.get('condition')
+        request.values.get('fields'),
+        request.values.get('table'),
+        request.values.get('condition')
     )
-    # TODO: clean up output of db call
-    return exec_query(sql_string)
-
+    result = exec_query(sql_string)
+    return json.dumps(result)
 
 @app.route('/insert')
 def insert():
-    validate_user(request.args.get('id_token'))
+    validate_user(request.values.get('id_token'))
     # TODO: assert that there are those parameters in dict and nothing else
     # TODO: sanitize all parts
     sql_string = 'INSERT INTO {} {} VALUES {};'.format(
-        request.args.get('table'),
-        request.args.get('fields'),
-        request.args.get('values')
+        request.values.get('table'),
+        request.values.get('fields'),
+        request.values.get('values')
     )
-    exec_query(sql_string)
-    # TODO: clean up output of db call
-    return 'Insert'
+    result = exec_query(sql_string)
+    return json.dumps(result)
 
-@app.route('/modify')
+@app.route('/update')
 def modify():
-    validate_user(request.args.get('id_token'))
+    validate_user(request.values.get('id_token'))
 
     # TODO: assert that there are those parameters in dict and nothing else
     # TODO: sanitize all parts
     sql_string = 'UPDATE {} SET {} WHERE {};'.format(
-        request.args.get('table'),
+        request.values.get('table'),
         # TODO: need to form this into 'field1 = value1, field2 = value2, ...'
-        request.args.get('modify_pairs'),
-        request.args.get('condition')
+        request.values.get('modify_pairs'),
+        request.values.get('condition')
     )
-    exec_query(sql_string)
-    # TODO: clean up output of db call
-    return 'Modify'
+    result = exec_query(sql_string)
+    return json.dumps(result)
 
-@app.route('/get-profile')
+@app.route('/get-profile', methods = ['GET', 'POST'])
 def get_profile():
     # TODO: validate that params are correct and sanitize inputs
     # validate userid
-    # user_id = validate_user(request.args.get('id_token'))
+    google_id = validate_user(request.values.get('idtoken'))
+    
+    return construct_profile_json(google_id)
 
-    # return construct_profile_json(user_id)
-    return construct_profile_json(request.args.get('userid'))
-
-def construct_profile_json(user_id):
+# TODO: handle empty results of queries
+def construct_profile_json(google_id):
     # fetch user info
-    fetch_user_sql = 'SELECT * FROM user WHERE userId = {}'.format(
-        user_id
+    fetch_user_sql = 'SELECT * FROM user WHERE googleId = {};'.format(
+        google_id
     )
-    user_data = exec_query(fetch_user_sql)
+    user_data = exec_query(fetch_user_sql)[0]
 
-    # TODO: figure out query to do this `easily`
     # use user info to fetch projects
-    pojects_sql = ''.format(
-
+    projects_id_sql = 'SELECT * FROM owners WHERE userId = {};'.format(
+		user_data['userId']
     )
+    project_ids = [owner_row['projectId'] for owner_row in exec_query(projects_id_sql)]
+
+
+    projects_sql = 'SELECT * FROM project WHERE {};'.format(
+        build_condition('projectId', project_ids)
+    )
+
     projects = exec_query(projects_sql)
 
-    # use projects info to fetch devices
-    project_ids = [project['projectId'] for project in projects]
-
-    # TODO: test if this "IN" thing is correct
     #fetch_device
-    devices_sql = 'SELECT * FROM device WHERE projectId IN {}'.format(
-        str(tuple(project_ids))
+    devices_sql = 'SELECT * FROM device WHERE {}'.format(
+        build_condition('projectId', project_ids)
     )
 
     devices = exec_query(devices_sql)
 
-    # TODO: figure out how to get just the device ids
     device_ids = [device['deviceId'] for device in devices]
 
     # use devices info to fetch sensors
-    sensors_sql = 'SELECT * FROM sensor WHERE deviceId IN {}'.format(
-        # TODO: format device_ids from python list into mysql list
-        str(tuple(device_ids))
+    sensors_sql = 'SELECT * FROM sensor WHERE {}'.format(
+        build_condition('deviceId', device_ids)
     )
 
     sensors = exec_query(sensors_sql)
@@ -128,7 +130,7 @@ def construct_profile_json(user_id):
             'name': sensor['name']
         }
 
-        device_id = sensor['device_id'];
+        device_id = sensor['deviceId'];
 
         # add to dict (if doesn't exist, create list)
         if device_id not in sensors_dict.keys():
@@ -157,35 +159,51 @@ def construct_profile_json(user_id):
         project_dict = {
             'id': project['projectId'],
             'name': project['name'],
-            'email': project['email'],
-            'alerts': project['alerts'],
+            #'email': project['email'],
+            #'alerts': project['alerts'],
             'devices': devices_dict[project['projectId']]
         }
 
         project_list.append(project_dict)
 
     profile_dict = {
-        'name': user_data['name']
+        'name': user_data['name'],
         'projects': project_list
     }
 
     # return result as string
-    # return json.dumps(profile_dict)
-    return 'yay'
+    return_string = json.dumps(profile_dict)
+    print(return_string)
+    return return_string
+
+def build_condition(column_name, list_of_vals):
+    if len(list_of_vals) == 1:
+       return '{} = {}'.format(
+                    column_name,
+                    list_of_vals[0]
+       )
+    else:
+        return '{} IN {}'.format(
+                    column_name,
+                    str(tuple(list_of_vals))
+                )
+
 
 def exec_query(sql_string):
     cursor = mysql.get_db().cursor()
     data = None
+    descriptions = None
     try:
         # Execute the SQL command
         cursor.execute(sql_string)
         # Fetch all the rows in a list of lists.
+        descriptions = cursor.description
         data = cursor.fetchall()
     except:
         print("Error: unable o fetch data")
 
     # Get column names
-    column_names = [column_info[0] for column_info in cursor.description]
+    column_names = [column_info[0] for column_info in descriptions]
     formatted_data = []
     for row in data:
         formatted_data.append(dict(zip(column_names, row)))
@@ -194,7 +212,7 @@ def exec_query(sql_string):
 
 
 def validate_user(id_token):
-    idinfo = id_token.verify_oauth2_token(id_token, requests.Request(), CLIENT_ID)
+    idinfo = id_token_lib.verify_oauth2_token(id_token, requests.Request(), CLIENT_ID)
 
     if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
         print('Invalid token')
@@ -204,6 +222,8 @@ def validate_user(id_token):
     email = idinfo['email']
     name = idinfo['name']
 
+    return userid
+'''
     user_exists_sql = 'SELECT * FROM user WHERE userId = {}'.format(
         userid
     )
@@ -214,3 +234,4 @@ def validate_user(id_token):
         pass
     else:
         pass
+'''
