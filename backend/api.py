@@ -39,13 +39,14 @@ def get():
     # TODO: assert that there are those parameters in dict and nothing else
     # TODO: sanitize all parts
     sql_string = 'SELECT {} FROM {} WHERE {};'.format(
-        request.values.get('fields'),
-        request.values.get('table'),
-        request.values.get('condition')
+          request.values.get('fields'),
+          request.values.get('table'),
+          request.values.get('condition')
     )
     result = exec_query(sql_string)
     return json.dumps(result)
 
+# TODO: need to commit after executing insert
 @app.route('/insert')
 def insert():
     validate_user(request.values.get('id_token'))
@@ -59,6 +60,7 @@ def insert():
     result = exec_query(sql_string)
     return json.dumps(result)
 
+# TODO: need to commit after executing update
 @app.route('/update')
 def modify():
     validate_user(request.values.get('id_token'))
@@ -76,7 +78,7 @@ def modify():
 
 @app.route('/get-profile', methods = ['GET', 'POST'])
 def get_profile():
-    # TODO: validate that params are correct and sanitize inputs
+    # TODO: validate that params are correct and sanitize idtoken
     # validate userid
     google_id = validate_user(request.values.get('idtoken'))
     
@@ -173,36 +175,48 @@ def construct_profile_json(google_id):
 
     # return result as string
     return_string = json.dumps(profile_dict)
-    print(return_string)
     return return_string
 
 def build_condition(column_name, list_of_vals):
     if len(list_of_vals) == 1:
-       return '{} = {}'.format(
-                    column_name,
-                    list_of_vals[0]
-       )
+        return '{} = {}'.format(
+            column_name,
+            list_of_vals[0]
+        )
     else:
         return '{} IN {}'.format(
-                    column_name,
-                    str(tuple(list_of_vals))
-                )
+            column_name,
+            str(tuple(list_of_vals))
+        )
 
 
 def exec_query(sql_string):
     cursor = mysql.get_db().cursor()
-    data = None
+    try:
+        # Execute the SQL command, by calling execute like this, it handles sql injection
+        cursor.execute(sql_string)
+    except Exception as e:
+        print(e)
+
     descriptions = None
     try:
-        # Execute the SQL command
-        cursor.execute(sql_string)
         # Fetch all the rows in a list of lists.
         descriptions = cursor.description
+        print(data)
+    except:
+        print("Error: Couldn't fetch description")
+
+    data = None
+    try:
+        # Fetch all of the data
         data = cursor.fetchall()
     except:
-        print("Error: unable o fetch data")
+        print("Error: Couldn't fetch data")
+
 
     # Get column names
+    # TODO: check to make sure descriptions and data gets populated
+    # should exit program gracefully instead of None type error
     column_names = [column_info[0] for column_info in descriptions]
     formatted_data = []
     for row in data:
@@ -215,7 +229,7 @@ def validate_user(id_token):
     idinfo = id_token_lib.verify_oauth2_token(id_token, requests.Request(), CLIENT_ID)
 
     if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-        print('Invalid token')
+        raise ValueError('Invalid token')
 
 
     userid = idinfo['sub']
@@ -223,7 +237,9 @@ def validate_user(id_token):
     name = idinfo['name']
 
     return userid
-'''
+
+    # TODO: create process to add user to db and start approval process
+''' General logic of approval process
     user_exists_sql = 'SELECT * FROM user WHERE userId = {}'.format(
         userid
     )
@@ -234,4 +250,10 @@ def validate_user(id_token):
         pass
     else:
         pass
+'''
+''' Query object to be used later
+class SqlQuery:
+    def __init__(self, format_string, arg_tuple):
+        self.format_string = format_string
+        self.arg_tuple = arg_tuple
 '''
