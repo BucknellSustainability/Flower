@@ -11,6 +11,8 @@ import datetime
 import fcntl
 import re
 import traceback
+import subprocess
+import os
 
 # One copy of this thread is spawned to look for new USB devices.
 # master_queue is a thread-safe queue of SensorReading objects.
@@ -84,7 +86,7 @@ def read_packet(arduino):
 # This method will get as many lines as necessary to find a full JSON object, and return
 # it as a string.
 def read_json(arduino):
-	with serial.Serial(arduino, 115200, timeout=5) as conn
+	with serial.Serial(arduino, 115200, timeout=5) as conn:
 		packet = ""
 		line = ""
 
@@ -135,7 +137,12 @@ def read_line(arduino):
 # we won't be able to talk to it for some reason.
 def reset_all_usb_ports():
 	for port in get_all_usb_ports():
-		reset_usb_port(port)
+		try:
+			reset_usb_port(port)
+			print("Successfully reset port " + port.getPath() + " named \"" + port.getName() + "\".")
+		except Exception as err:
+			print("Failed to read from port " + port.getPath() + " named \"" + port.getName() + "\":")
+			print(err)
 
 
 # Reboot any attached USB device. portObj is a UsbPort object.
@@ -163,18 +170,14 @@ def reset_usb_port(portObj):
 #
 # This returns an array of UsbPort objects.
 def get_all_usb_ports():
-	
-	# lsusb lists all USB ports, and basic info about what is connected to each port (if anything).
-	# This calls it and saves its output.
-	# Each line of the output is formatted like:
-	#   Bus <number> Device <number>: ID <number>:<number> <name>
-	# When nothing is connected, it's formatted like:
-	# 	Bus <number> Device <number>: ID 0000:0000
-	#
-	lsusb_text = subprocess.check_output("lsusb")
-	
-	# This regex matches a line of output from lsusb.
-	usb_regex = re.compile("Bus\s+(?P<bus>\d+)\s+Device\s+(?P<device>\d+).+ID\s(?P<id>\w+:\w+)\s(?P<tag>.+)$", re.I)
+	# All usb tty devices are listed in /sys/bus/usb-serial/devices.
+	# We will assume that they are all arduinos.
+	tty_list = os.listdir("/sys/bus/usb-serial/devices")
+
+	for name in tty_list:
+		# Reconstruct the full path.
+		tty_path = "/dev/" + name
+		usb_path = "/sys/bus/usb-serial/devices/" + name
 
 	# Parse each line of the output.
 	ports = []
@@ -187,7 +190,7 @@ def get_all_usb_ports():
 		if line_match:
 			# Make a UsbPort object and save it.
 			port_info = line_match.groupdict()
-			port = UsbPort(port_info["bus"], port_info["device"], port_info["id"], port_info["name"])
+			port = UsbPort(port_info["bus"], port_info["device"], port_info["id"], port_info["tag"])
 			ports.append(port)
 		else:
 			# This should never happen; lsusb output something weird.
