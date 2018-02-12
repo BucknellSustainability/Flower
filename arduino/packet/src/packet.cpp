@@ -1,8 +1,32 @@
+#include <Packet.h>
+
+Packet::Packet(void) :
+    _baud_rate(defaultBaudrate),
+    _json_message("NULL")
+{
+    ;
+}
+
 String json_message = ("NULL");
 const int BAUD_RATE = 9600;
 
-bool isInitialized(){
-    if (json_message.compareTo("NULL") == 0){
+bool Packet::initialize(){
+    baud_rate = BAUD_RATE;
+    Serial.begin(baud_rate);
+}
+
+bool Packet::initialize(int baud_rate){
+    _baud_rate = baud_rate;
+    // TODO: Check for erroneous baud_rate
+    Serial.begin(baud_rate);
+}
+
+bool Packet::close(){
+    Serial.end();
+}
+
+bool Packet::isInitialized(){
+    if (_json_message.compareTo("NULL") == 0){
         printf("JSON message null");
         return false;
     }
@@ -13,18 +37,17 @@ bool isInitialized(){
  * Constructor that starts a JSON message
  * Returns nonzero on error
  */
-int start_packet(){
-    Serial.begin(BAUD_RATE);
-    json_message.remove(0); // Clear the string
-    json_message.concat("{"); // Opening curly bracket of json
+int Packet::start_packet(){
+    _json_message.remove(0); // Clear the string
+    _json_message.concat("{"); // Opening curly bracket of json
     return 0;
 }
 
 /** Adds an integer to the JSON message
  *  Returns nonzero on error
  */
-int add_int_field(const char* name, int value){
-    if (!isInitialized()){
+int Packet::add_int_field(const char* name, int value){
+    if (!this.isInitialized()){
         return -1;
     }
     
@@ -40,15 +63,15 @@ int add_int_field(const char* name, int value){
 /** Adds a double to the JSON message
  *  Returns nonzero on error
  */
-int add_double_field(const char* name, double value, int decimalPlaces){
-    if (!isInitialized()){
+int Packet::add_double_field(const char* name, double value, int decimalPlaces){
+    if (!this.isInitialized()){
         return -1;
     }
 
     // Trailing comma incase there are more attributes but should
     // be removed when finishing json object
 
-    if (!json_message.concat(String("\"") + String(name) + String("\":") + String(value,decimalPlaces) + String(","))){
+    if (!_json_message.concat(String("\"") + String(name) + String("\":") + String(value,decimalPlaces) + String(","))){
         return -1;
     }
     return 0;
@@ -57,11 +80,11 @@ int add_double_field(const char* name, double value, int decimalPlaces){
 /** Adds a string to the JSON message
  *  Returns nonzero on error
  */
-int add_text_field(const char* name, const char* value){
+int Packet::add_text_field(const char* name, const char* value){
     if (!isInitialized()){
         return -1;
     }
-  if (!json_message.concat(String("\"") + String(name) + String("\":\"") + String(value) + String("\","))){
+  if (!_json_message.concat(String("\"") + String(name) + String("\":\"") + String(value) + String("\","))){
         return -1;
     }
     return 0;
@@ -70,19 +93,17 @@ int add_text_field(const char* name, const char* value){
 /** Sends the JSON message along the serial connection.
  *  Returns nonzero on error
  */
-int end_packet(){
+int Packet::end_packet(){
     if (!isInitialized()){
         return -1;
     }
-    if (json_message.endsWith(",")){
+    if (_json_message.endsWith(",")){
         // If there's a trailing comma, remove it
-        json_message.remove(json_message.length()-1);
+        _json_message.remove(_json_message.length()-1);
     }
-    json_message.concat("}\n");
-    Serial.write(json_message.c_str());
-    //free(json_message);
-    //*json_message = NULL;
-    json_message.remove(0); // Clear message
-    json_message.concat("NULL");
+    _json_message.concat("}\n");
+    Serial.write(_json_message.c_str());
+    _json_message.remove(0); // Clear message
+    _json_message.concat("NULL");
     return 0;
 }
