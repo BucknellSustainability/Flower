@@ -4,3 +4,8 @@ emailer.log
 chart.json
 chart.png
 Chart.html
+asset-manifest.json
+favicon.ico
+manifest.json
+service-worker.js
+static/*

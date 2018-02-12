@@ -1,0 +1,8 @@
+#gitignore for the production build ONLY
+.DS_Store
+asset-manifest.json
+favicon.ico
+index.html
+manifest.json
+service-worker.js
+static/*
