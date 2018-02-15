@@ -13,11 +13,12 @@ import re
 import traceback
 import subprocess
 import os
+import json
 
 # One copy of this thread is spawned to look for new USB devices.
 # master_queue is a thread-safe queue of SensorReading objects.
 def arduino_main(master_queue):
-	reset_all_usb_ports()
+	#reset_all_usb_ports()
 
 	# Array of ArduinoWorkers
 	workers = []
@@ -39,15 +40,16 @@ def arduino_main(master_queue):
 						break
 
 			# Check if any of the open ports are arduinos.
-			arduino_ports = []
-			for port in open_ports:
-				# TODO: Make this less hacky.
-				if "Arduino" in port.getName():
-					arduino_ports.append(port)
+			arduino_ports = open_ports
+			#arduino_ports = []
+			#for port in open_ports:
+			#	# TODO: Make this less hacky.
+			#	if "Arduino" in port.getName():
+			#			arduino_ports.append(port)
 			
 			# Make new threads.
 			for port in arduino_ports:
-				arduino_id = port.getId()
+				arduino_id = get_serial_id(port)
 				thread = Thread(target=arduino_thread, args=(master_queue, port))
 				worker = ArduinoWorker(arduino_id, thread)
 				workers.append(worker)
@@ -86,7 +88,7 @@ def read_packet(arduino):
 # This method will get as many lines as necessary to find a full JSON object, and return
 # it as a string.
 def read_json(arduino):
-	with serial.Serial(arduino, 115200, timeout=5) as conn:
+	with serial.Serial(arduino.getPath(), 115200, timeout=5) as conn:
 		packet = ""
 		line = ""
 
@@ -95,6 +97,7 @@ def read_json(arduino):
 			line = read_line(conn)
 		
 		# Chop off any text before the packet starts.
+		print("raw line: '%s'" % line)
 		startIndex = line.find('{')
 		line = line[startIndex:]
 
@@ -109,8 +112,8 @@ def read_json(arduino):
 			line = read_line(conn)
 		
 		# Chop off any text after the packet ends.
-		endIndex = line.find('}')
-		packet += " " + line[:endIndex]
+		endIndex = line.find('}') + 1
+		packet += line[:endIndex]
 
 		return packet
 
@@ -172,14 +175,20 @@ def reset_usb_port(portObj):
 def get_all_usb_ports():
 	# All usb tty devices are listed in /sys/bus/usb-serial/devices.
 	# We will assume that they are all arduinos.
-	tty_list = os.listdir("/sys/bus/usb-serial/devices")
+	#tty_list = os.listdir("/sys/bus/usb-serial/devices")
+	# TODO: This is a hack.
+	tty_list = ["/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyUSB2", "/dev/ttyUSB3"]
 
+	ports = []
 	for name in tty_list:
-		# Reconstruct the full path.
-		tty_path = "/dev/" + name
-		usb_path = "/sys/bus/usb-serial/devices/" + name
+		if os.path.exists(name):
+			port = UsbPort(name)
+			ports.append(port)
+		else:
+			ports.append(UsbPort(""))
+	return ports
 
-	# Parse each line of the output.
+"""	# Parse each line of the output.
 	ports = []
 	for line in lsusb_text.split('\n'):
 		# Match the regex against the line.
@@ -197,27 +206,33 @@ def get_all_usb_ports():
 			message = "Error: Unexpected output from lsusb: \"%s\"" % line
 			raise Exception(message)
 	
-	return ports
+	return ports"""
 
 # TODO: Document this.
 # See https://sites.google.com/site/itmyshare/system-admin-tips-and-tools/udevadm---useage-examples
 def get_serial_id(port):
-	usb_props = subprocess.check_output("udevadm info --query=property --name %s" % port.getPath())
+	name = port.getPath().split('/')[2]
+	usb_props = subprocess.check_output(["udevadm", "info", "--query=property", "--name=%s" % name]).decode()
 	id_regex = re.compile("ID_SERIAL=(?P<id_str>.*)", re.I)
 	for line in usb_props.split('\n'):
 		if line:
 			line_match = id_regex.match(line)
 
 		if line_match:
-			return line_match["id_str"]
+			return line_match.group("id_str")
 
 	return None
-
 
 # A container for info about usb ports.
 # Note that ID strings are unique, and stay constant between unplugging, reboot, etc.
 class UsbPort:
-	def __init__(self, bus_number, device_number, vin_pin_str, name):
+	def __init__(self, path):
+		self.path = path
+		if path == "":
+			self.is_device = False
+		else:
+			self.is_device = True
+	"""def __init__(self, bus_number, device_number, vin_pin_str, name):
 		self.bus_number = bus_number
 		self.device_number = device_number
 		self.name = name
@@ -232,11 +247,14 @@ class UsbPort:
 		if self.hasDevice():
 			self.id_string = get_serial_id(self)
 		else:
-			self.id_string = None
+			self.id_string = None"""
 	
 	# This returns the path to the port file.
-	def getPath(self):
+	"""def getPath(self):
 		return "/dev/bus/usb/%s/%s" % (self.bus_number, self.device_number)
+	"""
+	def getPath(self):
+		return self.path
 
 	def getId(self):
 		return self.id_string
@@ -249,7 +267,8 @@ class UsbPort:
 		# If there is nothing connected to the port, the ID is 0.
 		# Note: a device is allowed to have an empty name string; don't use that
 		# to check if there's a device connected!
-		return self.vin == "0000" and self.pin == "0000"
+		#return self.vin == "0000" and self.pin == "0000"
+		return self.is_device
 
 
 # TODO: Document this.
