@@ -14,6 +14,7 @@ import traceback
 import subprocess
 import os
 import json
+from queue import Queue
 
 # One copy of this thread is spawned to look for new USB devices.
 # master_queue is a thread-safe queue of SensorReading objects.
@@ -50,6 +51,7 @@ def arduino_main(master_queue):
 			# Make new threads.
 			for port in arduino_ports:
 				arduino_id = get_serial_id(port)
+				port.id_string = arduino_id
 				thread = Thread(target=arduino_thread, args=(master_queue, port))
 				worker = ArduinoWorker(arduino_id, thread)
 				workers.append(worker)
@@ -290,12 +292,12 @@ class SensorReading:
 		self.data = data
 		self.id_string = id_string
 
-	def getTime():
+	def getTime(self):
 		return self.time
 
-	def getData():
+	def getData(self):
 		return self.data
 
-	def getId():
+	def getId(self):
 		return self.id_string
 
