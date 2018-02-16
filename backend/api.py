@@ -10,7 +10,7 @@ import pprint
 from google.oauth2 import id_token as id_token_lib
 from google.auth.transport import requests
 
-# pip install --user --upgrade flask-mysql
+# pip install --user --upgrade flask-mysql flask-cors
 from flask import Flask, request
 from flask_cors import CORS
 from flaskext.mysql import MySQL
@@ -84,7 +84,7 @@ def get_profile():
     # TODO: validate that params are correct and sanitize idtoken
     # validate userid
     google_id = validate_user(request.values.get('idtoken'))
-    
+
     return construct_profile_json(google_id)
 
 @app.route('/get-all-sensors', methods = ['GET', 'POST'])
@@ -327,10 +327,5 @@ def jsonconverter(o):
         pass
     else:
         pass
-'''
-''' Query object to be used later
-class SqlQuery:
-    def __init__(self, format_string, arg_tuple):
-        self.format_string = format_string
-        self.arg_tuple = arg_tuple
-'''
+
+    return userid
