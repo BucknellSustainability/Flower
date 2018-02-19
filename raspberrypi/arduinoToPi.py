@@ -14,31 +14,50 @@ import traceback
 import subprocess
 import os
 import json
+from threading import Thread
 from queue import Queue
+
+# global keep-alive
+mainThreadAlive = False
 
 # One copy of this thread is spawned to look for new USB devices.
 # master_queue is a thread-safe queue of SensorReading objects.
 def arduino_main(master_queue):
+	global mainThreadAlive
 	#reset_all_usb_ports()
 
 	# Array of ArduinoWorkers
 	workers = []
 
+	
+
 	while True:
 		try:
+			mainThreadAlive = True
 			# Check that all the arduino threads are ok.
-			for thread in workers:
-				if not thread.is_alive():
+			dead_workers = []
+			for worker in workers:
+				if not worker.getThread().is_alive():
 					# TODO: Error handling.
-					thread.join()
+					print("Joining worker: %s", worker.getId())
+					worker.getThread().join()
+					dead_workers.append(worker)
+			for worker in dead_workers:
+				workers.remove(worker)
 
 			# Check if any new devices have been plugged in.
 			open_ports = []
 			for port in get_all_usb_ports():
-				for worker in workers:
-					if port.hasDevice() and port.getId() != worker.getId():
+				if port.hasDevice():
+					conflict = False
+					for worker in workers:
+						if port.getId() == worker.getId():
+							conflict = True
+							break
+					if not conflict:
+						# No conflicts
 						open_ports.append(port)
-						break
+				
 
 			# Check if any of the open ports are arduinos.
 			arduino_ports = open_ports
@@ -47,23 +66,34 @@ def arduino_main(master_queue):
 			#	# TODO: Make this less hacky.
 			#	if "Arduino" in port.getName():
 			#			arduino_ports.append(port)
-			
+
 			# Make new threads.
 			for port in arduino_ports:
-				arduino_id = get_serial_id(port)
-				port.id_string = arduino_id
+				print("Connecting to port: %s", port.getId())
+				arduino_id = port.getId()
 				thread = Thread(target=arduino_thread, args=(master_queue, port))
 				worker = ArduinoWorker(arduino_id, thread)
 				workers.append(worker)
 				thread.start()
+				print("Worker started: %s", worker.getId())
+		except (KeyboardInterrupt, SystemExit):
+			print("KeyboardInterrupt or SystemExit; cleaning up...");
+			mainThreadAlive = False
+			for worker in workers:
+				print("Waiting for worker %s..." % worker.getId())
+				worker.getThread().join()
+			workers = []
+			print("done")
+			return
 		except Exception as e:
 			print(e)
 
 
 # This thread is spawned for each connected arduino.
 def arduino_thread(master_queue, port):
+	global mainThreadAlive
 	try:
-		while (True):
+		while (mainThreadAlive):
 			# Get sensor data from the arduino.
 			json = read_packet(port)
 
@@ -74,6 +104,7 @@ def arduino_thread(master_queue, port):
 			# Send it to the queue.
 			queue_entry = SensorReading(time, json, port.getId())
 			master_queue.put(queue_entry)
+		print("Thread %s: mainThreadAlive is %s; closing" % (port.getId(), str(mainThreadAlive)))
 	except:
 		# TODO: Error handling.
 		# Currently, if there's an error, the thread ends.
@@ -234,6 +265,7 @@ class UsbPort:
 			self.is_device = False
 		else:
 			self.is_device = True
+			self.id_string = get_serial_id(self)
 	"""def __init__(self, bus_number, device_number, vin_pin_str, name):
 		self.bus_number = bus_number
 		self.device_number = device_number
@@ -280,10 +312,10 @@ class ArduinoWorker:
 		self.id_string = id_string
 		self.thread_obj = thread_obj
 
-	def getThread():
+	def getThread(self):
 		return self.thread_obj
 
-	def getId():
+	def getId(self):
 		return self.id_string
 
 class SensorReading:
