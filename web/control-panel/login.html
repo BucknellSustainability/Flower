@@ -21,7 +21,7 @@
           var id_token = googleUser.getAuthResponse().id_token;
 
           var xhr = new XMLHttpRequest();
-          xhr.open('POST', 'http://134.82.9.147:5000/get-profile');
+          xhr.open('POST', 'http://134.82.9.147:5000/request-access');
           xhr.withCredentials = true;
           //xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
           xhr.onload = function() {
