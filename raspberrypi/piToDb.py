@@ -52,11 +52,11 @@ def process_reading(reading, connection):
 
 		return (sensor_id, reading.getTime(), value)
 
-def do_sensor_insert(cursor, sensor_id, time, value):
+def do_sensor_data_insert(cursor, sensor_id, time, value):
 	command_template = "INSERT INTO energyhill.data (sensorId, dateTime, value) VALUES (%s, FROM_UNIXTIME(%s), %s)"
 	
 	assert(isinstance(sensor_id, int))
-	#assert(isinstance(time, DateTime)) # TODO: Fix this
+	assert(isinstance(time, long))
 	assert(isinstance(value, float))
 	
 	command = command_template % (str(sensor), str(time), str(value))
@@ -86,7 +86,7 @@ def database_loop(master_queue):
 			# Send the readings in bulk.
 			with connection.cursor() as cursor:
 				for sensor, time, value in data_to_push:
-					do_sensor_insert(cursor, sensor, time, value)
+					do_sensor_data_insert(cursor, sensor, time, value)
 
 				connection.commit()
 	finally:
@@ -118,7 +118,6 @@ def get_arduino_dbid(connection, id_string):
 		return cached_arduino_ids[id_string]
 
 	with connection.cursor(cursors.DictCursor) as cursor:
-		# fetchall will return an array of dictionaries.
 		rows = do_select_arduino(connection, cursor, id_string) 
 		
 		if len(rows) == 0:
@@ -128,7 +127,7 @@ def get_arduino_dbid(connection, id_string):
 			rows = do_select_arduino(connection, cursor, id_string)
 			
 			if len(rows) == 0:
-				raise Exception("Unable to insert arduino into the database.")
+				raise Exception("Unable to insert arduino into the database: %s" % id_string)
 		
 		# We now have rows from the server. Check that we only found ONE entry!
 		if len(rows) == 1:
@@ -137,7 +136,58 @@ def get_arduino_dbid(connection, id_string):
 			return arduino_id
 		else:
 			raise Exception("Found multiple rows with hardwareId %s" % id_string)
-		
+
+def do_select_sensor(connection, cursor, arduino_id, sensor_name):
+	# Escape the user-provided sensor name.
+	sensor_name_escaped = cursor.escape(sensor_name)
+
+	# Defensive coding.
+	assert(isinstance(arduino_id, int))
+
+	command = "SELECT sensorId FROM energyhill.sensor WHERE (deviceId, sensorName) IS (%s, %s)" % (str(arduino_id), sensor_name_escaped)
+	do_sql(cursor, command)
+	connection.commit()
+
+	# fetchall will return an array of dictionaries.
+	rows = cursor.fetchall()
+	return rows
+
+def do_insert_sensor(connection, cursor, arduino_id, sensor_name):
+	# Escape the user-provided sensor name.
+	sensor_name_escaped = cursor.escape(sensor_name)
+
+	# Defensive coding.
+	assert(isinstance(arduino_id, int))
+
+	command = "INSERT INTO energyhill.sensor (deviceId, sensorName) VALUES (%s, %s)" % (str(arduino_id), sensor_name_escaped)
+	do_sql(cursor, command)
+	connection.commit()
+
+cached_sensor_ids = {}
+def get_sensor_dbid(connection, arduino_id, sensor_name):
+	key_pair = (arduino_id, sensor_name)
+	if cached_sensor_ids[key_pair]:
+		return cached_sensor_ids[key_pair]
+
+	with connection.cursor(cursors.DictCursor) as cursor:
+		rows = do_select_sensor(connection, cursor, arduino_id, sensor_name)
+
+		if len(rows) == 0:
+			do_insert_sensor(connection, cursor, arduino_id, sensor_name)
+
+			# Try again.
+			rows = do_select_sensor(connection, cursor, arduino_id, sensor_name)
+
+			if len(rows) == 0:
+				raise Exception("Unable to insert sensor into the database: (%s, %s)" % (str(arduino_id), sensor_name)
+
+		# We now have rows from the server. Check that we only found ONE entry!
+		if len(rows) == 1:
+			sensor_id = cursor.fetchall()[0]["sensorId"]
+			cached_sensor_ids[key_pair] = sensor_id
+			return sensor_id
+		else:
+			raise Exception("Found multiple rows with (arduinoId, sensorName): (%s, %s)" % (str(arduino_id), sensor_name)
 
 
 def connectToDB():
@@ -151,25 +201,6 @@ def connectToDB():
 	connection = pymysql.connect(host=config['DB_URL'], user=config['DB_USERNAME'], password=config['DB_PASSWORD'], db=config['DB_NAME'])
 	return connection
 
-
-# Old server code.
-def pushToDB(connection, number, sensor):
-	"""connection is the I/O object with the database. number is the number to insert, sensor is the sensor ID number."""
-	# Check that number and sensor are both integers, and not strings.
-	# Normally this is avoided in python, but this check ensures that no funnybusiness
-	# happens with the SQL command.
-	assert(isinstance(number, float))
-	assert(isinstance(sensor, int))
-	with connection.cursor() as cursor:
-			# Form the command.
-			command = "INSERT INTO data (sensorId, value) VALUES (" + str(sensor) + ", " + str(number) + ");"
-			cursor.execute(command)
-
-			# Send the command.
-			connection.commit()
-
-			# Debugging
-			print("sent: " + command)
 
 
 
