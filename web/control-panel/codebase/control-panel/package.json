@@ -4,6 +4,7 @@
   "private": true,
   "dependencies": {
     "axios": "^0.17.1",
+    "mdbootstrap": "^4.4.4",
     "package.json": "^2.0.1",
     "react": "^16.2.0",
     "react-bootstrap": "^0.32.1",

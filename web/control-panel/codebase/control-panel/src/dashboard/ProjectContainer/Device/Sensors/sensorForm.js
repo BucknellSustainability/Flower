@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {Button, Panel, Form, FormGroup, FormControl, HelpBlock, ControlLabel, Row, Col} from 'react-bootstrap'
+import {Form, FormGroup, FormControl, HelpBlock, ControlLabel, Row, Col} from 'react-bootstrap'
 
 export class SensorForm extends React.Component {
   constructor(props, context) {
@@ -62,7 +62,6 @@ export class SensorForm extends React.Component {
 
 
   render() {
-    var sensor = this.props.sensor;
     return (
       <Form>
         <Row className="sensorRow">
