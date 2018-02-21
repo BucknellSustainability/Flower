@@ -2,10 +2,9 @@
 <html>
 
   <head>
-    <title>Bucknell Sustainability</title>
+    <title>JV</title>
 
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-    <meta name="google-signin-client_id" content="438120227370-65o4j0kmk9mbij1bp3dqvnts9dh4kfrf.apps.googleusercontent.com">
 
     <meta charset="utf-8">
   </head>
@@ -14,30 +13,23 @@
   </style>
 
   <body>
-      <div class="g-signin2" data-onsuccess="onSignIn"></div>
-      <script src="https://apis.google.com/js/platform.js" async defer></script>
       <script>
-      function onSignIn(googleUser) {
-          var id_token = googleUser.getAuthResponse().id_token;
-
           var xhr = new XMLHttpRequest();
-          xhr.open('POST', 'http://134.82.9.147:5000/get-profile');
+          xhr.open('GET', 'http://127.0.0.1:5000/read');
           xhr.withCredentials = true;
-          //xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
           xhr.onload = function() {
-              console.log('Signed in as: ' + xhr.responseText);
+              console.log(xhr.responseText);
           };
-          xhr.send('idtoken=' + id_token);
+          xhr.send('table=alerts&fields=alertId&condition=');
 
         //   var profile = googleUser.getBasicProfile();
         //   console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
         //   console.log('Name: ' + profile.getName());
         //   console.log('Image URL: ' + profile.getImageUrl());
         //   console.log('Email: ' + profile.getEmail()); // This is null if the 'email' scope is not present.
-        }
       </script>
   </body>
 
 
 </html>
-

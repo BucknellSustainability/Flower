@@ -1,12 +1,9 @@
 import React, { Component } from 'react';
 import './Dashboard.css';
-import {ProjectNav} from './ProjectNav.js'
-import {ProjectContainer} from './ProjectContainer.js'
-import Well from 'react-bootstrap/lib/Well'
+import {ProjectNav} from './ProjectNav/ProjectNav.js'
+import {ProjectContainer} from './ProjectContainer/ProjectContainer.js'
+import {Row, Col} from 'react-bootstrap/lib/'
 
-import Grid from 'react-bootstrap/lib/Grid'
-import Row from 'react-bootstrap/lib/Row'
-import Col from 'react-bootstrap/lib/Col'
 
 export class Dashboard extends React.Component {
 
@@ -26,24 +23,24 @@ export class Dashboard extends React.Component {
               alerts: false,
               devices: [{
                 id: 1,
-                name: "arduino 1",
+                name: "Arduino 1",
                 sensors:[{
                   id: 1,
-                  name: "water"
+                  name: "Water Sensor"
                 },{
                   id:2,
-                  name: "fire"
+                  name: "Fire Sensor"
                 },{
                   id:3,
-                  name: "wind"
+                  name: "Wind Sensor"
                 },{
                   id:4,
-                  name:"earth"
+                  name:"Earth Sensor"
                 }
               ]},
               {
                 id: 2,
-                name: "arduino 2",
+                name: "Arduino 2",
                 sensors:[{
                   id: 5,
                   name: "sensor"}
@@ -56,10 +53,23 @@ export class Dashboard extends React.Component {
             alerts: true,
             devices: [{
               id: 2,
-              name: "device 1",
+              name: "Device 1",
               sensors:[{
                 id: 6,
-                name: "tree sensor"
+                name: "Tree sensor"
+              }]
+            }]
+        },
+        {
+            name:"Wind Turbine",
+            email:"ugh@bucknell.edu",
+            alerts: true,
+            devices: [{
+              id: 2,
+              name: "Device 1",
+              sensors:[{
+                id: 6,
+                name: "Tree sensor"
               }]
             }]
         }]
@@ -78,17 +88,15 @@ export class Dashboard extends React.Component {
     const projectContainer = <ProjectContainer user={this.state.user} activeProject={this.state.activeProject}/>
 
     return (	
-        <div className="row">
+        <div className="dashboard-main">
             <Row>
-              <Col id="navCol" md={2}>
+              <Col id="navCol" md={3}>
                   {projectNav} 
               </Col>
-
               <Col id="projCol" md={9}>
                   {projectContainer}
               </Col>
             </Row>
-
         </div>
     );
   }

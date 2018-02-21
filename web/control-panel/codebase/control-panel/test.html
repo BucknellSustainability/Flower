@@ -5,7 +5,6 @@
     <title>Bucknell Sustainability</title>
 
     <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
-    <meta name="google-signin-client_id" content="438120227370-65o4j0kmk9mbij1bp3dqvnts9dh4kfrf.apps.googleusercontent.com">
 
     <meta charset="utf-8">
   </head>
@@ -14,20 +13,19 @@
   </style>
 
   <body>
-      <div class="g-signin2" data-onsuccess="onSignIn"></div>
-      <script src="https://apis.google.com/js/platform.js" async defer></script>
       <script>
-      function onSignIn(googleUser) {
-          var id_token = googleUser.getAuthResponse().id_token;
-
+      function onSignIn() {
           var xhr = new XMLHttpRequest();
-          xhr.open('POST', 'http://134.82.9.147:5000/get-profile');
+          xhr.open('GET', 'http://localhost:5001/read');
           xhr.withCredentials = true;
-          //xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
           xhr.onload = function() {
               console.log('Signed in as: ' + xhr.responseText);
           };
-          xhr.send('idtoken=' + id_token);
+          xhr.send('fields=alertId');
+          xhr.send('table=alerts')
+          xhr.send('condition=')
+
 
         //   var profile = googleUser.getBasicProfile();
         //   console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
@@ -40,4 +38,3 @@
 
 
 </html>
-

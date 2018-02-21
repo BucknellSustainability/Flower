@@ -1,18 +1,20 @@
 import React, { Component } from 'react';
-import logo from './images/logo.svg';
 import './App.css';
-import {Dashboard} from './Dashboard.js'
-
+import './fonts.css'
+import {Dashboard} from './dashboard/Dashboard.js'
+import {DashboardHeader} from './dashboard/DashboardHeader.js'
 
 class App extends Component {
   render() {
     const dashboard = <Dashboard />
+    const dashboardHeader = <DashboardHeader />
     return (
       <div className="App">
         <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Energy Hill Dashboard</h1>
+          {dashboardHeader}
+
         </header>
+
         {dashboard}
         
       </div>
