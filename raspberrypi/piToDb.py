@@ -7,11 +7,13 @@ import pymysql
 # sudo pip3 install pymysql
 # That should fix it.
 
-
+import traceback
 import json
 from arduinoToPi import SensorReading
-
-
+import queue
+import time
+import datetime
+import math
 
 # master_queue is a queue of SensorReading objects.
 def database_main(master_queue):
@@ -19,7 +21,8 @@ def database_main(master_queue):
 		try:
 			database_loop(master_queue)
 		except Exception as e:
-			print(e)
+			traceback.print_exc(e)
+			#print(e)
 
 def get_all_readings(master_queue):
 	readings = []
@@ -35,31 +38,37 @@ def get_all_readings(master_queue):
 # an entry for each sensor returned by the arduino.
 #
 # Returns each sensor's value in (sensor_id, time, value) tuples.
-def process_reading(reading, connection):
+def process_reading(connection, reading):
+	
 	# Get the arduino's DB ID.
 	device_id = get_arduino_dbid(connection, reading.getId())
 
 	# Get the data from the arduino.
-	json = reading.getData()
+	json_data = reading.getData()
 
 	# TODO: Check that the project name matches the one in the database.
 
 	# Iterate over every sensor value.
 	# TODO: Exclude the project name field in the json structure.
-	for name, value in json:
+	sensor_tuples = []
+	for name, value in json_data.items():
 		# Find the sensor ID.
 		sensor_id = get_sensor_dbid(connection, device_id, name)
+		sensor_tuples.append((sensor_id, reading.getTime(), value))
+	
+	return sensor_tuples
 
-		return (sensor_id, reading.getTime(), value)
-
-def do_sensor_data_insert(cursor, sensor_id, time, value):
+def do_sensor_data_insert(cursor, sensor_id, data_time, value):
 	command_template = "INSERT INTO energyhill.data (sensorId, dateTime, value) VALUES (%s, FROM_UNIXTIME(%s), %s)"
 	
 	assert(isinstance(sensor_id, int))
-	assert(isinstance(time, long))
-	assert(isinstance(value, float))
+	assert(isinstance(data_time, datetime.datetime))
+	assert(isinstance(value, float) or isinstance(value, int))
 	
-	command = command_template % (str(sensor), str(time), str(value))
+	# Note: Python uses a floating-point time, but we need an integer time.
+	unix_time = math.floor(time.mktime(data_time.timetuple()))
+
+	command = command_template % (str(sensor_id), str(unix_time), str(value))
 	do_sql(cursor, command)
 
 def do_sql(cursor, command):
@@ -81,11 +90,13 @@ def database_loop(master_queue):
 			# Process each reading.
 			data_to_push = []
 			for reading in readings:
-				data_to_push.append(process_reading(connection, reading))
+				sensors = process_reading(connection, reading)
+				for sensor in sensors:
+					data_to_push.append(sensor)
 
 			# Send the readings in bulk.
 			with connection.cursor() as cursor:
-				for sensor, time, value in data_to_push:
+				for (sensor, time, value) in data_to_push:
 					do_sensor_data_insert(cursor, sensor, time, value)
 
 				connection.commit()
@@ -95,9 +106,9 @@ def database_loop(master_queue):
 
 def do_select_arduino(connection, cursor, id_string):
 	# Defensive escape, shouldn't ever be an issue.
-	id_string_escaped = cursor.escape(id_string)
+	id_string_escaped = connection.escape(id_string)
 	
-	command = "SELECT deviceId FROM energyhill.device WHERE hardwareId IS %s" % id_string_escaped
+	command = "SELECT deviceId FROM energyhill.device WHERE hardwareId = %s" % id_string_escaped
 	do_sql(cursor, command)
 	connection.commit()
 		
@@ -106,18 +117,21 @@ def do_select_arduino(connection, cursor, id_string):
 	return rows
 
 def do_insert_arduino(connection, cursor, id_string):
+	# Defensive escape, shouldn't ever be an issue.
+	id_string_escaped = connection.escape(id_string)
+	
 	# Create a new entry for this board.
-	command = "INSERT INTO energyhill.device (deviceId) VALUES (%s)" % id_string_escaped
+	command = "INSERT INTO energyhill.device (hardwareId) VALUES (%s)" % id_string_escaped
 	do_sql(cursor, command)
 	connection.commit()
 
 # TODO: Document this
 cached_arduino_ids = {}
 def get_arduino_dbid(connection, id_string):
-	if cached_arduino_ids[id_string]:
+	if id_string in cached_arduino_ids:
 		return cached_arduino_ids[id_string]
 
-	with connection.cursor(cursors.DictCursor) as cursor:
+	with connection.cursor(pymysql.cursors.DictCursor) as cursor:
 		rows = do_select_arduino(connection, cursor, id_string) 
 		
 		if len(rows) == 0:
@@ -131,7 +145,7 @@ def get_arduino_dbid(connection, id_string):
 		
 		# We now have rows from the server. Check that we only found ONE entry!
 		if len(rows) == 1:
-			arduino_id = cursor.fetchall()[0]["deviceId"]
+			arduino_id = rows[0]["deviceId"]
 			cached_arduino_ids[id_string] = arduino_id
 			return arduino_id
 		else:
@@ -139,12 +153,12 @@ def get_arduino_dbid(connection, id_string):
 
 def do_select_sensor(connection, cursor, arduino_id, sensor_name):
 	# Escape the user-provided sensor name.
-	sensor_name_escaped = cursor.escape(sensor_name)
+	sensor_name_escaped = connection.escape(sensor_name)
 
 	# Defensive coding.
 	assert(isinstance(arduino_id, int))
 
-	command = "SELECT sensorId FROM energyhill.sensor WHERE (deviceId, sensorName) IS (%s, %s)" % (str(arduino_id), sensor_name_escaped)
+	command = "SELECT sensorId FROM energyhill.sensor WHERE (deviceId, name) = (%s, %s)" % (str(arduino_id), sensor_name_escaped)
 	do_sql(cursor, command)
 	connection.commit()
 
@@ -154,22 +168,22 @@ def do_select_sensor(connection, cursor, arduino_id, sensor_name):
 
 def do_insert_sensor(connection, cursor, arduino_id, sensor_name):
 	# Escape the user-provided sensor name.
-	sensor_name_escaped = cursor.escape(sensor_name)
+	sensor_name_escaped = connection.escape(sensor_name)
 
 	# Defensive coding.
 	assert(isinstance(arduino_id, int))
 
-	command = "INSERT INTO energyhill.sensor (deviceId, sensorName) VALUES (%s, %s)" % (str(arduino_id), sensor_name_escaped)
+	command = "INSERT INTO energyhill.sensor (deviceId, name) VALUES (%s, %s)" % (str(arduino_id), sensor_name_escaped)
 	do_sql(cursor, command)
 	connection.commit()
 
 cached_sensor_ids = {}
 def get_sensor_dbid(connection, arduino_id, sensor_name):
 	key_pair = (arduino_id, sensor_name)
-	if cached_sensor_ids[key_pair]:
+	if key_pair in cached_sensor_ids:
 		return cached_sensor_ids[key_pair]
 
-	with connection.cursor(cursors.DictCursor) as cursor:
+	with connection.cursor(pymysql.cursors.DictCursor) as cursor:
 		rows = do_select_sensor(connection, cursor, arduino_id, sensor_name)
 
 		if len(rows) == 0:
@@ -179,15 +193,15 @@ def get_sensor_dbid(connection, arduino_id, sensor_name):
 			rows = do_select_sensor(connection, cursor, arduino_id, sensor_name)
 
 			if len(rows) == 0:
-				raise Exception("Unable to insert sensor into the database: (%s, %s)" % (str(arduino_id), sensor_name)
+				raise Exception("Unable to insert sensor into the database: (%s, %s)" % (str(arduino_id), sensor_name))
 
 		# We now have rows from the server. Check that we only found ONE entry!
 		if len(rows) == 1:
-			sensor_id = cursor.fetchall()[0]["sensorId"]
+			sensor_id = rows[0]["sensorId"]
 			cached_sensor_ids[key_pair] = sensor_id
 			return sensor_id
 		else:
-			raise Exception("Found multiple rows with (arduinoId, sensorName): (%s, %s)" % (str(arduino_id), sensor_name)
+			raise Exception("Found multiple rows with (arduinoId, sensorName): (%s, %s)" % (str(arduino_id), sensor_name))
 
 
 def connectToDB():

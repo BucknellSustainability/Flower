@@ -126,11 +126,11 @@ def read_json(arduino):
 		line = ""
 
 		# Read lines until the start of a packet is found.
+		# TODO: If this infinite loops, the thread never checks to see if it should quit.
 		while ('{' not in line):
 			line = read_line(conn)
 		
 		# Chop off any text before the packet starts.
-		print("raw line: '%s'" % line)
 		startIndex = line.find('{')
 		line = line[startIndex:]
 
@@ -140,6 +140,7 @@ def read_json(arduino):
 		# two ways: inside a string, and as part of a nested object. Nested objects are not allowed.
 		# But it could be inside a string, which isn't allowed for the moment, but should be allowed
 		# in the future.
+		# TODO: If this infinite loops, the thread never checks to see if it should quit.
 		while ('}' not in line):
 			packet += " " + line
 			line = read_line(conn)
@@ -148,6 +149,7 @@ def read_json(arduino):
 		endIndex = line.find('}') + 1
 		packet += line[:endIndex]
 
+		print("raw packet: '%s'" % line)
 		return packet
 
 # TODO: Error checking
@@ -160,12 +162,17 @@ def read_line(arduino):
 	# binary string, with /r/n characters at the end. This is a blocking
 	# read.
 	data = arduino.readline()
-
-	# Chop off the last two characters (/r/n)
-	data = data[0:-2];
 	
 	# Convert the string from binary to utf-8.
 	data = data.decode("ascii")
+
+	# Remove the last newline. (\r\n or just \n)
+	if data[-1] == "\n":
+		data = data[0:-1]
+	
+	if data[-1] == "\r":
+		data = data[0:-1]
+
 	return data
 
 
