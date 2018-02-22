@@ -3,6 +3,7 @@
 # flask run --host=0.0.0.0
 
 import json
+import datetime
 
 # pip install --user --upgrade google-auth
 from google.oauth2 import id_token as id_token_lib
@@ -45,7 +46,7 @@ def get():
     )
     print(sql_string)
     result = exec_query(sql_string)
-    return json.dumps(result)
+    return json.dumps(result, default = jsonconverter)
 
 # TODO: need to commit after executing insert
 @app.route('/insert')
@@ -59,7 +60,7 @@ def insert():
         request.values.get('values')
     )
     result = exec_query(sql_string)
-    return json.dumps(result)
+    return json.dumps(result, default = jsonconverter)
 
 # TODO: need to commit after executing update
 @app.route('/update')
@@ -75,7 +76,7 @@ def modify():
         request.values.get('condition')
     )
     result = exec_query(sql_string)
-    return json.dumps(result)
+    return json.dumps(result, default = jsonconverter)
 
 @app.route('/get-profile', methods = ['GET', 'POST'])
 def get_profile():
@@ -175,7 +176,7 @@ def construct_profile_json(google_id):
     }
 
     # return result as string
-    return_string = json.dumps(profile_dict)
+    return_string = json.dumps(profile_dict, default = jsonconverter)
     return return_string
 
 def build_condition(column_name, list_of_vals):
@@ -238,6 +239,10 @@ def validate_user(id_token):
     name = idinfo['name']
 
     return userid
+
+def jsonconverter(o):
+    if isinstance(o, datetime.datetime):
+        return o.__str__()
 
     # TODO: create process to add user to db and start approval process
 ''' General logic of approval process
