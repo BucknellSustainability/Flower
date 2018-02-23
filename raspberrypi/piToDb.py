@@ -7,7 +7,6 @@ import pymysql
 # sudo pip3 install pymysql
 # That should fix it.
 
-import traceback
 import json
 from arduinoToPi import SensorReading
 import queue
@@ -21,8 +20,7 @@ def database_main(master_queue):
 		try:
 			database_loop(master_queue)
 		except Exception as e:
-			traceback.print_exc(e)
-			#print(e)
+			print(e)
 
 def get_all_readings(master_queue):
 	readings = []

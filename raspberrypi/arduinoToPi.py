@@ -99,7 +99,7 @@ def arduino_thread(master_queue, port):
 
 			# Get the current time as a UNIX timestamp.
 			# TODO: Get the timestamp before parsing the json?
-			time = datetime.datetime.now(datetime.timezone.utc)
+			time = datetime.datetime.now()
 
 			# Send it to the queue.
 			queue_entry = SensorReading(time, json, port.getId())
