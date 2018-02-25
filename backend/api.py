@@ -4,6 +4,7 @@
 
 import json
 import datetime
+import pprint
 
 # pip install --user --upgrade google-auth
 from google.oauth2 import id_token as id_token_lib
@@ -85,6 +86,10 @@ def get_profile():
     google_id = validate_user(request.values.get('idtoken'))
     
     return construct_profile_json(google_id)
+
+@app.route('/get-all-sensors', methods = ['GET', 'POST'])
+def get_all_sensors():
+    return build_all_sensors_dict()
 
 # TODO: handle empty results of queries
 def construct_profile_json(google_id):
@@ -178,6 +183,72 @@ def construct_profile_json(google_id):
     # return result as string
     return_string = json.dumps(profile_dict, default = jsonconverter)
     return return_string
+
+def build_all_sensors_dict():
+    # fetch all projects
+    projects_sql = 'SELECT * FROM project;'
+    projects = exec_query(projects_sql)
+
+    # fetch all devices
+    devices_sql = 'SELECT * FROM device;'
+    devices = exec_query(devices_sql)
+
+    device_ids = [device['deviceId'] for device in devices]
+
+    # fetch all sensors
+    sensors_sql = 'SELECT * FROM sensor'
+    sensors = exec_query(sensors_sql)
+
+    sensors_dict = {}
+    devices_dict = {}
+    project_list = []
+    # throw all data into dictionary to be converted to JSON
+    for sensor in sensors:
+        # construct sensor dict
+        sensor_dict = {
+            'id': sensor['sensorId'],
+            'name': sensor['name'],
+            'description': sensor['description']
+        }
+
+        device_id = sensor['deviceId'];
+
+        # add to dict (if doesn't exist, create list)
+        if device_id not in sensors_dict.keys():
+            sensors_dict[device_id] = [sensor_dict]
+        else:
+            sensors_dict[device_id].append(sensor_dict)
+
+    for device in devices:
+        project_id = device['projectId']
+        # add to dict (if doesn't exist, create list)
+        device_id = device['deviceId']
+        if device_id in sensors_dict.keys():
+            if project_id not in devices_dict.keys():
+                devices_dict[project_id] = sensors_dict[device_id]
+            else:
+                devices_dict[project_id] += sensors_dict[device_id]
+
+    for project in projects:
+        # construct project dict
+        project_dict = {
+            'id': project['projectId'],
+            'name': project['name'],
+            #'email': project['email'],
+            #'alerts': project['alerts'],
+            'sensors': devices_dict[project['projectId']]
+        }
+
+        project_list.append(project_dict)
+
+    project_dict = {'projects': project_list}
+
+    pprint.pprint(project_dict)
+
+    # return result as string
+    return_string = json.dumps(project_dict, default = jsonconverter)
+    return return_string
+
 
 def build_condition(column_name, list_of_vals):
     if len(list_of_vals) == 1:
