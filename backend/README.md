@@ -50,3 +50,8 @@ Each of these end points need to be accessed by an http request to `http://linux
 - `{endpoint}`: `get-profile`
 - parameters:
     - `idtoken`: the token that Google Auth gives to the client
+
+
+## Get all of the sensors with project information
+- `{endpoint}`: `get-all-sensors`
+- parameters: None
