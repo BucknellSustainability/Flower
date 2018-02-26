@@ -10,12 +10,14 @@ export class CreateVis extends React.Component {
 
     this.handleHide = this.handleHide.bind(this);
     this.sensorToggleClick = this.sensorToggleClick.bind(this);
+    this.handleChartTypeChange = this.handleChartTypeChange.bind(this);
 
     this.state = {
       show: false,
       allProjects: [],
       activeProject: {sensors:[]},
-      selectedSensors: []
+      selectedSensors: [],
+      chartType: 0
     };
   }
 
@@ -55,6 +57,9 @@ export class CreateVis extends React.Component {
     console.log(sensors)
   }
 
+  handleChartTypeChange(e) {
+    this.setState({ chartType: e });
+  }
 
   getAllProjects(){
       var xhr = new XMLHttpRequest();
@@ -100,15 +105,20 @@ export class CreateVis extends React.Component {
           <Modal.Body>
 
             <Row>
-              <Col lg={6} md={6} sm={6}>
+              <Col lg={5} md={5} sm={5}>
 
                 <Well>
                   <p className="concert bold black text-left"> 1) Select Chart Type </p>
-                  <ButtonGroup style={{marginBottom: "20px"}}>
-                    <Button bsStyle="info">Line Graph</Button>
-                    <Button bsStyle="info">Gauge Chart</Button>
-                    <Button bsStyle="info">Pie Chart</Button>
-                  </ButtonGroup>
+                  <ToggleButtonGroup 
+                    name="chartRadio"
+                    type="radio" 
+                    value={this.state.chartType} 
+                    onChange={() => {this.handleChartTypeChange()}}
+                    style={{marginBottom: "20px"}}>
+                    <ToggleButton name="line" bsStyle="info" value={0}>Line Graph</ToggleButton>
+                    <ToggleButton name="gauge" bsStyle="info" value={1}>Gauge Chart</ToggleButton>
+                    <ToggleButton name="pie" bsStyle="info" value={2}>Pie Chart</ToggleButton>
+                  </ToggleButtonGroup>
 
                   <p className="concert bold black text-left"> 2) Select Project(s) </p>
                   <SplitButton title={this.state.activeProject.name} pullRight id="split-button-pull-right" style={{marginBottom: "20px"}}>
@@ -140,8 +150,8 @@ export class CreateVis extends React.Component {
                 </Well>
 
               </Col>
-              <Col lg={6} md={6} sm={6}>
-                <iframe width="400" height="400" src={this.getIframeURL()}></iframe>
+              <Col lg={7} md={7} sm={7}>
+                <iframe width="500" height="420" src={this.getIframeURL()}></iframe>
                 <h6 className="black"> iframe link: [ iframe width="800" height="450" src={this.getIframeURL()} ] </h6>
               </Col>
             </Row>
