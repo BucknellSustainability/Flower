@@ -108,11 +108,12 @@ def get_profile():
 
     return construct_profile_json(google_id)
 
-<<<<<<< HEAD
+
 @app.route('/get-all-sensors', methods = ['GET', 'POST'])
 def get_all_sensors():
     return build_all_sensors_dict()
-=======
+
+
 @app.route('/request-access', methods = ['POST'])
 def request_access():
     idinfo = get_idinfo(request.values.get('idtoken'))
@@ -136,7 +137,6 @@ def request_access():
 def approve_user():
     userid = request.values.get('userid')
 
-    # TODO: validate that admin and not just user
     try:
         validate_admin(request.values.get('idtoken'))
     except UserDeniedException as e:
@@ -157,9 +157,8 @@ def approve_user():
     send_approved_email(approved_user[0]['email'])
     
     return ''
->>>>>>> Added a bunch of user login code and refactored lots of code
 
-# TODO: handle empty results of queries
+
 def construct_profile_json(google_id):
     # fetch user info
     fetch_user_sql = 'SELECT * FROM user WHERE googleId = {};'.format(
@@ -416,9 +415,9 @@ def send_approval_email(name, email, userid):
     )
 
     body = (EMAIL_HTML_START +
-            'Hello,\n' +
+            'Hello, <br>' +
            '{0} ({1}) wants access to the Energy Hill dashboard.  To approve this request, please click this link and sign in to your Google account: <a href="{2}">{2}</a>\n' +
-           'Sincerely,\n' + 
+           'Sincerely,<br>' + 
            'Energy Hill Robot' +
            EMAIL_HTML_END).format(
                 name,
@@ -431,12 +430,13 @@ def send_approval_email(name, email, userid):
     admins = exec_query(get_admins_sql)
     admin_emails = [admin['email'] for admin in admins]
 
-    sendEmail('energyhill@bucknell.edu',
-              admin_emails,
-              'Energy Hill Dashboard Access Request',
-              body,
-              [],
-              True
+    sendEmail(
+        sender='energyhill@bucknell.edu',
+        receivers=admin_emails,
+        subject='Energy Hill Dashboard Access Request',
+        body=body,
+        attachments=[],
+        is_body_html=True
     )
 
 def send_approved_email(approved_user_email):
@@ -444,20 +444,21 @@ def send_approved_email(approved_user_email):
     link = ''
 
     body = (EMAIL_HTML_START +
-            'Hello,\n' +
+            'Hello,<br>' +
             'You have been granted access to the Energy Hill dashboard.  You can use this link to access the dashboard <a href="{0}">{0}</a>' +
-            'Thanks,\n' +
+            'Thanks,<br>' +
             'Energy Hill Robot' +
             EMAIL_HTML_END).format(
                   link 
             )
 
-    sendEmail('energyhill@bucknell.edu',
-              [approved_user_email],
-              'Energy Hill - You\'ve been approved',
-              body,
-              [],
-              True
+    sendEmail(
+        sender='energyhill@bucknell.edu',
+        receivers=[approved_user_email],
+        subject='Energy Hill - You\'ve been approved',
+        body=body,
+        attachments=[],
+        is_body_html=True
     )
 
 def jsonconverter(o):

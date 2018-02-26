@@ -11,12 +11,12 @@ Send Email with attachments and text
 
 attachments should be a list of objects that can be attached to a MIMEMultipart obj
 """
-def sendEmail(sender, receivers, subject, body, attachments, isBodyHtml=False):
+def sendEmail(sender, receivers, subject, body, attachments, is_body_html=False):
     assert type(attachments) is list
     assert type(receivers) is list
     
     msg = MIMEMultipart()
-    text = MIMEText(body, 'html') if isBodyHtml else MIMEText(body)
+    text = MIMEText(body, 'html') if is_body_html else MIMEText(body)
 
     # attach elements to email
     msg.attach(text)
