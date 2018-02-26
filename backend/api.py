@@ -16,7 +16,7 @@ from flask_cors import CORS
 from flaskext.mysql import MySQL
 
 # local files
-from emailer import sendEmail
+from emailer import *
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
@@ -149,8 +149,12 @@ def approve_user():
     approve_user_sql = 'UPDATE user SET approved = 1 WHERE userId = {}'.format(userid)
     exec_query(approve_user_sql)
 
-    # TODO: send email to student
-    send_approved_email()
+    # get approved user email
+    approved_user_email_sql = 'SELECT email FROM user WHERE userId = {}'.format(userid)
+    approved_user = exec_query(approved_user_email_sql)
+
+    # send email to student
+    send_approved_email(approved_user[0]['email'])
     
     return ''
 >>>>>>> Added a bunch of user login code and refactored lots of code
@@ -398,14 +402,16 @@ def validate_user(id_token):
 
 def send_approval_email(name, email, userid):
     # TODO: find a better way to do this
-    link = request.host_url + '/Flower/web/requests/approveUser.html?userid={}'.format(
+    link = 'http://eg.bucknell.edu/~bdm015/Flower/web/requests/approveUser.html?userid={}'.format(
         userid
     )
 
-    body = ('Hello,\n' +
+    body = (EMAIL_HTML_START +
+            'Hello,\n' +
            '{0} ({1}) wants access to the Energy Hill dashboard.  To approve this request, please click this link and sign in to your Google account: <a href="{2}">{2}</a>\n' +
            'Sincerely,\n' + 
-           'Energy Hill Robot').format(
+           'Energy Hill Robot' +
+           EMAIL_HTML_END).format(
                 name,
                 email,
                 link
@@ -418,15 +424,33 @@ def send_approval_email(name, email, userid):
     admins = ['bdm015@bucknell.edu']
 
     sendEmail('energyhill@bucknell.edu',
-                    admins,
-                    'Energy Hill Dashboard Access Request',
-                    body,
-                    []
+              admins,
+              'Energy Hill Dashboard Access Request',
+              body,
+              [],
+              True
     )
 
-def send_approved_email():
-    body = ('Hello,\n' +
-            'You have been granted access to the Energy Hill dashboard.  You can use this link to access the dashboard <a href=""></a>
+def send_approved_email(approved_user_email):
+    # TODO: add actual link to dashboard
+    link = ''
+
+    body = (EMAIL_HTML_START +
+            'Hello,\n' +
+            'You have been granted access to the Energy Hill dashboard.  You can use this link to access the dashboard <a href="{0}">{0}</a>' +
+            'Thanks,\n' +
+            'Energy Hill Robot' +
+            EMAIL_HTML_END).format(
+                  link 
+            )
+
+    sendEmail('energyhill@bucknell.edu',
+              [approved_user_email],
+              'Energy Hill - You\'ve been approved',
+              body,
+              [],
+              True
+    )
 
 def jsonconverter(o):
     if isinstance(o, datetime.datetime):

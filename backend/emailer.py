@@ -3,17 +3,20 @@ from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
 from email.mime.multipart import MIMEMultipart
 
+EMAIL_HTML_START = '<html><head></head><body><p>'
+EMAIL_HTML_END = '</p></body></html>'
+
 """
 Send Email with attachments and text
 
 attachments should be a list of objects that can be attached to a MIMEMultipart obj
 """
-def sendEmail(sender, receivers, subject, body, attachments):
+def sendEmail(sender, receivers, subject, body, attachments, isBodyHtml=False):
     assert type(attachments) is list
     assert type(receivers) is list
     
     msg = MIMEMultipart()
-    text = MIMEText(body)
+    text = MIMEText(body, 'html') if isBodyHtml else MIMEText(body)
 
     # attach elements to email
     msg.attach(text)

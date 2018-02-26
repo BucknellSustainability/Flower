@@ -16,18 +16,20 @@
   <body>
       <div class="g-signin2" data-onsuccess="onSignIn"></div>
       <script src="https://apis.google.com/js/platform.js" async defer></script>
+      <script type="text/javascript" src="../common/queryParams.js" ></script>
       <script>
       function onSignIn(googleUser) {
           var id_token = googleUser.getAuthResponse().id_token;
 
           var xhr = new XMLHttpRequest();
-          xhr.open('POST', 'http://linuxremote1.bucknell.edu:5001/request-access');
+          xhr.open('POST', 'http://linuxremote1.bucknell.edu:5001/approve-user');
           xhr.withCredentials = true;
-          //xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
           xhr.onload = function() {
               console.log('Signed in as: ' + xhr.responseText);
           };
-          xhr.send('idtoken=' + id_token);
+          xhr.send('userid=' + getParameterByName('userid') +
+                   '&idtoken=' + id_token);
 
         //   var profile = googleUser.getBasicProfile();
         //   console.log('ID: ' + profile.getId()); // Do not send to your backend! Use an ID token instead.
