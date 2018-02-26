@@ -138,7 +138,7 @@ def approve_user():
 
     # TODO: validate that admin and not just user
     try:
-        validate_user(request.values.get('idtoken'))
+        validate_admin(request.values.get('idtoken'))
     except UserDeniedException as e:
         # TODO: log failure to access
         print(e)
@@ -388,7 +388,7 @@ def validate_user(id_token):
     if result == []:
         # user doesn't exist in system yet, add to db and redirect
         insert_user_sql = 'INSERT INTO user (email, name, approved, googleId) VALUES (\'{}\', \'{}\', {}, \'{}\');'.format(
-            email, name, int(False), googleid 
+            email, name, googleid 
         )
         exec_query(insert_user_sql)
 
@@ -398,6 +398,15 @@ def validate_user(id_token):
         raise UserDeniedException('User was found in DB, but not approved')
 
     # if user is in system
+    return googleid
+
+def validate_admin(id_token):
+    googleid = validate_user(id_token)
+    is_admin_sql = 'SELECT isAdmin FROM user WHERE googleId = {}'.format(googleid)
+    is_admin = exec_query(is_admin_sql)
+    if ord(is_admin[0]['isAdmin']) == False:
+        raise UserDeniedException('Currently logged in user trying to approve user is not admin')
+
     return googleid
 
 def send_approval_email(name, email, userid):
@@ -417,14 +426,13 @@ def send_approval_email(name, email, userid):
                 link
             )
 
-    # TODO: actually get admins instead of hardcoding
-    #get_admins_sql = ''
-    #admins = exec_query(get_admins_sql)
-    #print(admins)
-    admins = ['bdm015@bucknell.edu']
+    # get list of admin emails
+    get_admins_sql = 'SELECT email FROM user WHERE isAdmin = 1'
+    admins = exec_query(get_admins_sql)
+    admin_emails = [admin['email'] for admin in admins]
 
     sendEmail('energyhill@bucknell.edu',
-              admins,
+              admin_emails,
               'Energy Hill Dashboard Access Request',
               body,
               [],
