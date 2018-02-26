@@ -40,7 +40,7 @@ export class ProjectNav extends Component{
                         </div>
                       </Col>
                       <Col md="4">
-                        <Button> MyBtn </Button>
+                        <Button> Remove </Button>
                       </Col>
                     </Row>
                   </div>

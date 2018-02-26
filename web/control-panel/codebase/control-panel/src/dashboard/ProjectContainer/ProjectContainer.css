@@ -12,13 +12,40 @@
   background: linear-gradient(to left, #237a57, #287241); 
 }
 
-
 .project-info-title{
     margin-top: 5px;
     margin-bottom: 0px;
     color: white;
 }
 
+.rowC{
+  display:flex; 
+  flex-direction:row;
+  margin-right: 5px;
+}
+
+.unclaimed-device{
+  background-color: #333; 
+  border-color: #333;
+  padding: 15px;
+  margin: 10px;
+}
+
+#contained-modal-title{
+  color: black;
+}
+
+.cardTitle{
+  margin-top: 0px;
+}
+
+.cardSubtitle{
+  margin-bottom: 15px;
+}
+
+#claim-modal-title{
+  margin: 0px;
+}
 
 .project-info-panel{
     border: thick double silver;

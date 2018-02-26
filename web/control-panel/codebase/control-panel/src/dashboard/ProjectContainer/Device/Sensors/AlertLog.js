@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import './AlertLog.css'
+import '../../../../fonts.css';
 import {ButtonGroup, Button, Modal} from 'react-bootstrap'
 
 export class AlertLog extends React.Component {
@@ -19,16 +20,25 @@ export class AlertLog extends React.Component {
     this.setState({ show: false });
   }
 
+  getHandledText(handled) {
+    if(handled == 1){
+      return <td className="text-center false-handled bold"> False </td>;
+    }
+    else{
+      return <td className="text-center true-handled"> True </td>;
+    }
+  }
+
   addHandledBtn(handled) {
     if (handled == 1){
-      return <td><Button>Mark Handled</Button></td>
+      return <td className="text-center"><Button>Mark Handled</Button></td>
     }
-    return <td></td>
+    return <td className="text-center"></td>
   }
 
   getAlerts(){
     var xhr = new XMLHttpRequest();
-    var url = 'http://127.0.0.1:5000/read?table=alerts&fields=alertId,handled&condition=sensorId=' + this.props.sensor.id;
+    var url = 'http://127.0.0.1:5000/read?table=alerts&fields=alertId,handled,alertTime&condition=sensorId=' + this.props.sensor.id;
     xhr.open('GET', url);
     xhr.withCredentials = true;
     xhr.responseType = 'json';
@@ -39,13 +49,12 @@ export class AlertLog extends React.Component {
         scope.setState({alertData: xhr.response, show: true});
     };
     xhr.send();
-    this.setState({show: true})
   }
 
   render() {
     return (
       <div className="modal-container">
-        <Button bsSize="small" className="alert-log-btn" onClick={() => {this.getAlerts()}}>Alert Log</Button>
+        <Button bsSize="small" className="alert-log-btn concert" onClick={() => {this.getAlerts()}}>Alert Log</Button>
 
         <Modal
           bsSize="large"
@@ -64,18 +73,20 @@ export class AlertLog extends React.Component {
             <table class="table table-striped">
               <thead>
                 <tr>
-                  <th scope="col">Alert #</th>
-                  <th scope="col">AlertId</th>
-                  <th scope="col">Handled</th>
+                  <th className="text-center">Alert #</th>
+                  <th className="text-center">Alert Id</th>
+                  <th className="text-center">Alert Time</th>
+                  <th className="text-center">Handled?</th>
                 </tr>
               </thead>
               <tbody>
 
               {this.state.alertData.map((alert, i) =>
-                <tr>
-                    <th scope="row">{i}</th>
-                    <td>{alert.alertId}</td>
-                    <td>{alert.handled}</td>
+                <tr> 
+                    <td className="text-center">{i}</td>
+                    <td className="text-center">{alert.alertId}</td>
+                    <td className="text-center">{alert.alertTime}</td>
+                    {this.getHandledText(alert.handled)}
                     {this.addHandledBtn(alert.handled)}
                 </tr>
               )}

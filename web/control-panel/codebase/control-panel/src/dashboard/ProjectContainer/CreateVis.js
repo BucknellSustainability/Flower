@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
-import {Button, ButtonGroup, Modal} from 'react-bootstrap'
+import '../../fonts.css'
+import './CreateVis.css'
+import {Button, ButtonGroup, Modal, Row, Col, SplitButton, MenuItem, Badge, Well, ButtonToolbar, ToggleButton, ToggleButtonGroup} from 'react-bootstrap'
 
 export class CreateVis extends React.Component {
 
@@ -7,8 +9,15 @@ export class CreateVis extends React.Component {
     super(props, context);
 
     this.handleHide = this.handleHide.bind(this);
+    this.sensorToggleClick = this.sensorToggleClick.bind(this);
+    this.handleChartTypeChange = this.handleChartTypeChange.bind(this);
+
     this.state = {
-      show: false
+      show: false,
+      allProjects: [],
+      activeProject: {sensors:[]},
+      selectedSensors: [],
+      chartType: 0
     };
   }
 
@@ -16,12 +25,67 @@ export class CreateVis extends React.Component {
     this.setState({ show: false });
   }
 
+  getIframeURL(){
+    let len = this.state.selectedSensors.length
+    let out = "https://eg.bucknell.edu/~jav017/Flower/WebServer/visualize.html?id=" + JSON.stringify(this.state.selectedSensors).slice(1,-1)
+    console.log(out)
+    return out;
+  }
+
+  findElement(selectedId){
+    let i;
+      for (i in this.state.selectedSensors){
+        if(selectedId === this.state.selectedSensors[i]){
+          return i;
+        }
+      }
+      return -1;
+  }
+
+  sensorToggleClick(selectedId){
+    let sensors = this.state.selectedSensors;
+    let found = this.findElement(selectedId)
+    console.log(found)
+    if(found !== -1){
+      sensors.splice(found, 1)
+      this.setState({selectedSensors: sensors});
+    }
+    else{
+      sensors.push(selectedId);
+      this.setState({selectedSensors: sensors});
+    }
+    console.log(sensors)
+  }
+
+  handleChartTypeChange(e) {
+    this.setState({ chartType: e });
+  }
+
+  getAllProjects(){
+      var xhr = new XMLHttpRequest();
+      var url = 'http://127.0.0.1:5000/get-all-sensors';
+      xhr.open('GET', url);
+      xhr.withCredentials = true;
+      xhr.responseType = 'json';
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+      
+      const scope = this;
+      xhr.onload = function() {
+        scope.setState({allProjects: xhr.response.projects, activeProject: xhr.response.projects[0] ,show: true});
+        console.log(xhr.response.projects);
+      };
+      xhr.send();
+      //this.setState({show: true})
+  }
+
+
   render() {
+    console.log(this.state.selectedSensors)
     return (
       <div className="modal-container">
-        <Button className="code-btn center-text"
+        <Button className="code-btn center-text concert"
           bsStyle="info"
-          onClick={() => this.setState({ show: true })}
+          onClick={() => {this.getAllProjects()}}
         >
           Generate Graph
         </Button>
@@ -40,11 +104,62 @@ export class CreateVis extends React.Component {
           </Modal.Header>
           <Modal.Body>
 
+            <Row>
+              <Col lg={5} md={5} sm={5}>
+
+                <Well>
+                  <p className="concert bold black text-left"> 1) Select Chart Type </p>
+                  <ToggleButtonGroup 
+                    name="chartRadio"
+                    type="radio" 
+                    value={this.state.chartType} 
+                    onChange={() => {this.handleChartTypeChange()}}
+                    style={{marginBottom: "20px"}}>
+                    <ToggleButton name="line" bsStyle="info" value={0}>Line Graph</ToggleButton>
+                    <ToggleButton name="gauge" bsStyle="info" value={1}>Gauge Chart</ToggleButton>
+                    <ToggleButton name="pie" bsStyle="info" value={2}>Pie Chart</ToggleButton>
+                  </ToggleButtonGroup>
+
+                  <p className="concert bold black text-left"> 2) Select Project(s) </p>
+                  <SplitButton title={this.state.activeProject.name} pullRight id="split-button-pull-right" style={{marginBottom: "20px"}}>
+                    {this.state.allProjects.map((project, i) =>
+                        <MenuItem 
+                          id={project.id} 
+                          eventKey={i} 
+                          onClick={() => {this.setState({activeProject: project})}}> {project.name} <Badge>{project.id}</Badge>
+                        </MenuItem>
+                    )}
+                  </SplitButton>;
+
+
+                  <p className="concert bold black text-left"> 3) Select Sensors </p>
+                  <ButtonToolbar>
+                    <ToggleButtonGroup type="checkbox" value={this.state.selectedSensors} vertical block>
+                       {this.state.activeProject.sensors.map((sensor, i) =>
+                              <ToggleButton 
+                                className="sensor-check"
+                                value={sensor.id} 
+                                onChange={() => {this.sensorToggleClick(sensor.id)}}
+                                style={{marginBottom: "5px", padding: "10px"}}> 
+                                    <p className="concert bold"><Badge>{sensor.id}</Badge> {sensor.name}</p> 
+                                    <p className="concert"> {sensor.description} </p>
+                              </ToggleButton>
+                        )}
+                      </ToggleButtonGroup>
+                    </ButtonToolbar>
+                </Well>
+
+              </Col>
+              <Col lg={7} md={7} sm={7}>
+                <iframe width="500" height="420" src={this.getIframeURL()}></iframe>
+                <h6 className="black"> iframe link: [ iframe width="800" height="450" src={this.getIframeURL()} ] </h6>
+              </Col>
+            </Row>
           </Modal.Body>
           <Modal.Footer>
             <ButtonGroup>
               <Button bsStyle="danger" onClick={this.handleHide}>Cancel</Button>
-              <Button bsStyle="success" onClick={this.handleHide}>Create</Button>
+              <Button bsStyle="success" onClick={this.handleHide}>Copy Link</Button>
             </ButtonGroup>
           </Modal.Footer>
         </Modal>
