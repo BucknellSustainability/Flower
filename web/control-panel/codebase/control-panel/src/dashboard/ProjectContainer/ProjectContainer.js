@@ -3,7 +3,8 @@ import './ProjectContainer.css';
 import {DeviceNav} from './Device/DeviceNav.js'
 import {DeviceContainer} from './Device/DeviceContainer.js'
 import {CreateVis} from './CreateVis.js';
-import {Button, Panel, Form, FormGroup, FormControl, ControlLabel, Col, Row} from 'react-bootstrap/lib/';
+import {ClaimDevice} from './ClaimDevice.js';
+import {Button, ButtonGroup, Panel, Form, FormGroup, FormControl, ControlLabel, Col, Row} from 'react-bootstrap/lib/';
 
 export class ProjectContainer extends React.Component {
   constructor(props, context) {
@@ -11,21 +12,25 @@ export class ProjectContainer extends React.Component {
     this.deviceNavHandler = this.deviceNavHandler.bind(this);
 
     this.state = {
-      activeDevice: 0
+      activeDevice: 0,
+      showVis: false,
+      showClaimDevice: false
     };
 
   }
 
-    deviceNavHandler(active){
+  deviceNavHandler(active){
     this.setState({
       activeDevice: active
     })
   }
 
+
   render() {
     const currProject = this.props.user.projects[this.props.activeProject];
     return (
           <div>
+
                 <Panel className="project-info-panel" bsStyle="primary">
                   <Panel.Heading className="project-info-panel-header">
                     <Panel.Title >
@@ -34,7 +39,10 @@ export class ProjectContainer extends React.Component {
                               <h3 className="project-info-title concert bold"> Project Information: {currProject.name} </h3>
                           </Col>
                           <Col lg={3} md={3} sm={3}>
-                              <CreateVis />
+                            <div className="rowC">
+                              <ClaimDevice style={{marginRight:"15px"}}/>
+                              <CreateVis/>
+                            </div>
                           </Col>
                         </Row>
                     </Panel.Title>

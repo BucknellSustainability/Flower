@@ -5,3 +5,11 @@
     border: thin solid white;
     color: white;
 }
+
+.false-handled{
+	color: red;
+}
+
+.true-handled{
+	color: green;
+}

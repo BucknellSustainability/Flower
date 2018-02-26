@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import './UploadCode.css';
+import '../../../fonts.css';
 import {Button, ButtonGroup, Modal, FormGroup, FormControl, ControlLabel} from 'react-bootstrap'
 
 export class UploadCode extends React.Component {
@@ -20,7 +21,7 @@ export class UploadCode extends React.Component {
   render() {
     return (
       <div className="modal-container">
-        <Button className="code-btn center-text"
+        <Button className="code-btn center-text concert"
           bsStyle="info"
           onClick={() => this.setState({ show: true })}
         >

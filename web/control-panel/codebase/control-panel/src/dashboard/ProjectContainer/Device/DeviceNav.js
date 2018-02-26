@@ -17,10 +17,13 @@ export class DeviceNav extends Component{
 
   handleSelect(selectedKey) {
     this.setState({activeKey: selectedKey});
-    this.props.handler(selectedKey);
+    if(selectedKey != 10000){
+      this.props.handler(selectedKey);
+    }
   }
 
   render() {
+    let index=0;
     return (
           <div id="deviceNav">
                 <Panel className="device-nav-panel">
