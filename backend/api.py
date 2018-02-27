@@ -21,11 +21,13 @@ from emailer import *
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
 
-CLIENT_ID = '438120227370-65o4j0kmk9mbij1bp3dqvnts9dh4kfrf.apps.googleusercontent.com'
-
 # load config (db info)
 with open("../config.json", 'r') as f:
     config = json.load(f)
+with open("../deployment.json", 'r') as f:
+    deploy_config = json.load(f)
+
+CLIENT_ID = deploy_config['GOOGLE_CLIENT_ID'] 
 
 # give mysql plug the db info
 app.config.update(
@@ -49,17 +51,15 @@ def get():
           request.values.get('table'),
           request.values.get('condition')
     )
-    print(sql_string)
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
-# TODO: need to commit after executing insert
 @app.route('/insert')
 def insert():
     try:
         validate_user(request.values.get('id_token'))
     except UserDeniedException as e:
-        # TODO: log failure to access
+        print(e)
         # return empty response to signify user not given permission
         return ''
 
@@ -73,13 +73,12 @@ def insert():
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
-# TODO: need to commit after executing update
 @app.route('/update')
 def modify():
     try:
         validate_user(request.values.get('id_token'))
     except UserDeniedException as e:
-        # TODO: log failure to access
+        print(e)
         # return empty response to signify user not given permission
         return ''
 
@@ -94,14 +93,13 @@ def modify():
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
-@app.route('/get-profile', methods = ['GET', 'POST'])
+@app.route('/get-profile', methods = ['GET'])
 def get_profile():
     # TODO: validate that params are correct and sanitize idtoken
-    # validate userid
+    # validate useridi
     try:
         google_id = validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
-        # TODO: log failure to access
         print(e)
         # return empty response to signify user not given permission
         return ''
@@ -109,12 +107,12 @@ def get_profile():
     return construct_profile_json(google_id)
 
 
-@app.route('/get-all-sensors', methods = ['GET', 'POST'])
+@app.route('/get-all-sensors', methods = ['GET'])
 def get_all_sensors():
     return build_all_sensors_dict()
 
 
-@app.route('/request-access', methods = ['POST'])
+@app.route('/request-access', methods = ['GET'])
 def request_access():
     idinfo = get_idinfo(request.values.get('idtoken'))
     
@@ -133,14 +131,13 @@ def request_access():
 
     return ''
 
-@app.route('/approve-user', methods = ['POST'])
+@app.route('/approve-user', methods = ['GET'])
 def approve_user():
     userid = request.values.get('userid')
 
     try:
         validate_admin(request.values.get('idtoken'))
     except UserDeniedException as e:
-        # TODO: log failure to access
         print(e)
         # return empty response to signify user not given permission
         return ''
@@ -349,8 +346,8 @@ def exec_query(sql_string):
 
     # handle query not returning anything - this could mean error or insert/update
     if data is None or descriptions is None:
-        # TODO: log that 
         print("Query ({}) didn't return anything".format(sql_string))
+
         # in case it is an insert/update, need to commit
         conn.commit()
         return []
@@ -386,7 +383,7 @@ def validate_user(id_token):
 
     if result == []:
         # user doesn't exist in system yet, add to db and redirect
-        insert_user_sql = 'INSERT INTO user (email, name, approved, googleId) VALUES (\'{}\', \'{}\', {}, \'{}\');'.format(
+        insert_user_sql = 'INSERT INTO user (email, name, googleId) VALUES (\'{}\', \'{}\', \'{}\');'.format(
             email, name, googleid 
         )
         exec_query(insert_user_sql)
@@ -401,6 +398,7 @@ def validate_user(id_token):
 
 def validate_admin(id_token):
     googleid = validate_user(id_token)
+    print('admin is good to go')
     is_admin_sql = 'SELECT isAdmin FROM user WHERE googleId = {}'.format(googleid)
     is_admin = exec_query(is_admin_sql)
     if ord(is_admin[0]['isAdmin']) == False:
@@ -409,8 +407,7 @@ def validate_admin(id_token):
     return googleid
 
 def send_approval_email(name, email, userid):
-    # TODO: find a better way to do this
-    link = 'http://eg.bucknell.edu/~bdm015/Flower/web/requests/approveUser.html?userid={}'.format(
+    link = deploy_config['APPROVAL_LINK'].format(
         userid
     )
 
@@ -440,17 +437,12 @@ def send_approval_email(name, email, userid):
     )
 
 def send_approved_email(approved_user_email):
-    # TODO: add actual link to dashboard
-    link = ''
-
     body = (EMAIL_HTML_START +
-            'Hello,<br>' +
-            'You have been granted access to the Energy Hill dashboard.  You can use this link to access the dashboard <a href="{0}">{0}</a>' +
-            'Thanks,<br>' +
-            'Energy Hill Robot' +
-            EMAIL_HTML_END).format(
-                  link 
-            )
+        'Hello,<br>' +
+        'You have been granted access to the Energy Hill dashboard.  You can now access the dashboard.<br>' +
+        'Thanks,<br>' +
+        'Energy Hill Robot' +
+        EMAIL_HTML_END)
 
     sendEmail(
         sender='energyhill@bucknell.edu',

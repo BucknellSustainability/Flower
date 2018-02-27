@@ -1,12 +1,7 @@
 # Dependencies
 In order to use some of the scripts in this project, dependencies must be satisfied.
 
-| Script     | Dependencies | Installation          |
-|------------|--------------|-----------------------|
-| emailer.py | Python3.6 MySQLdb      | `pip install mysqldb` |
-
-On the Bucknell linux systems, `module load python/3.6` satisfies the python3.6
-dependency.
+Dependencies for the backend scripts can be found in the backend directory's README
 
 # Getting Started (Local Development)
 Navigate to the WebServer directory with your terminal. Both of these options
@@ -27,9 +22,9 @@ start the server on port __8000__. Your browser will automatically open the root
 of the live server, defaulting to `index.html` if present.
 
 
-## API Keys
+## API Keys and Deployment Specific Values
 API Keys should not be committed to the repo so  we've made a way for each developer to use their own.
-1. Create a file called `config.json` in the `Webserver` directory.
+1. Create a file called `config.json` in the repo's root directory.
 2. Add this code:
 ```
 {
@@ -40,19 +35,40 @@ API Keys should not be committed to the repo so  we've made a way for each devel
 }
 ```
 3. Fill out all values of the empty strings with information for your DB/API key info
-4. Access the values where needed:
+4. Create a file called `deployment.json` in the repo's root directory.  There are all things unique to your deployment.
+5. Add this code:
+```
+{
+  "": "",
+
+}
+```
+6. Fill out all values of the empty string with the information for your deployment
+7. Access the values where needed:
     * Python:
        ```
        import json
        with open('path/to/config.json', 'r') as f:
-           datastore = json.load(f)
+           config = json.load(f)
+
+       config['KEY_NAME']
        ```
     * PHP:
       ```
       $config = json_decode(file_get_contents("path/to/config.json"));
-      printf("%s", $config->DB_USERNAME);
+      printf("%s", $config->KEY_NAME);
       ```
-This config.json won't get committed because it is in the `.gitignore` so you will need to do this for each clone of the repo, but it should persist unless you delete the file.
+    * JS:
+      !!!This should only be used with the deployment.json so that DB credentials or other important information isn't leaked on the client side with `config.json`
+      ```
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script> 
+      <script type="text/javascript" src="../common/load-deployment.js" ></script>
+      ...
+      deploy_config["KEY_NAME"]
+      ```
+`KEY_NAME` is the key string in your config file such as `DB_NAME` or `FLASK_SERVER`.
+
+This `config.json` and `deployment.json` won't get committed because it is in the `.gitignore` so you will need to do this for each clone of the repo, but it should persist unless you delete the file.
 
 ## PHP with Bucknell Apache Hosting
 ### Introduction

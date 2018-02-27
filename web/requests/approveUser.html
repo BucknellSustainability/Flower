@@ -17,19 +17,20 @@
       <div class="g-signin2" data-onsuccess="onSignIn"></div>
       <script src="https://apis.google.com/js/platform.js" async defer></script>
       <script type="text/javascript" src="../common/queryParams.js" ></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script> 
+      <script type="text/javascript" src="../common/load-deployment.js" ></script>
       <script>
       function onSignIn(googleUser) {
           var id_token = googleUser.getAuthResponse().id_token;
 
           var xhr = new XMLHttpRequest();
-          xhr.open('POST', 'http://linuxremote1.bucknell.edu:5001/approve-user');
+          xhr.open('GET', deploy_config["FLASK_SERVER"] + '/approve-user?userid=' + getParameterByName('userid') +
+                   '&idtoken=' + id_token);
           xhr.withCredentials = true;
-          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
           xhr.onload = function() {
               console.log('Signed in as: ' + xhr.responseText);
           };
-          xhr.send('userid=' + getParameterByName('userid') +
-                   '&idtoken=' + id_token);
+          xhr.send();
         }
       </script>
   </body>
