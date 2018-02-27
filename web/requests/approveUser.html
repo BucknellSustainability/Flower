@@ -16,23 +16,19 @@
   <body>
       <div class="g-signin2" data-onsuccess="onSignIn"></div>
       <script src="https://apis.google.com/js/platform.js" async defer></script>
+      <script type="text/javascript" src="../common/queryParams.js" ></script>
       <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script> 
       <script type="text/javascript" src="../common/load-deployment.js" ></script>
       <script>
       function onSignIn(googleUser) {
           var id_token = googleUser.getAuthResponse().id_token;
-         
+
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', deploy_config['FLASK_SERVER'] + '/get-profile?idtoken=' + id_token);
+          xhr.open('GET', deploy_config["FLASK_SERVER"] + '/approve-user?userid=' + getParameterByName('userid') +
+                   '&idtoken=' + id_token);
           xhr.withCredentials = true;
           xhr.onload = function() {
               console.log('Signed in as: ' + xhr.responseText);
-              
-              // redirect if user is not allowed
-              if (xhr.responseText === '') {
-                // TODO: figure out how to handle https connection is not private issue
-                window.location.replace(deploy_config["REDIRECT_URL"]);
-              }
           };
           xhr.send();
         }

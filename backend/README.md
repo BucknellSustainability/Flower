@@ -55,3 +55,16 @@ Each of these end points need to be accessed by an http request to `http://linux
 ## Get all of the sensors with project information
 - `{endpoint}`: `get-all-sensors`
 - parameters: None
+
+
+## Ask admins for approval for user
+- `{endpoint}`: `request-access`
+- parameters:
+    - `idtoken`: the token that Google Auth gives to the client, needs to be for the user that wants aaccess
+
+
+## Approve user for dashboard access
+- `{endpoint}`: `approve-user`
+- parameters:
+    - `idtoken`: the token that Google Auth gives to the client, needs to be admin user
+    - `userid`: the userid from the DB that is to be approved access

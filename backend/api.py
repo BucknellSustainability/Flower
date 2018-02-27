@@ -10,19 +10,24 @@ import pprint
 from google.oauth2 import id_token as id_token_lib
 from google.auth.transport import requests
 
-# pip install --user --upgrade flask-mysql
+# pip install --user --upgrade flask-mysql flask-cors
 from flask import Flask, request
 from flask_cors import CORS
 from flaskext.mysql import MySQL
 
+# local files
+from emailer import *
+
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-
-CLIENT_ID = '438120227370-65o4j0kmk9mbij1bp3dqvnts9dh4kfrf.apps.googleusercontent.com'
 
 # load config (db info)
 with open("../config.json", 'r') as f:
     config = json.load(f)
+with open("../deployment.json", 'r') as f:
+    deploy_config = json.load(f)
+
+CLIENT_ID = deploy_config['GOOGLE_CLIENT_ID'] 
 
 # give mysql plug the db info
 app.config.update(
@@ -35,6 +40,7 @@ app.config.update(
 # Intialize mysql flask plugin
 mysql = MySQL()
 mysql.init_app(app)
+conn = mysql.connect()
 
 @app.route('/read')
 def get():
@@ -45,14 +51,18 @@ def get():
           request.values.get('table'),
           request.values.get('condition')
     )
-    print(sql_string)
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
-# TODO: need to commit after executing insert
 @app.route('/insert')
 def insert():
-    validate_user(request.values.get('id_token'))
+    try:
+        validate_user(request.values.get('id_token'))
+    except UserDeniedException as e:
+        print(e)
+        # return empty response to signify user not given permission
+        return ''
+
     # TODO: assert that there are those parameters in dict and nothing else
     # TODO: sanitize all parts
     sql_string = 'INSERT INTO {} {} VALUES {};'.format(
@@ -63,10 +73,14 @@ def insert():
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
-# TODO: need to commit after executing update
 @app.route('/update')
 def modify():
-    validate_user(request.values.get('id_token'))
+    try:
+        validate_user(request.values.get('id_token'))
+    except UserDeniedException as e:
+        print(e)
+        # return empty response to signify user not given permission
+        return ''
 
     # TODO: assert that there are those parameters in dict and nothing else
     # TODO: sanitize all parts
@@ -79,19 +93,69 @@ def modify():
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
-@app.route('/get-profile', methods = ['GET', 'POST'])
+@app.route('/get-profile', methods = ['GET'])
 def get_profile():
     # TODO: validate that params are correct and sanitize idtoken
-    # validate userid
-    google_id = validate_user(request.values.get('idtoken'))
-    
+    # validate useridi
+    try:
+        google_id = validate_user(request.values.get('idtoken'))
+    except UserDeniedException as e:
+        print(e)
+        # return empty response to signify user not given permission
+        return ''
+
     return construct_profile_json(google_id)
 
-@app.route('/get-all-sensors', methods = ['GET', 'POST'])
+
+@app.route('/get-all-sensors', methods = ['GET'])
 def get_all_sensors():
     return build_all_sensors_dict()
 
-# TODO: handle empty results of queries
+
+@app.route('/request-access', methods = ['GET'])
+def request_access():
+    idinfo = get_idinfo(request.values.get('idtoken'))
+    
+    googleid = idinfo['sub']
+    email = idinfo['email']
+    name = idinfo['name']
+    
+    # get user id (maybe use the google id)
+    userid_from_googleid_sql = 'SELECT userId FROM user WHERE googleId = {}'.format(
+        googleid
+    )
+    userid = exec_query(userid_from_googleid_sql)[0]['userId']
+
+    # pass id into emailer function to send to admins
+    send_approval_email(name, email, userid)
+
+    return ''
+
+@app.route('/approve-user', methods = ['GET'])
+def approve_user():
+    userid = request.values.get('userid')
+
+    try:
+        validate_admin(request.values.get('idtoken'))
+    except UserDeniedException as e:
+        print(e)
+        # return empty response to signify user not given permission
+        return ''
+    
+    # change approved status of `userid` to approved/1
+    approve_user_sql = 'UPDATE user SET approved = 1 WHERE userId = {}'.format(userid)
+    exec_query(approve_user_sql)
+
+    # get approved user email
+    approved_user_email_sql = 'SELECT email FROM user WHERE userId = {}'.format(userid)
+    approved_user = exec_query(approved_user_email_sql)
+
+    # send email to student
+    send_approved_email(approved_user[0]['email'])
+    
+    return ''
+
+
 def construct_profile_json(google_id):
     # fetch user info
     fetch_user_sql = 'SELECT * FROM user WHERE googleId = {};'.format(
@@ -264,32 +328,31 @@ def build_condition(column_name, list_of_vals):
 
 
 def exec_query(sql_string):
-    cursor = mysql.get_db().cursor()
-    try:
-        # Execute the SQL command, by calling execute like this, it handles sql injection
-        cursor.execute(sql_string)
-    except Exception as e:
-        print(e)
-
+    cursor = conn.cursor()
     descriptions = None
+    data = None
+    
     try:
+        # Execute the SQL command
+        cursor.execute(sql_string)
+        
         # Fetch all the rows in a list of lists.
         descriptions = cursor.description
-        print(data)
-    except:
-        print("Error: Couldn't fetch description")
-
-    data = None
-    try:
+        
         # Fetch all of the data
         data = cursor.fetchall()
-    except:
-        print("Error: Couldn't fetch data")
+    except Exception as e:
+        print("Error: Couldn't fetch data: {}".format(str(e)))
 
+    # handle query not returning anything - this could mean error or insert/update
+    if data is None or descriptions is None:
+        print("Query ({}) didn't return anything".format(sql_string))
 
-    # Get column names
-    # TODO: check to make sure descriptions and data gets populated
-    # should exit program gracefully instead of None type error
+        # in case it is an insert/update, need to commit
+        conn.commit()
+        return []
+
+    # Get column names and data into list of dicts
     column_names = [column_info[0] for column_info in descriptions]
     formatted_data = []
     for row in data:
@@ -297,40 +360,103 @@ def exec_query(sql_string):
 
     return formatted_data
 
-
-def validate_user(id_token):
+def get_idinfo(id_token):
     idinfo = id_token_lib.verify_oauth2_token(id_token, requests.Request(), CLIENT_ID)
 
     if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
         raise ValueError('Invalid token')
 
+    return idinfo
 
-    userid = idinfo['sub']
+def validate_user(id_token):
+    idinfo = get_idinfo(id_token)
+
+    googleid = idinfo['sub']
     email = idinfo['email']
     name = idinfo['name']
 
-    return userid
+    # TODO: protect against SQL injection
+    user_exists_sql = 'SELECT * FROM user WHERE googleId = {}'.format(
+        googleid
+    )
+    result = exec_query(user_exists_sql)
+
+    if result == []:
+        # user doesn't exist in system yet, add to db and redirect
+        insert_user_sql = 'INSERT INTO user (email, name, googleId) VALUES (\'{}\', \'{}\', \'{}\');'.format(
+            email, name, googleid 
+        )
+        exec_query(insert_user_sql)
+
+        raise UserDeniedException('User was not found in DB')
+    elif ord(result[0]['approved']) == False:
+        # user is not approved but in system, just redirect
+        raise UserDeniedException('User was found in DB, but not approved')
+
+    # if user is in system
+    return googleid
+
+def validate_admin(id_token):
+    googleid = validate_user(id_token)
+    print('admin is good to go')
+    is_admin_sql = 'SELECT isAdmin FROM user WHERE googleId = {}'.format(googleid)
+    is_admin = exec_query(is_admin_sql)
+    if ord(is_admin[0]['isAdmin']) == False:
+        raise UserDeniedException('Currently logged in user trying to approve user is not admin')
+
+    return googleid
+
+def send_approval_email(name, email, userid):
+    link = deploy_config['APPROVAL_LINK'].format(
+        userid
+    )
+
+    body = (EMAIL_HTML_START +
+            'Hello, <br>' +
+           '{0} ({1}) wants access to the Energy Hill dashboard.  To approve this request, please click this link and sign in to your Google account: <a href="{2}">{2}</a>\n' +
+           'Sincerely,<br>' + 
+           'Energy Hill Robot' +
+           EMAIL_HTML_END).format(
+                name,
+                email,
+                link
+            )
+
+    # get list of admin emails
+    get_admins_sql = 'SELECT email FROM user WHERE isAdmin = 1'
+    admins = exec_query(get_admins_sql)
+    admin_emails = [admin['email'] for admin in admins]
+
+    sendEmail(
+        sender='energyhill@bucknell.edu',
+        receivers=admin_emails,
+        subject='Energy Hill Dashboard Access Request',
+        body=body,
+        attachments=[],
+        is_body_html=True
+    )
+
+def send_approved_email(approved_user_email):
+    body = (EMAIL_HTML_START +
+        'Hello,<br>' +
+        'You have been granted access to the Energy Hill dashboard.  You can now access the dashboard.<br>' +
+        'Thanks,<br>' +
+        'Energy Hill Robot' +
+        EMAIL_HTML_END)
+
+    sendEmail(
+        sender='energyhill@bucknell.edu',
+        receivers=[approved_user_email],
+        subject='Energy Hill - You\'ve been approved',
+        body=body,
+        attachments=[],
+        is_body_html=True
+    )
 
 def jsonconverter(o):
     if isinstance(o, datetime.datetime):
         return o.__str__()
 
-    # TODO: create process to add user to db and start approval process
-''' General logic of approval process
-    user_exists_sql = 'SELECT * FROM user WHERE userId = {}'.format(
-        userid
-    )
-    result = exec_query(user_exists_sql)
-    print(result)
-    # TODO: fix this to reflect failed query
-    if result == []:
-        pass
-    else:
-        pass
-'''
-''' Query object to be used later
-class SqlQuery:
-    def __init__(self, format_string, arg_tuple):
-        self.format_string = format_string
-        self.arg_tuple = arg_tuple
-'''
+
+class UserDeniedException(Exception):
+    pass
