@@ -39,8 +39,10 @@ API Keys should not be committed to the repo so  we've made a way for each devel
 5. Add this code:
 ```
 {
-  "": "",
-
+ "APPROVAL_LINK": "",
+  "FLASK_SERVER": "",
+  "GOOGLE_CLIENT_ID": "",
+  "REDIRECT_URL": "" 
 }
 ```
 6. Fill out all values of the empty string with the information for your deployment
