@@ -9,6 +9,15 @@ import subprocess
 # local python file
 import email 
 
+AGGREGATION_SQL = 'INSERT INTO datahourly(sensorId, averageValue, sampleRate, dateTime)
+			(select 
+					sensorId, 
+					AVG(value) as value,  
+					COUNT(VALUE) as samplePerHour, 
+					DATE_FORMAT(SEC_TO_TIME(FLOOR((TIME_TO_SEC(CURTIME())+300)/600)*600), "%Y-%m-%d %H:%i:00")  from data
+			WHERE data.dateTime > CURRENT_TIMESTAMP - INTERVAL 10 MINUTE
+			GROUP BY sensorId)'
+
 def main():
     with open("../../config.json", 'r') as f:
         config = json.load(f)
@@ -21,11 +30,11 @@ def main():
 
     # prepare a cursor object using cursor() method
     cursor = db.cursor()
-    sql = "SELECT * FROM alerts WHERE handled != 1;"
+    sql = "SELECT * FROM alerts WHERE handled != 1; {}".format(AGGREGATION_SQL)
 
     try:
         # Execute the SQL command
-        cursor.execute(sql)
+        cursor.execute(sql, multi=True)
         # Fetch all the rows in a list of lists.
         unhandled = cursor.fetchall()
     except:
