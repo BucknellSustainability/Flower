@@ -188,7 +188,7 @@ def store_code():
         # two users to be uploading file for one device at same time...
         exec_query(insert_codeupload_alert_sql)
         
-        get_uploadid_sql = 'SELECT uploadId FROM codeupload WHERE uploadId = (SELECT MAX(uploadId) FROM codeupload) AND deviceId = {}'.format(
+        get_uploadid_sql = 'SELECT uploadId FROM codeupload WHERE uploadId = (SELECT MAX(uploadId) FROM codeupload WHERE deviceId = {})'.format(
             deviceid
         )
         uploadid = exec_query(get_uploadid_sql)[0]['uploadId']
