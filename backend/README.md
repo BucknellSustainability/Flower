@@ -68,3 +68,22 @@ Each of these end points need to be accessed by an http request to `http://linux
 - parameters:
     - `idtoken`: the token that Google Auth gives to the client, needs to be admin user
     - `userid`: the userid from the DB that is to be approved access
+
+## Log error message after attempt at code upload
+- `{endpoint}`: `log-error`
+- allowed http requests: `POST`
+- parameters:
+    - `deviceid`: the deviceid from the DB that the code upload was attempted on
+    - `error_msg`: the full error message to be saved and relayed
+
+## Log success message after attempt at code upload
+- `{endpoint}`: `log-success`
+- allowed http requests: `POST`
+- parameters:
+    - `deviceid`: the deviceid from the DB that the code upload was attempted on
+
+## Check for status of code upload
+- `{endpoint}`: `check-error`
+- allowed http requests: `GET`
+- parameters:
+    - `deviceid`: the deviceid from the DB that is waiting to be attempted at code upload

@@ -156,7 +156,7 @@ def approve_user():
     
     return ''
 
-@app.route('/log-success', methods = ['GET'])
+@app.route('/log-success', methods = ['POST'])
 def log_success():
     deviceid = request.values.get('deviceid')
     handle_codeupload_response(deviceid, None)
