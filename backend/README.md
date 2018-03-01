@@ -71,14 +71,14 @@ Each of these end points need to be accessed by an http request to `http://linux
 
 ## Log error message after attempt at code upload
 - `{endpoint}`: `log-error`
-- allowed http requests: `POST`
+- allowed http requests: `GET`
 - parameters:
     - `deviceid`: the deviceid from the DB that the code upload was attempted on
     - `error_msg`: the full error message to be saved and relayed
 
 ## Log success message after attempt at code upload
 - `{endpoint}`: `log-success`
-- allowed http requests: `POST`
+- allowed http requests: `GET`
 - parameters:
     - `deviceid`: the deviceid from the DB that the code upload was attempted on
 

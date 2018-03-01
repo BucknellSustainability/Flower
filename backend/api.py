@@ -3,15 +3,17 @@
 # flask run --host=0.0.0.0
 
 import json
+import time
 import datetime
 import pprint
+import os
 
 # pip install --user --upgrade google-auth
 from google.oauth2 import id_token as id_token_lib
 from google.auth.transport import requests
 
 # pip install --user --upgrade flask-mysql flask-cors
-from flask import Flask, request
+from flask import Flask, request, send_from_directory
 from flask_cors import CORS
 from flaskext.mysql import MySQL
 
@@ -28,7 +30,7 @@ with open("../deployment.json", 'r') as f:
     deploy_config = json.load(f)
 
 CLIENT_ID = deploy_config['GOOGLE_CLIENT_ID']
-ERROR_DIR = 'errors/'
+ERROR_FOLDER = 'errors/'
 
 # give mysql plug the db info
 app.config.update(
@@ -156,17 +158,19 @@ def approve_user():
     
     return ''
 
-@app.route('/log-success', methods = ['POST'])
+@app.route('/log-success', methods = ['GET'])
 def log_success():
     deviceid = request.values.get('deviceid')
     handle_codeupload_response(deviceid, None)
+    return '' # TODO: figure out what should return
 
 # TODO: does this need to be protected since it is creating files???
-@app.route('/log-error', methods = ['POST'])
+@app.route('/log-error', methods = ['GET'])
 def log_error():
     deviceid = request.values.get('deviceid')
     error_msg = request.values.get('error_msg')
     handle_codeupload_response(deviceid, error_msg)
+    return '' # TODO: figure out what to return
 
 @app.route('/check-error', methods = ['GET'])
 def check_error():
@@ -177,8 +181,9 @@ def check_error():
     )
     status = exec_query(check_status_sql)
    
-    # if row was deleted or handled is 1, then 
-    if status == [] or ord(status[0]['handled']) == True:
+    # if row was deleted or handled is 1, then
+    print(status[0]['handled'] == True)
+    if status == [] or status[0]['handled'] == True:
         error_sql = 'SELECT errorId, path FROM errors WHERE deviceId = {} AND errorId = (SELECT MAX(errorId) FROM errors)'.format(
             deviceid
         )
@@ -198,9 +203,9 @@ def check_error():
         return ''
 
 def handle_codeupload_response(deviceid, error_msg):
-    handling_sql = 'INSERT INTO errors (deviceId, timestamp) VALUES ({}, {})'.format(
+    handling_sql = 'INSERT INTO errors (deviceId, timestamp) VALUES (\'{}\', \'{}\')'.format(
         deviceid,
-        currtime #TODO: FIX THIS
+        datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
     )
     exec_query(handling_sql)
     
@@ -224,7 +229,7 @@ def handle_codeupload_response(deviceid, error_msg):
         text_file.write(error_msg)
         text_file.close()
 
-        update_path_sql = 'UPDATE errors SET path = {} WHERE errorId = {}'.format(
+        update_path_sql = 'UPDATE errors SET path = \'{}\' WHERE errorId = {}'.format(
             path,
             errorid
         )
