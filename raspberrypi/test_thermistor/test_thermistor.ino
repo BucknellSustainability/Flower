@@ -47,7 +47,7 @@ double Thermistor(int RawADC) {
 	
 	Temp = (Temp * 9.0)/ 5.0 + 32.0; // Convert C to F
 	//Serial.print(", Fahrenheit: ");
-	Serial.print(Temp);
+	//Serial.print(Temp);
 	
 	return Temp;
 }
@@ -59,7 +59,11 @@ void setup() {
 const size_t BUFF_LEN = 100;
 
 void loop() {
-	// Check if the serial output buffer can fit the data. If it can't, println() will block,
+        Serial.print("{\"Temperature:\": ");
+        Serial.print(Thermistor(analogRead(0)));
+        Serial.println("}");
+	/*
+        // Check if the serial output buffer can fit the data. If it can't, println() will block,
 	// so we skip writing it instead.
 	char* message_buffer[BUFF_LEN];
         int data = int(Thermistor(analogRead(0)));
@@ -97,6 +101,6 @@ void loop() {
         } else {
           // TODO: Maybe output an error eventually? Especially if
           // short_message != NULL.
-        }
+        }*/
 	delay(1000);
 }
