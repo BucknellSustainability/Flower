@@ -27,7 +27,8 @@ with open("../config.json", 'r') as f:
 with open("../deployment.json", 'r') as f:
     deploy_config = json.load(f)
 
-CLIENT_ID = deploy_config['GOOGLE_CLIENT_ID'] 
+CLIENT_ID = deploy_config['GOOGLE_CLIENT_ID']
+ERROR_DIR = 'errors/'
 
 # give mysql plug the db info
 app.config.update(
@@ -155,6 +156,86 @@ def approve_user():
     
     return ''
 
+@app.route('/log-success', methods = ['GET'])
+def log_success():
+    deviceid = request.values.get('deviceid')
+    handle_codeupload_response(deviceid, None)
+
+# TODO: does this need to be protected since it is creating files???
+@app.route('/log-error', methods = ['POST'])
+def log_error():
+    deviceid = request.values.get('deviceid')
+    error_msg = request.values.get('error_msg')
+    handle_codeupload_response(deviceid, error_msg)
+
+@app.route('/check-error', methods = ['GET'])
+def check_error():
+    deviceid = request.values.get('deviceid')
+
+    check_status_sql = 'SELECT handled FROM codeupload WHERE deviceId = {}'.format(
+        deviceid
+    )
+    status = exec_query(check_status_sql)
+   
+    # if row was deleted or handled is 1, then 
+    if status == [] or ord(status[0]['handled']) == True:
+        error_sql = 'SELECT errorId, path FROM errors WHERE deviceId = {} AND errorId = (SELECT MAX(errorId) FROM errors)'.format(
+            deviceid
+        )
+        error = exec_query(error_sql)
+
+        # TODO: validate that this is correct way to show Null string
+        if error[0]['path'] == None:
+            # success!
+            # TODO: agree on what value to return, could use http return codes to help convey
+            return 'SUCCESS'
+        else:
+            # failure!
+            errorid = error[0]['errorId']
+            error_dir_path = os.path.join(app.root_path, ERROR_FOLDER)
+            return send_from_directory(directory=error_dir_path, filename=get_error_filename(errorid))
+    else:
+        return ''
+
+def handle_codeupload_response(deviceid, error_msg):
+    handling_sql = 'INSERT INTO errors (deviceId, timestamp) VALUES ({}, {})'.format(
+        deviceid,
+        currtime #TODO: FIX THIS
+    )
+    exec_query(handling_sql)
+    
+    # can't be race condition here because one Pi can't be trying to upload two things at same time
+
+    if error_msg is not None:
+        # get errorid of row just inserted
+        get_errorid_sql = 'SELECT errorId FROM errors WHERE errorId = (SELECT MAX(errorId) FROM errors WHERE deviceId = {})'.format(
+            deviceid
+        )
+        errorid = exec_query(get_errorid_sql)[0]['errorId']
+
+        if not os.path.exists(ERROR_FOLDER):
+            os.makedirs(ERROR_FOLDER)
+
+        filename = get_error_filename(errorid)
+        path = os.path.join(ERROR_FOLDER, filename)
+
+        #save error in file
+        text_file = open(path, "w")
+        text_file.write(error_msg)
+        text_file.close()
+
+        update_path_sql = 'UPDATE errors SET path = {} WHERE errorId = {}'.format(
+            path,
+            errorid
+        )
+        exec_query(update_path_sql)
+
+    # once stored error message and created row, can finally mark as handled
+    mark_handled_sql = 'UPDATE codeupload SET handled = 1 WHERE deviceId = {}'.format(deviceid)
+    exec_query(mark_handled_sql)
+
+def get_error_filename(errorid):
+    return str(errorid) + '.txt'
 
 def construct_profile_json(google_id):
     # fetch user info
