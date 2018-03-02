@@ -5,23 +5,20 @@
 import json
 import time
 import datetime
-import pprint
 import os
 
 # pip install --user --upgrade google-auth
 from google.oauth2 import id_token as id_token_lib
 from google.auth.transport import requests
 
-# pip install --user --upgrade flask-mysql flask-cors
-from flask import Flask, request, send_from_directory
+# pip install --user --upgrade flask-mysql
+from flask import Flask, request, redirect, url_for, send_from_directory
 from flask_cors import CORS
 from flaskext.mysql import MySQL
+from werkzeug.utils import secure_filename
 
 # local files
 from emailer import *
-
-app = Flask(__name__)
-CORS(app, supports_credentials=True)
 
 # load config (db info)
 with open("../config.json", 'r') as f:
@@ -31,6 +28,14 @@ with open("../deployment.json", 'r') as f:
 
 CLIENT_ID = deploy_config['GOOGLE_CLIENT_ID']
 ERROR_FOLDER = 'errors/'
+UPLOAD_FOLDER = 'uploads/'
+# DO NOT ALLOW PHP FILES BECAUSE THEN USERS CAN EXECUTE ARBITRARY CODE
+ALLOWED_EXTENSIONS = set(['hex'])
+
+app = Flask(__name__)
+CORS(app, supports_credentials=True)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # give mysql plug the db info
 app.config.update(
@@ -45,7 +50,7 @@ mysql = MySQL()
 mysql.init_app(app)
 conn = mysql.connect()
 
-@app.route('/read')
+@app.route('/read', methods = ['GET'])
 def get():
     # TODO: assert that there are those parameters in dict and nothing else
     # TODO: sanitize all parts
@@ -57,7 +62,7 @@ def get():
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
-@app.route('/insert')
+@app.route('/insert', methods = ['POST'])
 def insert():
     try:
         validate_user(request.values.get('id_token'))
@@ -76,7 +81,7 @@ def insert():
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
-@app.route('/update')
+@app.route('/update', methods = ['POST'])
 def modify():
     try:
         validate_user(request.values.get('id_token'))
@@ -96,7 +101,7 @@ def modify():
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
-@app.route('/get-profile', methods = ['GET'])
+@app.route('/get-profile', methods = ['POST'])
 def get_profile():
     # TODO: validate that params are correct and sanitize idtoken
     # validate useridi
@@ -114,8 +119,7 @@ def get_profile():
 def get_all_sensors():
     return build_all_sensors_dict()
 
-
-@app.route('/request-access', methods = ['GET'])
+@app.route('/request-access', methods = ['POST'])
 def request_access():
     idinfo = get_idinfo(request.values.get('idtoken'))
     
@@ -134,7 +138,7 @@ def request_access():
 
     return ''
 
-@app.route('/approve-user', methods = ['GET'])
+@app.route('/approve-user', methods = ['POST'])
 def approve_user():
     userid = request.values.get('userid')
 
@@ -202,6 +206,75 @@ def check_error():
     else:
         return ''
 
+
+@app.route('/store-code', methods = ["POST"])
+def store_code():
+    # check if valid user
+    try:
+        validate_user(request.values.get('idtoken'))
+    except UserDeniedException as e:
+        print(e)
+        return ''
+
+    deviceid = request.values.get('deviceid')
+
+    # check if the post request has the file part
+    if 'file' not in request.files:
+        return redirect(request.url)
+    file = request.files['file']
+    # if user does not select file, browser also
+    # submit a empty part without filename
+    if file.filename == '':
+        return redirect(request.url)
+    if file and allowed_file(file.filename):
+        # insert alert entry into db
+        insert_codeupload_alert_sql = 'INSERT INTO codeupload (deviceId) VALUES (\'{}\');'.format(
+            deviceid
+        )
+        # TODO: in theory this can become a race condition, but very unlikely.  Would need
+        # two users to be uploading file for one device at same time...
+        exec_query(insert_codeupload_alert_sql)
+        
+        get_uploadid_sql = 'SELECT uploadId FROM codeupload WHERE uploadId = (SELECT MAX(uploadId) FROM codeupload WHERE deviceId = {})'.format(
+            deviceid
+        )
+        uploadid = exec_query(get_uploadid_sql)[0]['uploadId']
+
+        # construct path to put code file and make upload dir if doesn't already exist
+        filename = get_code_filename(uploadid)
+        path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if not os.path.exists(app.config['UPLOAD_FOLDER']):
+            os.makedirs(app.config['UPLOAD_FOLDER'])
+        file.save(path)
+        
+        # update uploadid row to have path
+        upload_path_update_sql = 'UPDATE codeupload SET path = {} WHERE uploadId = {}'.format(
+            path,
+            uploadid
+        )
+        exec_query(upload_path_update_sql)
+
+        return ''
+
+@app.route('/download-code', methods = ['GET'])
+def download_code():
+    # no need to validate user, maybe validate RaPi
+    
+    uploadid = request.values.get('uploadid')
+    
+    upload_dir_path = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
+    return send_from_directory(directory=upload_dir_path, filename=get_code_filename(uploadid))
+
+def get_code_filename(uploadid):
+    return str(uploadid) + '.hex'
+  
+def get_error_filename(errorid):
+    return str(errorid) + '.txt'
+
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 def handle_codeupload_response(deviceid, error_msg):
     handling_sql = 'INSERT INTO errors (deviceId, timestamp) VALUES (\'{}\', \'{}\')'.format(
         deviceid,
@@ -239,9 +312,7 @@ def handle_codeupload_response(deviceid, error_msg):
     mark_handled_sql = 'UPDATE codeupload SET handled = 1 WHERE deviceId = {}'.format(deviceid)
     exec_query(mark_handled_sql)
 
-def get_error_filename(errorid):
-    return str(errorid) + '.txt'
-
+    
 def construct_profile_json(google_id):
     # fetch user info
     fetch_user_sql = 'SELECT * FROM user WHERE googleId = {};'.format(

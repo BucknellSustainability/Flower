@@ -24,6 +24,7 @@ Each of these end points need to be accessed by an http request to `http://linux
 
 ## Reading from the DB
 - `{endpoint}`: `read`
+- allowed http requests: `GET`
 - parameters: 
     - `fields`: the column names which should be retrieved
     - `table`: the table which to pull data from
@@ -31,6 +32,7 @@ Each of these end points need to be accessed by an http request to `http://linux
 
 ## Inserting into the DB
 - `{endpoint}`: `insert`
+- allowed http requests: `POST`
 - parameters:
     - `idtoken`: the token that Google Auth gives to the client
     - `table`: the table which to pull data from
@@ -39,6 +41,7 @@ Each of these end points need to be accessed by an http request to `http://linux
 
 ## Update the DB
 - `{endpoint}`: `insert`
+- allowed http requests: `POST`
 - parameters:
     - idtoken`: the token that Google Auth gives to the client
     - `table`: the table which to pull data from
@@ -48,26 +51,46 @@ Each of these end points need to be accessed by an http request to `http://linux
 
 ## Get the User Profile
 - `{endpoint}`: `get-profile`
+- allowed http requests: `POST`
 - parameters:
     - `idtoken`: the token that Google Auth gives to the client
 
 
 ## Get all of the sensors with project information
 - `{endpoint}`: `get-all-sensors`
+- allowed http requests: `GET`
 - parameters: None
 
 
 ## Ask admins for approval for user
 - `{endpoint}`: `request-access`
+- allowed http requests: `POST`
 - parameters:
     - `idtoken`: the token that Google Auth gives to the client, needs to be for the user that wants aaccess
 
 
 ## Approve user for dashboard access
 - `{endpoint}`: `approve-user`
+- allowed http requests: `POST`
 - parameters:
     - `idtoken`: the token that Google Auth gives to the client, needs to be admin user
     - `userid`: the userid from the DB that is to be approved access
+
+
+## Upload a file
+- `{endpoint}`: `store-code`
+- allowed http requests: `POST`
+- parameters:
+    - `idtoken`: the token that Google Auth gives to the client, needs to be admin user
+    - `deviceid`: the deviceid from the DB that the code is to uploaded to`
+
+
+## Download a file
+- `{endpoint}`: `download-code`
+- allowed http requests: `GET`
+- parameters:
+    - `uploadid`: the uploadid from the DB that specifies the code upload
+    
 
 ## Log error message after attempt at code upload
 - `{endpoint}`: `log-error`
@@ -76,11 +99,13 @@ Each of these end points need to be accessed by an http request to `http://linux
     - `deviceid`: the deviceid from the DB that the code upload was attempted on
     - `error_msg`: the full error message to be saved and relayed
 
+
 ## Log success message after attempt at code upload
 - `{endpoint}`: `log-success`
 - allowed http requests: `GET`
 - parameters:
     - `deviceid`: the deviceid from the DB that the code upload was attempted on
+
 
 ## Check for status of code upload
 - `{endpoint}`: `check-error`
