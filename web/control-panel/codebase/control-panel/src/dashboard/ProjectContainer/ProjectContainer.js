@@ -35,10 +35,10 @@ export class ProjectContainer extends React.Component {
                   <Panel.Heading className="project-info-panel-header">
                     <Panel.Title >
                         <Row>
-                          <Col lg={6} sm={6} md={6} lgOffset={3} mdOffset={3} smOffset={3}>
+                          <Col lg={6} md={6} sm={6} lgOffset={3} mdOffset={1} smOffset={0}>
                               <h3 className="project-info-title concert bold"> Project Information: {currProject.name} </h3>
                           </Col>
-                          <Col lg={3} md={3} sm={3}>
+                          <Col lg={3} md={5} sm={6}>
                             <div className="rowC">
                               <ClaimDevice style={{marginRight:"15px"}}/>
                               <CreateVis/>
