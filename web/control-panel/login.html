@@ -21,9 +21,12 @@
       <script>
       function onSignIn(googleUser) {
           var id_token = googleUser.getAuthResponse().id_token;
-         
+        
+          var form_data = new FormData();
+          form_data.append('idtoken', id_token);
+          
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', deploy_config['FLASK_SERVER'] + '/get-profile?idtoken=' + id_token);
+          xhr.open('POST', deploy_config['FLASK_SERVER'] + '/get-profile');
           xhr.withCredentials = true;
           xhr.onload = function() {
               console.log('Signed in as: ' + xhr.responseText);
@@ -34,7 +37,7 @@
                 window.location.replace(deploy_config["REDIRECT_URL"]);
               }
           };
-          xhr.send();
+          xhr.send(form_data);
         }
       </script>
   </body>
