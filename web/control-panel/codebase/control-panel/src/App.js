@@ -9,7 +9,7 @@ class App extends Component {
     super();
 
     this.state = {
-      researcher: undefined,
+      researcher: "just let the dashboard load",
       permission: true
     }
   }
