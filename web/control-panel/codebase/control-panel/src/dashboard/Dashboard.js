@@ -75,6 +75,23 @@ export class Dashboard extends React.Component {
         }]
       }
     };
+    
+  }
+
+  componentDidMount(){
+      var xhr = new XMLHttpRequest();
+      var url = 'http://127.0.0.1:5000/read?table=device&fields=*&condition=projectId is null';
+      xhr.open('GET', url);
+      xhr.withCredentials = true;
+      xhr.responseType = 'json';
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+      const scope = this;
+      xhr.onload = function() {
+        scope.setState({unclaimedDevices: xhr.response, show: true});
+      };
+      xhr.send();
+      //this.setState({show: true})
   }
 
   projectNavHandler(active) {
@@ -87,11 +104,11 @@ export class Dashboard extends React.Component {
   	const projectNav = <ProjectNav user={this.state.user} handler={this.projectNavHandler}/>;
     const projectContainer = <ProjectContainer user={this.state.user} activeProject={this.state.activeProject}/>
 
-    return (	
+    return (
         <div className="dashboard-main">
             <Row>
               <Col id="navCol" md={3}>
-                  {projectNav} 
+                  {projectNav}
               </Col>
               <Col id="projCol" md={9}>
                   {projectContainer}

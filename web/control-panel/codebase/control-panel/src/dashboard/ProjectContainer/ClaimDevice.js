@@ -19,14 +19,14 @@ export class ClaimDevice extends React.Component {
     this.setState({ show: false });
   }
 
-    getUnclaimedDevices(){
+  getUnclaimedDevices(){
       var xhr = new XMLHttpRequest();
       var url = 'http://127.0.0.1:5000/read?table=device&fields=*&condition=projectId is null';
       xhr.open('GET', url);
       xhr.withCredentials = true;
       xhr.responseType = 'json';
       xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-      
+
       const scope = this;
       xhr.onload = function() {
         scope.setState({unclaimedDevices: xhr.response, show: true});
@@ -61,7 +61,7 @@ export class ClaimDevice extends React.Component {
           <Modal.Body>
             <Row>
               {this.state.unclaimedDevices.map((device, i) =>
-                <Col key={i} xl={6} lg={6} md={6} sm={12} xs={12}> 
+                <Col key={i} xl={6} lg={6} md={6} sm={12} xs={12}>
                   <div className="card text-center card-inverse unclaimed-device">
                       <ClaimDeviceForm device={device}> </ClaimDeviceForm>
                   </div>
