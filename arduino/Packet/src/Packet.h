@@ -1,5 +1,6 @@
 #ifndef PACKET_H
 #define PACKET_H
+#include <Arduino.h>
 
 class Packet{
 public:
@@ -56,7 +57,8 @@ public:
    */
   int end_packet();
 private:
-  String json_message = ("NULL");
+  String _json_message = ("NULL");
+  long _baud_rate;
 };
 
 #endif
