@@ -9,16 +9,31 @@ class App extends Component {
     super();
 
     this.state = {
-      researcher: "just let the dashboard load",
-      permission: true
+      researcher: undefined,
+      permission: false
     }
+  }
+
+  componentDidMount() {
+    this.renderButton();
+  }
+
+  renderButton() {
+      window.gapi.signin2.render('my-signin2', {
+        'width': 240,
+        'height': 50,
+        'longtitle': true,
+        'theme': 'dark',
+        'onsuccess': console.log('yay'),
+        'onfailure': console.log('oops')
+      });
   }
 
   render() {
     const dashboard = <Dashboard />
     const dashboardHeader = <DashboardHeader />
 
-    if (this.state.permission == false) { //================= PERMISSION DENIED
+    if (this.state.permission == false) { //================= NOT SIGNED IN
       return (
         <div className="App">
           <header className="App-header">
@@ -26,7 +41,8 @@ class App extends Component {
 
           </header>
 
-          <h1 className="App-title">You do not have permission to view this page!</h1>
+          <h1 className="App-title">You must log in to view this page</h1>
+          <div className="signIn" id="my-signin2"></div>
 
         </div>
       );//

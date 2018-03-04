@@ -27,16 +27,8 @@
     <noscript>
       You need to enable JavaScript to run this app.
     </noscript>
-    <div class="g-signin2" data-onsuccess="onSignIn"></div>
     <div id="root"></div>
     <script src="https://apis.google.com/js/platform.js" async defer></script>
-    <script>
-      function onSignIn(googleUser) {
-        var id_token = googleUser.getAuthResponse().id_token;
-        //to access the token, use window.id_token
-        //keep in mind this method is called asynchronously... so the token will not arrive right away
-      }
-    </script>
     <!--
       This HTML file is a template.
       If you open it directly in the browser, you will see an empty page.
