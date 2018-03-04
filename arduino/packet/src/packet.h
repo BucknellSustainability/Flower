@@ -1,35 +1,62 @@
 #ifndef PACKET_H
 #define PACKET_H
 
-String json_message = ("NULL");
-const int BAUD_RATE = 9600;
+class Packet{
+public:
+  const long DEFAULT_BAUD_RATE = 9600;
+  /**
+   * Constructor
+   */
+  Packet(void);
 
-bool isInitialized();
+  bool isInitialized();
 
-/**
- * Constructor that starts a JSON message
- * Returns nonzero on error
- */
-int start_packet();
+  /**
+   * Opens a serial connection with the given baud_rate.
+   * @return           nonzero on error
+   */
+  int initialize();
 
-/** Adds an integer to the JSON message
- *  Returns nonzero on error
- */
-int add_int_field(const char* name, int value);
+  /**
+   * Opens a serial connection with the given baud_rate.
+   * @param  baud_rate long representing speed of communication in bits per second (baud)
+   * @return           nonzero on error
+   */
+  int initialize(long baud_rate);
 
-/** Adds a double to the JSON message
- *  Returns nonzero on error
- */
-int add_double_field(const char* name, double value, int decimalPlaces);
+  /**
+   * Closes the serial connection
+   * @return nonzero on error
+   */
+  int close();
 
-/** Adds a string to the JSON message
- *  Returns nonzero on error
- */
-int add_text_field(const char* name, const char* value);
+  /**
+   * Starts a JSON message
+   * Returns nonzero on error
+   */
+  int start_packet();
 
-/** Sends the JSON message along the serial connection.
- *  Returns nonzero on error
- */
-int end_packet();
+  /** Adds an integer to the JSON message
+   *  Returns nonzero on error
+   */
+  int add_int_field(const char* name, int value);
+
+  /** Adds a double to the JSON message
+   *  Returns nonzero on error
+   */
+  int add_double_field(const char* name, double value, int decimalPlaces);
+
+  /** Adds a string to the JSON message
+   *  Returns nonzero on error
+   */
+  int add_text_field(const char* name, const char* value);
+
+  /** Sends the JSON message along the serial connection.
+   *  Returns nonzero on error
+   */
+  int end_packet();
+private:
+  String json_message = ("NULL");
+};
 
 #endif

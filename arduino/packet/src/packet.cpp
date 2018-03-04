@@ -1,28 +1,33 @@
 #include <Packet.h>
 
 Packet::Packet(void) :
-    _baud_rate(defaultBaudrate),
+    _baud_rate(DEFAULT_BAUD_RATE),
     _json_message("NULL")
 {
     ;
 }
 
-String json_message = ("NULL");
-const int BAUD_RATE = 9600;
+// String json_message = ("NULL");
+// const int DEFAULT_BAUD_RATE = 9600;
 
-bool Packet::initialize(){
-    baud_rate = BAUD_RATE;
+int Packet::initialize(){
+    baud_rate = Packet::DEFAULT_BAUD_RATE;
     Serial.begin(baud_rate);
+
+    //TODO: Send project name over serial for identity purposes
+    return 0;
 }
 
-bool Packet::initialize(int baud_rate){
+int Packet::initialize(long baud_rate){
     _baud_rate = baud_rate;
     // TODO: Check for erroneous baud_rate
     Serial.begin(baud_rate);
+    return 0;
 }
 
-bool Packet::close(){
+int Packet::close(){
     Serial.end();
+    return 0;
 }
 
 bool Packet::isInitialized(){
@@ -50,10 +55,10 @@ int Packet::add_int_field(const char* name, int value){
     if (!this.isInitialized()){
         return -1;
     }
-    
+
     // Trailing comma incase there are more attributes but should
     // be removed when finishing json object
-    
+
     if (!json_message.concat(String("\"") + String(name) + String("\":") + String(value,DEC) + String(","))){
         return -1;
     }
