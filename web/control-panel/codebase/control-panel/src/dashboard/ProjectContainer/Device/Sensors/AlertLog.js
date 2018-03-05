@@ -36,6 +36,14 @@ export class AlertLog extends React.Component {
     return <td className="text-center"></td>
   }
 
+  showModal(){
+      this.setState({show: true});
+  }
+
+  componentWillMount(){
+    this.getAlerts()
+  }
+
   getAlerts(){
     var xhr = new XMLHttpRequest();
     var url = 'http://127.0.0.1:5000/read?table=alerts&fields=alertId,handled,alertTime&condition=sensorId=' + this.props.sensor.id;
@@ -46,7 +54,7 @@ export class AlertLog extends React.Component {
     
     const scope = this;
     xhr.onload = function() {
-        scope.setState({alertData: xhr.response, show: true});
+        scope.setState({alertData: xhr.response});
     };
     xhr.send();
   }
@@ -54,7 +62,7 @@ export class AlertLog extends React.Component {
   render() {
     return (
       <div className="modal-container">
-        <Button bsSize="small" className="alert-log-btn concert" onClick={() => {this.getAlerts()}}>Alert Log</Button>
+        <Button bsSize="small" className="alert-log-btn concert" onClick={() => {this.showModal()}}>Alert Log</Button>
 
         <Modal
           bsSize="large"

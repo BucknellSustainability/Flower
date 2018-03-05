@@ -21,6 +21,7 @@ export class Dashboard extends React.Component {
               name:"Water Tank",
               email:"bob@bucknell.edu",
               alerts: false,
+              id: 5,
               devices: [{
                 id: 1,
                 name: "Arduino 1",
@@ -50,19 +51,7 @@ export class Dashboard extends React.Component {
             {
             name:"Solar Array",
             email:"ugh@bucknell.edu",
-            alerts: true,
-            devices: [{
-              id: 2,
-              name: "Device 1",
-              sensors:[{
-                id: 6,
-                name: "Tree sensor"
-              }]
-            }]
-        },
-        {
-            name:"Wind Turbine",
-            email:"ugh@bucknell.edu",
+            id: 6,
             alerts: true,
             devices: [{
               id: 2,

@@ -41,7 +41,7 @@ export class ProjectContainer extends React.Component {
                           <Col lg={3} md={5} sm={6}>
                             <div className="rowC">
                               <ClaimDevice style={{marginRight:"15px"}}/>
-                              <CreateVis/>
+                              <CreateVis activeProject={currProject}/>
                             </div>
                           </Col>
                         </Row>
