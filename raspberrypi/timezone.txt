@@ -1,0 +1,10 @@
+
+to set the timezone to EST:
+
+1) sudo dpkg-reconfigure tzdata
+2) Select "America"
+3) Scroll down and select "New York"
+
+
+
+

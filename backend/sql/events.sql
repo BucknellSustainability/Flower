@@ -22,4 +22,4 @@ INSERT INTO datahourly
 	(sensorId, averageValue, sampleRate, dateTime)
 SELECT sensorId, AVG(value) as averageValue, 1 as sampleRate, FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(dateTime) DIV 600) * 600) as t
   FROM data
-  GROUP BY t
+  GROUP BY t, sensorId

@@ -23,14 +23,17 @@
       function onSignIn(googleUser) {
           var id_token = googleUser.getAuthResponse().id_token;
 
+          var form_data = new FormData();
+          form_data.append('idtoken', id_token);
+
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', deploy_config["FLASK_SERVER"] + '/request-access?idtoken=' + id_token);
+          xhr.open('GET', deploy_config["FLASK_SERVER"] + '/request-access');
           xhr.withCredentials = true;
           xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
           xhr.onload = function() {
               console.log('Signed in as: ' + xhr.responseText);
           };
-          xhr.send();
+          xhr.send(form_data);
         }
       </script>
   </body>

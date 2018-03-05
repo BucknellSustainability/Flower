@@ -22,15 +22,18 @@
       <script>
       function onSignIn(googleUser) {
           var id_token = googleUser.getAuthResponse().id_token;
+          
+          var form_data = new FormData();
+          form_data.append('idtoken', id_token);
+          form_data.append('userid', getParameterByName('userid'));
 
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', deploy_config["FLASK_SERVER"] + '/approve-user?userid=' + getParameterByName('userid') +
-                   '&idtoken=' + id_token);
+          xhr.open('POST', deploy_config["FLASK_SERVER"] + '/approve-user');
           xhr.withCredentials = true;
           xhr.onload = function() {
               console.log('Signed in as: ' + xhr.responseText);
           };
-          xhr.send();
+          xhr.send(form_data);
         }
       </script>
   </body>

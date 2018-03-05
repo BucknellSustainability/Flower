@@ -3,23 +3,22 @@
 # flask run --host=0.0.0.0
 
 import json
+import time
 import datetime
-import pprint
+import os
 
 # pip install --user --upgrade google-auth
 from google.oauth2 import id_token as id_token_lib
 from google.auth.transport import requests
 
-# pip install --user --upgrade flask-mysql flask-cors
-from flask import Flask, request
+# pip install --user --upgrade flask-mysql
+from flask import Flask, request, redirect, url_for, send_from_directory
 from flask_cors import CORS
 from flaskext.mysql import MySQL
+from werkzeug.utils import secure_filename
 
 # local files
 from emailer import *
-
-app = Flask(__name__)
-CORS(app, supports_credentials=True)
 
 # load config (db info)
 with open("../config.json", 'r') as f:
@@ -27,7 +26,16 @@ with open("../config.json", 'r') as f:
 with open("../deployment.json", 'r') as f:
     deploy_config = json.load(f)
 
-CLIENT_ID = deploy_config['GOOGLE_CLIENT_ID'] 
+CLIENT_ID = deploy_config['GOOGLE_CLIENT_ID']
+ERROR_FOLDER = 'errors/'
+UPLOAD_FOLDER = 'uploads/'
+# DO NOT ALLOW PHP FILES BECAUSE THEN USERS CAN EXECUTE ARBITRARY CODE
+ALLOWED_EXTENSIONS = set(['hex'])
+
+app = Flask(__name__)
+CORS(app, supports_credentials=True)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # give mysql plug the db info
 app.config.update(
@@ -42,7 +50,7 @@ mysql = MySQL()
 mysql.init_app(app)
 conn = mysql.connect()
 
-@app.route('/read')
+@app.route('/read', methods = ['GET'])
 def get():
     # TODO: assert that there are those parameters in dict and nothing else
     # TODO: sanitize all parts
@@ -54,7 +62,7 @@ def get():
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
-@app.route('/insert')
+@app.route('/insert', methods = ['POST'])
 def insert():
     try:
         validate_user(request.values.get('id_token'))
@@ -73,7 +81,7 @@ def insert():
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
-@app.route('/update')
+@app.route('/update', methods = ['POST'])
 def modify():
     try:
         validate_user(request.values.get('id_token'))
@@ -93,7 +101,7 @@ def modify():
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
-@app.route('/get-profile', methods = ['GET'])
+@app.route('/get-profile', methods = ['POST'])
 def get_profile():
     # TODO: validate that params are correct and sanitize idtoken
     # validate useridi
@@ -111,8 +119,7 @@ def get_profile():
 def get_all_sensors():
     return build_all_sensors_dict()
 
-
-@app.route('/request-access', methods = ['GET'])
+@app.route('/request-access', methods = ['POST'])
 def request_access():
     idinfo = get_idinfo(request.values.get('idtoken'))
     
@@ -131,7 +138,7 @@ def request_access():
 
     return ''
 
-@app.route('/approve-user', methods = ['GET'])
+@app.route('/approve-user', methods = ['POST'])
 def approve_user():
     userid = request.values.get('userid')
 
@@ -155,7 +162,157 @@ def approve_user():
     
     return ''
 
+@app.route('/log-success', methods = ['GET'])
+def log_success():
+    deviceid = request.values.get('deviceid')
+    handle_codeupload_response(deviceid, None)
+    return '' # TODO: figure out what should return
 
+# TODO: does this need to be protected since it is creating files???
+@app.route('/log-error', methods = ['GET'])
+def log_error():
+    deviceid = request.values.get('deviceid')
+    error_msg = request.values.get('error_msg')
+    handle_codeupload_response(deviceid, error_msg)
+    return '' # TODO: figure out what to return
+
+@app.route('/check-error', methods = ['GET'])
+def check_error():
+    deviceid = request.values.get('deviceid')
+
+    check_status_sql = 'SELECT handled FROM codeupload WHERE deviceId = {}'.format(
+        deviceid
+    )
+    status = exec_query(check_status_sql)
+   
+    # if row was deleted or handled is 1, then
+    print(status[0]['handled'] == True)
+    if status == [] or status[0]['handled'] == True:
+        error_sql = 'SELECT errorId, path FROM errors WHERE deviceId = {} AND errorId = (SELECT MAX(errorId) FROM errors)'.format(
+            deviceid
+        )
+        error = exec_query(error_sql)
+
+        # TODO: validate that this is correct way to show Null string
+        if error[0]['path'] == None:
+            # success!
+            # TODO: agree on what value to return, could use http return codes to help convey
+            return 'SUCCESS'
+        else:
+            # failure!
+            errorid = error[0]['errorId']
+            error_dir_path = os.path.join(app.root_path, ERROR_FOLDER)
+            return send_from_directory(directory=error_dir_path, filename=get_error_filename(errorid))
+    else:
+        return ''
+
+
+@app.route('/store-code', methods = ["POST"])
+def store_code():
+    # check if valid user
+    try:
+        validate_user(request.values.get('idtoken'))
+    except UserDeniedException as e:
+        print(e)
+        return ''
+
+    deviceid = request.values.get('deviceid')
+
+    # check if the post request has the file part
+    if 'file' not in request.files:
+        return redirect(request.url)
+    file = request.files['file']
+    # if user does not select file, browser also
+    # submit a empty part without filename
+    if file.filename == '':
+        return redirect(request.url)
+    if file and allowed_file(file.filename):
+        # insert alert entry into db
+        insert_codeupload_alert_sql = 'INSERT INTO codeupload (deviceId) VALUES (\'{}\');'.format(
+            deviceid
+        )
+        # TODO: in theory this can become a race condition, but very unlikely.  Would need
+        # two users to be uploading file for one device at same time...
+        exec_query(insert_codeupload_alert_sql)
+        
+        get_uploadid_sql = 'SELECT uploadId FROM codeupload WHERE uploadId = (SELECT MAX(uploadId) FROM codeupload WHERE deviceId = {})'.format(
+            deviceid
+        )
+        uploadid = exec_query(get_uploadid_sql)[0]['uploadId']
+
+        # construct path to put code file and make upload dir if doesn't already exist
+        filename = get_code_filename(uploadid)
+        path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        if not os.path.exists(app.config['UPLOAD_FOLDER']):
+            os.makedirs(app.config['UPLOAD_FOLDER'])
+        file.save(path)
+        
+        # update uploadid row to have path
+        upload_path_update_sql = 'UPDATE codeupload SET path = {} WHERE uploadId = {}'.format(
+            path,
+            uploadid
+        )
+        exec_query(upload_path_update_sql)
+
+        return ''
+
+@app.route('/download-code', methods = ['GET'])
+def download_code():
+    # no need to validate user, maybe validate RaPi
+    
+    uploadid = request.values.get('uploadid')
+    
+    upload_dir_path = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
+    return send_from_directory(directory=upload_dir_path, filename=get_code_filename(uploadid))
+
+def get_code_filename(uploadid):
+    return str(uploadid) + '.hex'
+  
+def get_error_filename(errorid):
+    return str(errorid) + '.txt'
+
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def handle_codeupload_response(deviceid, error_msg):
+    handling_sql = 'INSERT INTO errors (deviceId, timestamp) VALUES (\'{}\', \'{}\')'.format(
+        deviceid,
+        datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+    )
+    exec_query(handling_sql)
+    
+    # can't be race condition here because one Pi can't be trying to upload two things at same time
+
+    if error_msg is not None:
+        # get errorid of row just inserted
+        get_errorid_sql = 'SELECT errorId FROM errors WHERE errorId = (SELECT MAX(errorId) FROM errors WHERE deviceId = {})'.format(
+            deviceid
+        )
+        errorid = exec_query(get_errorid_sql)[0]['errorId']
+
+        if not os.path.exists(ERROR_FOLDER):
+            os.makedirs(ERROR_FOLDER)
+
+        filename = get_error_filename(errorid)
+        path = os.path.join(ERROR_FOLDER, filename)
+
+        #save error in file
+        text_file = open(path, "w")
+        text_file.write(error_msg)
+        text_file.close()
+
+        update_path_sql = 'UPDATE errors SET path = \'{}\' WHERE errorId = {}'.format(
+            path,
+            errorid
+        )
+        exec_query(update_path_sql)
+
+    # once stored error message and created row, can finally mark as handled
+    mark_handled_sql = 'UPDATE codeupload SET handled = 1 WHERE deviceId = {}'.format(deviceid)
+    exec_query(mark_handled_sql)
+
+    
 def construct_profile_json(google_id):
     # fetch user info
     fetch_user_sql = 'SELECT * FROM user WHERE googleId = {};'.format(
