@@ -52,14 +52,27 @@ conn = mysql.connect()
 
 @app.route('/read', methods = ['GET'])
 def get():
-    # TODO: assert that there are those parameters in dict and nothing else
-    # TODO: sanitize all parts
+    try:
+        table = request.values.get('table')
+        validate_table_name(table)
+
+        fields = split_and_validate_column_name_csv(request.values.get('fields'))
+
+        condition_fields = split_and_validate_column_name_csv(request.values.get('condition_fields'))
+        condition_values = split_csv(request.values.get('condition_values'))
+        assert len(condition_fields) == len(condition_values), 'Condition Fields and Values parameters are not equal length'
+
+    except UserInputError, AssertionError as e:
+        print(e)
+        return ''
+
+    # Build sql string with constructed fields and condition fields parts with `?`s
     sql_string = 'SELECT {} FROM {} WHERE {};'.format(
-          request.values.get('fields'),
-          request.values.get('table'),
-          request.values.get('condition')
+          ','.join(fields),
+          table,
+          interleave(condition_fields, ' = ', '?', ' AND ')
     )
-    result = exec_query(sql_string)
+    result = exec_query(sql_string, tuple(condition_values))
     return json.dumps(result, default = jsonconverter)
 
 @app.route('/insert', methods = ['POST'])
@@ -71,14 +84,25 @@ def insert():
         # return empty response to signify user not given permission
         return ''
 
-    # TODO: assert that there are those parameters in dict and nothing else
-    # TODO: sanitize all parts
-    sql_string = 'INSERT INTO {} {} VALUES {};'.format(
-        request.values.get('table'),
-        request.values.get('fields'),
-        request.values.get('values')
+
+    try:
+        table = request.values.get('table')
+        validate_table_name(table)
+
+        fields = split_and_validate_column_name_csv(request.values.get('fields'))
+        values = split_csv(request.values.get('values'))
+        assert len(fields) == len(values), 'Fields and Values parameters are not equal length'
+
+    except UserInputError, AssertionError as e:
+        print(e)
+        return ''
+
+    sql_string = 'INSERT INTO {} ({}) VALUES ({});'.format(
+        table,
+        ','.join(fields),
+        ','.join(['?'] * len(values))
     )
-    result = exec_query(sql_string)
+    result = exec_query(sql_string, tuple(values))
     return json.dumps(result, default = jsonconverter)
 
 @app.route('/update', methods = ['POST'])
@@ -90,15 +114,31 @@ def modify():
         # return empty response to signify user not given permission
         return ''
 
-    # TODO: assert that there are those parameters in dict and nothing else
-    # TODO: sanitize all parts
-    sql_string = 'UPDATE {} SET {} WHERE {};'.format(
-        request.values.get('table'),
-        # TODO: need to form this into 'field1 = value1, field2 = value2, ...'
-        request.values.get('modify_pairs'),
-        request.values.get('condition')
+    try:
+        table = request.values.get('table')
+        validate_table_name(table)
+
+        fields = split_and_validate_column_name_csv(request.values.get('fields'))
+        values = split_csv(request.values.get('values'))
+        assert len(fields) == len(values), 'Fields and Values parameters are not equal length'
+
+        condition_fields = split_and_validate_column_name_csv(request.values.get('condition_fields'))
+        condition_values = split_csv(request.values.get('condition_values'))
+        assert len(condition_fields) == len(condition_values), 'Condition Fields and Values parameters are not equal length'
+
+    except UserInputError, AssertionError as e:
+        print(e)
+        return ''
+
+    # Build sql string with constructed fields and condition fields parts with `?`s
+    sql_string = 'UPDATE {} SET ({}) WHERE {};'.format(
+        table,
+        interleave(fields, ' = ', '?', ' , '),
+        interleave(condition_fields, ' = ', '?', ' AND ')
     )
-    result = exec_query(sql_string)
+
+    # execute query with laundry list of values to sub in
+    result = exec_query(sql_string, tuple(values) + tuple(condition_values))
     return json.dumps(result, default = jsonconverter)
 
 
@@ -179,18 +219,13 @@ def log_error():
 def check_error():
     deviceid = request.values.get('deviceid')
 
-    check_status_sql = 'SELECT handled FROM codeupload WHERE deviceId = {}'.format(
-        deviceid
-    )
-    status = exec_query(check_status_sql)
+    check_status_sql = 'SELECT handled FROM codeupload WHERE deviceId = ?'
+    status = exec_query(check_status_sql, (deviceid,))
 
     # if row was deleted or handled is 1, then
-    print(status[0]['handled'] == True)
     if status == [] or status[0]['handled'] == True:
-        error_sql = 'SELECT errorId, path FROM errors WHERE deviceId = {} AND errorId = (SELECT MAX(errorId) FROM errors)'.format(
-            deviceid
-        )
-        error = exec_query(error_sql)
+        error_sql = 'SELECT errorId, path FROM errors WHERE errorId = (SELECT MAX(errorId) FROM errors WHERE  deviceId = ?)'
+        error = exec_query(error_sql, (deviceid,))
 
         # TODO: validate that this is correct way to show Null string
         if error[0]['path'] == None:
@@ -268,20 +303,16 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def handle_codeupload_response(deviceid, error_msg):
-    handling_sql = 'INSERT INTO errors (deviceId, timestamp) VALUES (\'{}\', \'{}\')'.format(
-        deviceid,
-        datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-    )
-    exec_query(handling_sql)
+    handling_sql = 'INSERT INTO errors (deviceId, timestamp) VALUES (?, ?)'
+    timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+    exec_query(handling_sql, (deviceid, timestamp))
 
     # can't be race condition here because one Pi can't be trying to upload two things at same time
 
     if error_msg is not None:
         # get errorid of row just inserted
-        get_errorid_sql = 'SELECT errorId FROM errors WHERE errorId = (SELECT MAX(errorId) FROM errors WHERE deviceId = {})'.format(
-            deviceid
-        )
-        errorid = exec_query(get_errorid_sql)[0]['errorId']
+        get_errorid_sql = 'SELECT errorId FROM errors WHERE errorId = (SELECT MAX(errorId) FROM errors WHERE deviceId = ?)'
+        errorid = exec_query(get_errorid_sql, (deviceid))[0]['errorId']
 
         if not os.path.exists(ERROR_FOLDER):
             os.makedirs(ERROR_FOLDER)
@@ -294,15 +325,12 @@ def handle_codeupload_response(deviceid, error_msg):
         text_file.write(error_msg)
         text_file.close()
 
-        update_path_sql = 'UPDATE errors SET path = \'{}\' WHERE errorId = {}'.format(
-            path,
-            errorid
-        )
-        exec_query(update_path_sql)
+        update_path_sql = 'UPDATE errors SET path = ? WHERE errorId = ?'
+        exec_query(update_path_sql, (path, errorid))
 
     # once stored error message and created row, can finally mark as handled
-    mark_handled_sql = 'UPDATE codeupload SET handled = 1 WHERE deviceId = {}'.format(deviceid)
-    exec_query(mark_handled_sql)
+    mark_handled_sql = 'UPDATE codeupload SET handled = 1 WHERE deviceId = ?'
+    exec_query(mark_handled_sql, (deviceid,))
 
 def validate_table_name(table_name):
     # pull list of table names
@@ -313,7 +341,15 @@ def validate_table_name(table_name):
     if table_name not in valid_tables:
         raise InputError('Query has invalid table name')
 
-def validate_column_name(table_name, column_name):
+def split_csv(csv):
+    return [field.strip() for field in column_name_csv.split(',')]
+
+def split_and_validate_column_name_csv(table_name, column_name_csv):
+    column_names = split_csv(column_name_csv)
+    validate_column_name(table_name, column_names)
+    return column_names
+
+def validate_column_name(table_name, column_names):
     # validate table name first
     validate_table_name(table_name)
 
@@ -322,8 +358,14 @@ def validate_column_name(table_name, column_name):
     cursor.execute('SELECT column_name FROM information_schema.columns WHERE table_name = ?', table_name)
     valid_columns = cursor.fetchall()
 
-    if column_name not in valid_columns:
-        raise InputError('Query has invalid column name')
+    for column_name in column_names:
+        if column_name not in valid_columns:
+            raise InputError('Query has invalid column name')
+
+# TODO: find better name for this
+def interleave(lhss, statement_sep, rhs, sep):
+    statements = [lhs + statement_sep + rhs for lhs in lhss]
+    return sep.join(statements)
 
 def construct_profile_json(google_id):
     # fetch user info

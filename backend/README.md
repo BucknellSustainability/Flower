@@ -6,7 +6,7 @@
 module load python/3.6
 ```
 
-3. Run the following commands to install all necessary python packages 
+3. Run the following commands to install all necessary python packages
 ```
 pip install --user --upgrade google-auth flask-mysql
 ```
@@ -25,28 +25,37 @@ Each of these end points need to be accessed by an http request to `http://linux
 ## Reading from the DB
 - `{endpoint}`: `read`
 - allowed http requests: `GET`
-- parameters: 
-    - `fields`: the column names which should be retrieved
-    - `table`: the table which to pull data from
-    - `condition`: the condition to select rows of data with
+- parameters:
+    - `table`: the table which to pull data from. Must be a valid table in the DB.
+    - `fields`: the column names which should be retrieved. Must be valid column of `table`
+    - `condition_fields`: the condition field to compare a value equal to.  Must be a valid column name for `table`
+    - `condition_values`: the values that must match up with the `condition_fields` to make a condition. Each subsequent field/value pair will be `AND`ed with the others.
+- form: `SELECT fields FROM table WHERE condition_fields[0] = condition_values[0] AND condition_fields[1] = condition_value[1] AND ...`
+- returns: JSON serialization of DB output
 
 ## Inserting into the DB
 - `{endpoint}`: `insert`
 - allowed http requests: `POST`
 - parameters:
     - `idtoken`: the token that Google Auth gives to the client
-    - `table`: the table which to pull data from
-    - `fields`: the column names which should be retrieved
+    - `table`: the table which to insert data into. Must be a valid table in DB.
+    - `fields`: the column names which should be inserted into. Must be valid columns in `table`.
     - `values`: the values to place into the fields in the same order that the fields are in
+- form: `INSERT INTO table (fields) VALUES (values)`
+- returns: JSON serialization of DB output
 
 ## Update the DB
-- `{endpoint}`: `insert`
+- `{endpoint}`: `update`
 - allowed http requests: `POST`
 - parameters:
-    - idtoken`: the token that Google Auth gives to the client
-    - `table`: the table which to pull data from
-    - `modify_pairs`: pairs of fields and data in the form `field1 = value1, field2 = value2, ...`
-    - `condition`: the condition to select rows of data with
+    - `idtoken`: the token that Google Auth gives to the client
+    - `table`: the table which to pull data from. Must be valid table in DB.
+    - `fields`: the columns of which to update information with. Must be valid columns in `table`
+    - `values`: the values to update into the fields columns in the same order that the fields are in.
+    - `condition_fields`: the condition field to compare a value equal to.  Must be a valid column name for `table`
+    - `condition_values`: the values that must match up with the `condition_fields` to make a condition. Each subsequent field/value pair will be `AND`ed with the others.
+- form: `UPDATE table SET (fields[0] = values[0], fields[1] = values[1], ...) WHERE condition_fields[0] = condition_values[0] AND condition_fields[1] = condition_value[1] AND ...`
+- returns: JSON serialization of DB output
 
 
 ## Get the User Profile
@@ -54,19 +63,22 @@ Each of these end points need to be accessed by an http request to `http://linux
 - allowed http requests: `POST`
 - parameters:
     - `idtoken`: the token that Google Auth gives to the client
+- returns: JSON serialization of all profile information for user log in
 
 
 ## Get all of the sensors with project information
 - `{endpoint}`: `get-all-sensors`
 - allowed http requests: `GET`
 - parameters: None
+- returns: JSON serialization of all sensors and their project information
 
 
 ## Ask admins for approval for user
 - `{endpoint}`: `request-access`
 - allowed http requests: `POST`
 - parameters:
-    - `idtoken`: the token that Google Auth gives to the client, needs to be for the user that wants aaccess
+    - `idtoken`: the token that Google Auth gives to the client, needs to be for the user that wants access
+- returns: nothing
 
 
 ## Approve user for dashboard access
@@ -75,22 +87,23 @@ Each of these end points need to be accessed by an http request to `http://linux
 - parameters:
     - `idtoken`: the token that Google Auth gives to the client, needs to be admin user
     - `userid`: the userid from the DB that is to be approved access
-
+- returns: nothing
 
 ## Upload a file
 - `{endpoint}`: `store-code`
 - allowed http requests: `POST`
 - parameters:
     - `idtoken`: the token that Google Auth gives to the client, needs to be admin user
-    - `deviceid`: the deviceid from the DB that the code is to uploaded to`
-
+    - `deviceid`: the deviceid from the DB that the code is to uploaded to
+    - file: a `.hex` file to be uploaded (see `web/control-panel/codeupload.html` for an example)
+- returns: nothing
 
 ## Download a file
 - `{endpoint}`: `download-code`
 - allowed http requests: `GET`
 - parameters:
     - `uploadid`: the uploadid from the DB that specifies the code upload
-    
+- returns: the `.hex` file requested
 
 ## Log error message after attempt at code upload
 - `{endpoint}`: `log-error`
@@ -98,17 +111,18 @@ Each of these end points need to be accessed by an http request to `http://linux
 - parameters:
     - `deviceid`: the deviceid from the DB that the code upload was attempted on
     - `error_msg`: the full error message to be saved and relayed
-
+- returns: nothing
 
 ## Log success message after attempt at code upload
 - `{endpoint}`: `log-success`
 - allowed http requests: `GET`
 - parameters:
     - `deviceid`: the deviceid from the DB that the code upload was attempted on
-
+- returns: nothing
 
 ## Check for status of code upload
 - `{endpoint}`: `check-error`
 - allowed http requests: `GET`
 - parameters:
     - `deviceid`: the deviceid from the DB that is waiting to be attempted at code upload
+- returns: the error message for the device if failure and `SUCCESS` if success
