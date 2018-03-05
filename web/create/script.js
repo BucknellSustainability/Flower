@@ -56,6 +56,7 @@ $(".next").click(function(){
 		iframe.setAttribute("src", url);
 		iframe.width="100%";
 		iframe.height="400px";
+		iframe.scrolling="no";
 
 		//place iframe into html container
 		document.getElementById("viewBox").appendChild(iframe);
@@ -64,7 +65,7 @@ $(".next").click(function(){
 		iframeTextareaHTML.textContent = iframe.outerHTML;
 
 		var iframeTextareaWP = document.getElementById("iframeTxtWP");
-		iframeTextareaWP.textContent = "[iframe id=iframe1 src=" + url + " width=100% height=400px]";
+		iframeTextareaWP.textContent = "[iframe id=iframe1 src=" + url + " scrolling="no" width=100% height=400px]";
 	}
 
 	//activate next step on progressbar using the index of next_fs
