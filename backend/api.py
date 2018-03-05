@@ -122,11 +122,11 @@ def get_all_sensors():
 @app.route('/request-access', methods = ['POST'])
 def request_access():
     idinfo = get_idinfo(request.values.get('idtoken'))
-    
+
     googleid = idinfo['sub']
     email = idinfo['email']
     name = idinfo['name']
-    
+
     # get user id (maybe use the google id)
     userid_from_googleid_sql = 'SELECT userId FROM user WHERE googleId = {}'.format(
         googleid
@@ -148,7 +148,7 @@ def approve_user():
         print(e)
         # return empty response to signify user not given permission
         return ''
-    
+
     # change approved status of `userid` to approved/1
     approve_user_sql = 'UPDATE user SET approved = 1 WHERE userId = {}'.format(userid)
     exec_query(approve_user_sql)
@@ -159,7 +159,7 @@ def approve_user():
 
     # send email to student
     send_approved_email(approved_user[0]['email'])
-    
+
     return ''
 
 @app.route('/log-success', methods = ['GET'])
@@ -184,7 +184,7 @@ def check_error():
         deviceid
     )
     status = exec_query(check_status_sql)
-   
+
     # if row was deleted or handled is 1, then
     print(status[0]['handled'] == True)
     if status == [] or status[0]['handled'] == True:
@@ -234,7 +234,7 @@ def store_code():
         # TODO: in theory this can become a race condition, but very unlikely.  Would need
         # two users to be uploading file for one device at same time...
         exec_query(insert_codeupload_alert_sql)
-        
+
         get_uploadid_sql = 'SELECT uploadId FROM codeupload WHERE uploadId = (SELECT MAX(uploadId) FROM codeupload WHERE deviceId = {})'.format(
             deviceid
         )
@@ -246,7 +246,7 @@ def store_code():
         if not os.path.exists(app.config['UPLOAD_FOLDER']):
             os.makedirs(app.config['UPLOAD_FOLDER'])
         file.save(path)
-        
+
         # update uploadid row to have path
         upload_path_update_sql = 'UPDATE codeupload SET path = {} WHERE uploadId = {}'.format(
             path,
@@ -259,15 +259,15 @@ def store_code():
 @app.route('/download-code', methods = ['GET'])
 def download_code():
     # no need to validate user, maybe validate RaPi
-    
+
     uploadid = request.values.get('uploadid')
-    
+
     upload_dir_path = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
     return send_from_directory(directory=upload_dir_path, filename=get_code_filename(uploadid))
 
 def get_code_filename(uploadid):
     return str(uploadid) + '.hex'
-  
+
 def get_error_filename(errorid):
     return str(errorid) + '.txt'
 
@@ -281,7 +281,7 @@ def handle_codeupload_response(deviceid, error_msg):
         datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
     )
     exec_query(handling_sql)
-    
+
     # can't be race condition here because one Pi can't be trying to upload two things at same time
 
     if error_msg is not None:
@@ -312,7 +312,7 @@ def handle_codeupload_response(deviceid, error_msg):
     mark_handled_sql = 'UPDATE codeupload SET handled = 1 WHERE deviceId = {}'.format(deviceid)
     exec_query(mark_handled_sql)
 
-    
+
 def construct_profile_json(google_id):
     # fetch user info
     fetch_user_sql = 'SELECT * FROM user WHERE googleId = {};'.format(
@@ -488,14 +488,14 @@ def exec_query(sql_string):
     cursor = conn.cursor()
     descriptions = None
     data = None
-    
+
     try:
         # Execute the SQL command
         cursor.execute(sql_string)
-        
+
         # Fetch all the rows in a list of lists.
         descriptions = cursor.description
-        
+
         # Fetch all of the data
         data = cursor.fetchall()
     except Exception as e:
@@ -541,7 +541,7 @@ def validate_user(id_token):
     if result == []:
         # user doesn't exist in system yet, add to db and redirect
         insert_user_sql = 'INSERT INTO user (email, name, googleId) VALUES (\'{}\', \'{}\', \'{}\');'.format(
-            email, name, googleid 
+            email, name, googleid
         )
         exec_query(insert_user_sql)
 
@@ -571,7 +571,7 @@ def send_approval_email(name, email, userid):
     body = (EMAIL_HTML_START +
             'Hello, <br>' +
            '{0} ({1}) wants access to the Energy Hill dashboard.  To approve this request, please click this link and sign in to your Google account: <a href="{2}">{2}</a>\n' +
-           'Sincerely,<br>' + 
+           'Sincerely,<br>' +
            'Energy Hill Robot' +
            EMAIL_HTML_END).format(
                 name,

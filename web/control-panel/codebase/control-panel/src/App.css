@@ -1,8 +1,11 @@
 .App {
   text-align: center;
   background: none;
+}
 
-
+.signIn {
+  width: fit-content;
+  margin: 0 auto;
 }
 
 .App-logo {

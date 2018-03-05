@@ -64,7 +64,7 @@ export class Dashboard extends React.Component {
         }]
       }
     };
-    
+
   }
 
   componentDidMount(){
