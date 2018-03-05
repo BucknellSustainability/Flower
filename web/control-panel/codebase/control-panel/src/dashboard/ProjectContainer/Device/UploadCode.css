@@ -7,3 +7,15 @@ h1.title{
 	border: thin solid white;
 	vertical-align: middle;
 }
+
+.formControlsFile{
+	text-align: start !important;
+}
+
+#uploadLabel{
+	text-align: start;
+}
+
+#uploadHelp{
+	text-align: start;
+}

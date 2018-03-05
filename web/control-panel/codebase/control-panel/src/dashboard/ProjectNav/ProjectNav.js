@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, {Component} from 'react';
 import './ProjectNav.css';
 import '../../fonts.css';
 import {Button, Nav, NavItem, Well, Row, Col} from 'react-bootstrap/lib/';
