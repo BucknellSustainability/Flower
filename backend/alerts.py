@@ -30,11 +30,15 @@ def main():
 
     # prepare a cursor object using cursor() method
     cursor = db.cursor()
-    sql = "SELECT * FROM alerts WHERE handled != 1; {}".format(AGGREGATION_SQL)
+    get_handled_sql = "SELECT * FROM alerts WHERE handled != 1"
 
     try:
+        # do aggregation first
+        cursor.execute(AGGREGATION_SQL)
+        db.commit()
+
         # Execute the SQL command
-        cursor.execute(sql, multi=True)
+        cursor.execute(get_handled_sql)
         # Fetch all the rows in a list of lists.
         unhandled = cursor.fetchall()
     except:
