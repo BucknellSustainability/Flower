@@ -16,14 +16,14 @@ public:
    * Opens a serial connection with the given baud_rate.
    * @return           nonzero on error
    */
-  int initialize();
+  int initialize(String project_name);
 
   /**
    * Opens a serial connection with the given baud_rate.
    * @param  baud_rate long representing speed of communication in bits per second (baud)
    * @return           nonzero on error
    */
-  int initialize(long baud_rate);
+  int initialize(String project_name, long baud_rate);
 
   /**
    * Closes the serial connection
@@ -57,8 +57,9 @@ public:
    */
   int end_packet();
 private:
-  String _json_message = ("NULL");
   long _baud_rate;
+  String _json_message;
+  String _project_name;
 };
 
 #endif

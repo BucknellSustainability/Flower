@@ -3,20 +3,19 @@
 Packet::Packet(void){
   _baud_rate = DEFAULT_BAUD_RATE;
   _json_message = "NULL";
+  _project_name = "NULL";
 }
 
 // String json_message = ("NULL");
 // const int DEFAULT_BAUD_RATE = 9600;
 
-int Packet::initialize(){
+int Packet::initialize(String project_name){
     _baud_rate = Packet::DEFAULT_BAUD_RATE;
     Serial.begin(_baud_rate);
-
-    //TODO: Send project name over serial for identity purposes
     return 0;
 }
 
-int Packet::initialize(long baud_rate){
+int Packet::initialize(String project_name, long baud_rate){
     _baud_rate = baud_rate;
     // TODO: Check for erroneous baud_rate
     Serial.begin(baud_rate);
@@ -33,6 +32,10 @@ bool Packet::isInitialized(){
         printf("JSON message null");
         return false;
     }
+    if (_json_message.compareTo("NULL") == 0){
+      printf("Project name null");
+      return false;
+    }
     return true;
 }
 
@@ -42,7 +45,7 @@ bool Packet::isInitialized(){
  */
 int Packet::start_packet(){
     _json_message.remove(0); // Clear the string
-    _json_message.concat("{"); // Opening curly bracket of json
+    _json_message.concat("{\"project\":\""+String(_project_name)+"\","); // Opening curly bracket of json
     return 0;
 }
 
