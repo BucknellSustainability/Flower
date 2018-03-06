@@ -20,7 +20,7 @@ export class CreateVis extends React.Component {
     this.state = {
       show: false,
       allProjects: [],
-      activeProject: {sensors:[]},
+      activeProject: {sensors:[], name: ""},
       selectedSensors: [],
       chartType: 0,
 
@@ -36,7 +36,6 @@ export class CreateVis extends React.Component {
   }
 
   newMin(e){
-    console.log(e)
     this.setState({gaugeMin: e.target.value});
   }
 
@@ -61,6 +60,7 @@ export class CreateVis extends React.Component {
   }
 
   getParamInputs(){
+    //if gauge chart
     if(this.state.chartType === 1){
       return   (<Form style={{ marginBottom: 20}} inline>
                   <FormGroup controlId="formInlineName">
@@ -113,6 +113,27 @@ export class CreateVis extends React.Component {
     this.setState({ chartType: e , selectedSensors: []});
   }
 
+  showModal(){
+      let proj = this.getActiveProject(this.state.allProjects)
+      this.setState({show: true, activeProject: proj});
+  }
+
+  componentWillMount(){
+      this.getAllProjects();
+  }
+
+  getActiveProject(xhrProjects){
+    let i;
+    for (i in xhrProjects){
+      alert(xhrProjects[i].id)
+      alert(this.props.activeProject.id)
+      if (xhrProjects[i].id === this.props.activeProject.id ){
+        return xhrProjects[i];
+      }
+    }
+    return;
+  }
+
   getAllProjects(){
       var xhr = new XMLHttpRequest();
       var url = 'http://127.0.0.1:5000/get-all-sensors';
@@ -123,20 +144,18 @@ export class CreateVis extends React.Component {
       
       const scope = this;
       xhr.onload = function() {
-        scope.setState({allProjects: xhr.response.projects, activeProject: xhr.response.projects[0] ,show: true});
-        console.log(xhr.response.projects);
+        scope.setState({allProjects: xhr.response.projects, activeProject: xhr.response.projects[0]});
       };
       xhr.send();
       //this.setState({show: true})
   }
-
 
   render() {
     return (
       <div className="modal-container">
         <Button className="code-btn center-text concert"
           bsStyle="info"
-          onClick={() => {this.getAllProjects()}}
+          onClick={() => {this.showModal()}}
         >
           Generate Graph
         </Button>

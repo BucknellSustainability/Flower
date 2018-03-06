@@ -1,7 +1,17 @@
 import React, { Component } from 'react';
 import './UploadCode.css';
 import '../../../fonts.css';
-import {Button, ButtonGroup, Modal, FormGroup, FormControl, ControlLabel} from 'react-bootstrap'
+import {Button, ButtonGroup, Modal, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap'
+
+
+function FieldGroup({ id, label, help, ...props }) {
+  return (
+    <FormGroup controlId={id}>
+      <FormControl {...props} />
+      {help && <HelpBlock id="uploadHelp">{help}</HelpBlock>}
+    </FormGroup>
+  );
+}
 
 export class UploadCode extends React.Component {
 
@@ -40,10 +50,14 @@ export class UploadCode extends React.Component {
           </Modal.Header>
           <Modal.Body>
 
-            <FormGroup controlId="formControlsTextarea">
-              <ControlLabel></ControlLabel>
-              <FormControl componentClass="textarea" placeholder="Enter Code Here" style={{ height: 300 }} />
-            </FormGroup>
+            <form>
+              <FieldGroup
+                id="formControlsFile"
+                type="file"
+                label="Upload Arduino Code"
+                help="Please Submit a File to Upload." 
+              />
+            </form>
 
           </Modal.Body>
           <Modal.Footer>
