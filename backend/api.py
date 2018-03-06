@@ -141,6 +141,12 @@ def modify():
     result = exec_query(sql_string, tuple(values) + tuple(condition_values))
     return json.dumps(result, default = jsonconverter)
 
+@app.route('/get-sensor-last-reading', methods = ['GET'])
+def get_sensor_last_reading():
+    sensorid = request.values.get('sensorid')
+    gauge_sql = 'SELECT value FROM data WHERE sensorId = %s ORDER BY dataId DESC LIMIT 1'
+    result = exec_query(gauge_sql, (sensorid,))
+    return json.dumps(result, default = jsonconverter)
 
 @app.route('/get-profile', methods = ['POST'])
 def get_profile():

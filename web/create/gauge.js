@@ -10,8 +10,6 @@ var parseQueryString = function(url) {
     return params;
 }
 //hold url parameter results
-var flaskUrl = 'http://localhost:5000'
-console.log(flaskUrl)
 var result = parseQueryString(location.search);
 
 
@@ -96,9 +94,9 @@ var chart = Highcharts.chart('graphView', Highcharts.merge(gaugeOptions, {
     }]
 }));
 
-function requestSensorInfo(fields, table, condition) {
+function requestSensorInfo(fields, table, condition_fields, condition_values) {
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', flaskUrl + '/read?fields=' + fields + '&table=' + table + '&condition=' + condition);
+      xhr.open('GET', deploy_config["FLASK_SERVER"] + '/read?fields=' + fields + '&table=' + table + '&condition_fields=' + condition_fields + '&condition_values=' + condition_values);
       xhr.responseType = 'json';
       xhr.withCredentials = true;
       xhr.onload = function() {
@@ -111,7 +109,8 @@ function requestSensorInfo(fields, table, condition) {
 
 requestSensorInfo('*',
           'sensor',
-          'sensorId in (' + result.id + ") ORDER BY sensorId ASC;"); 
+          'sensorId',
+          result.id); 
 
 
 setInterval(function () {
@@ -122,7 +121,7 @@ setInterval(function () {
     if(chart){
     	point = chart.series[0].points[0];
 	      var xhr = new XMLHttpRequest();
-	      xhr.open('GET', flaskUrl + '/read?fields=value&table=data&condition=sensorId='+result.id + ' ORDER BY dataId DESC LIMIT 1');
+	      xhr.open('GET',  deploy_config["FLASK_SERVER"] + '/get-sensor-last-reading?sensorid='+result.id);
 	      xhr.responseType = 'json';
 	      xhr.withCredentials = true;
 	      xhr.onload = function() {
