@@ -362,6 +362,8 @@ def validate_column_name(table_name, column_names):
     cursor = conn.cursor()
     cursor.execute('SELECT column_name FROM information_schema.columns WHERE table_name = %s', table_name)
     valid_columns = [column[0] for column in cursor.fetchall()]
+    # allow * queries
+    valid_columns.append('*')
 
     for column_name in column_names:
         if column_name not in valid_columns:
