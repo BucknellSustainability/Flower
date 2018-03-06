@@ -52,60 +52,106 @@ conn = mysql.connect()
 
 @app.route('/read', methods = ['GET'])
 def get():
-    # TODO: assert that there are those parameters in dict and nothing else
-    # TODO: sanitize all parts
+    try:
+        table = request.values.get('table')
+        validate_table_name(table)
+
+        fields = split_and_validate_column_name_csv(table, request.values.get('fields'))
+
+        condition_fields = split_and_validate_column_name_csv(table, request.values.get('condition_fields'))
+        condition_values = split_csv(request.values.get('condition_values'))
+        assert len(condition_fields) == len(condition_values), 'Condition Fields and Values parameters are not equal length'
+
+    except (HttpRequestParamError, AssertionError) as e:
+        print(e)
+        return ''
+
+    # Build sql string with constructed fields and condition fields parts with `%s`s
     sql_string = 'SELECT {} FROM {} WHERE {};'.format(
-          request.values.get('fields'),
-          request.values.get('table'),
-          request.values.get('condition')
+          ','.join(fields),
+          table,
+          interleave(condition_fields, ' = ', '%s', ' AND ')
     )
-    result = exec_query(sql_string)
+    result = exec_query(sql_string, tuple(condition_values))
     return json.dumps(result, default = jsonconverter)
 
 @app.route('/insert', methods = ['POST'])
 def insert():
     try:
-        validate_user(request.values.get('id_token'))
+        validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
         # return empty response to signify user not given permission
         return ''
 
-    # TODO: assert that there are those parameters in dict and nothing else
-    # TODO: sanitize all parts
-    sql_string = 'INSERT INTO {} {} VALUES {};'.format(
-        request.values.get('table'),
-        request.values.get('fields'),
-        request.values.get('values')
+
+    try:
+        table = request.values.get('table')
+        validate_table_name(table)
+
+        fields = split_and_validate_column_name_csv(table, request.values.get('fields'))
+        values = split_csv(request.values.get('values'))
+        assert len(fields) == len(values), 'Fields and Values parameters are not equal length'
+
+    except (HttpRequestParamError, AssertionError) as e:
+        print(e)
+        return ''
+
+    sql_string = 'INSERT INTO {} ({}) VALUES ({});'.format(
+        table,
+        ','.join(fields),
+        ','.join(['%s'] * len(values))
     )
-    result = exec_query(sql_string)
+    result = exec_query(sql_string, tuple(values))
     return json.dumps(result, default = jsonconverter)
 
 @app.route('/update', methods = ['POST'])
 def modify():
     try:
-        validate_user(request.values.get('id_token'))
+        validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
         # return empty response to signify user not given permission
         return ''
 
-    # TODO: assert that there are those parameters in dict and nothing else
-    # TODO: sanitize all parts
+    try:
+        table = request.values.get('table')
+        validate_table_name(table)
+
+        fields = split_and_validate_column_name_csv(table, request.values.get('fields'))
+        values = split_csv(request.values.get('values'))
+        assert len(fields) == len(values), 'Fields and Values parameters are not equal length'
+
+        condition_fields = split_and_validate_column_name_csv(table, request.values.get('condition_fields'))
+        condition_values = split_csv(request.values.get('condition_values'))
+        assert len(condition_fields) == len(condition_values), 'Condition Fields and Values parameters are not equal length'
+
+    except (HttpRequestParamError, AssertionError) as e:
+        print(e)
+        return ''
+
+    # Build sql string with constructed fields and condition fields parts with `%s`s
     sql_string = 'UPDATE {} SET {} WHERE {};'.format(
-        request.values.get('table'),
-        # TODO: need to form this into 'field1 = value1, field2 = value2, ...'
-        request.values.get('modify_pairs'),
-        request.values.get('condition')
+        table,
+        interleave(fields, ' = ', '%s', ' , '),
+        interleave(condition_fields, ' = ', '%s', ' AND ')
     )
-    result = exec_query(sql_string)
+
+    # execute query with laundry list of values to sub in
+    result = exec_query(sql_string, tuple(values) + tuple(condition_values))
+    return json.dumps(result, default = jsonconverter)
+
+@app.route('/get-sensor-last-reading', methods = ['GET'])
+def get_sensor_last_reading():
+    sensorid = request.values.get('sensorid')
+    gauge_sql = 'SELECT value FROM data WHERE sensorId = %s ORDER BY dataId DESC LIMIT 1'
+    result = exec_query(gauge_sql, (sensorid,))
     return json.dumps(result, default = jsonconverter)
 
 @app.route('/get-profile', methods = ['POST'])
 def get_profile():
-    # TODO: validate that params are correct and sanitize idtoken
-    # validate useridi
     try:
+        print(request.values.get('idtoken'))
         google_id = validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
@@ -127,11 +173,9 @@ def request_access():
     email = idinfo['email']
     name = idinfo['name']
 
-    # get user id (maybe use the google id)
-    userid_from_googleid_sql = 'SELECT userId FROM user WHERE googleId = {}'.format(
-        googleid
-    )
-    userid = exec_query(userid_from_googleid_sql)[0]['userId']
+    # get user id from googleid
+    userid_from_googleid_sql = 'SELECT userId FROM user WHERE googleId = %s'
+    userid = exec_query(userid_from_googleid_sql, (googleid,))[0]['userId']
 
     # pass id into emailer function to send to admins
     send_approval_email(name, email, userid)
@@ -150,12 +194,12 @@ def approve_user():
         return ''
 
     # change approved status of `userid` to approved/1
-    approve_user_sql = 'UPDATE user SET approved = 1 WHERE userId = {}'.format(userid)
-    exec_query(approve_user_sql)
+    approve_user_sql = 'UPDATE user SET approved = 1 WHERE userId = %s'
+    exec_query(approve_user_sql, (userid,))
 
     # get approved user email
-    approved_user_email_sql = 'SELECT email FROM user WHERE userId = {}'.format(userid)
-    approved_user = exec_query(approved_user_email_sql)
+    approved_user_email_sql = 'SELECT email FROM user WHERE userId = %s'
+    approved_user = exec_query(approved_user_email_sql, (userid,))
 
     # send email to student
     send_approved_email(approved_user[0]['email'])
@@ -168,7 +212,6 @@ def log_success():
     handle_codeupload_response(deviceid, None)
     return '' # TODO: figure out what should return
 
-# TODO: does this need to be protected since it is creating files???
 @app.route('/log-error', methods = ['GET'])
 def log_error():
     deviceid = request.values.get('deviceid')
@@ -180,18 +223,13 @@ def log_error():
 def check_error():
     deviceid = request.values.get('deviceid')
 
-    check_status_sql = 'SELECT handled FROM codeupload WHERE deviceId = {}'.format(
-        deviceid
-    )
-    status = exec_query(check_status_sql)
+    check_status_sql = 'SELECT handled FROM codeupload WHERE deviceId = %s'
+    status = exec_query(check_status_sql, (deviceid,))
 
     # if row was deleted or handled is 1, then
-    print(status[0]['handled'] == True)
     if status == [] or status[0]['handled'] == True:
-        error_sql = 'SELECT errorId, path FROM errors WHERE deviceId = {} AND errorId = (SELECT MAX(errorId) FROM errors)'.format(
-            deviceid
-        )
-        error = exec_query(error_sql)
+        error_sql = 'SELECT errorId, path FROM errors WHERE errorId = (SELECT MAX(errorId) FROM errors WHERE  deviceId = %s)'
+        error = exec_query(error_sql, (deviceid,))
 
         # TODO: validate that this is correct way to show Null string
         if error[0]['path'] == None:
@@ -228,17 +266,13 @@ def store_code():
         return redirect(request.url)
     if file and allowed_file(file.filename):
         # insert alert entry into db
-        insert_codeupload_alert_sql = 'INSERT INTO codeupload (deviceId) VALUES (\'{}\');'.format(
-            deviceid
-        )
+        insert_codeupload_alert_sql = 'INSERT INTO codeupload (deviceId) VALUES (%s)'
         # TODO: in theory this can become a race condition, but very unlikely.  Would need
         # two users to be uploading file for one device at same time...
-        exec_query(insert_codeupload_alert_sql)
+        exec_query(insert_codeupload_alert_sql, (deviceid,))
 
-        get_uploadid_sql = 'SELECT uploadId FROM codeupload WHERE uploadId = (SELECT MAX(uploadId) FROM codeupload WHERE deviceId = {})'.format(
-            deviceid
-        )
-        uploadid = exec_query(get_uploadid_sql)[0]['uploadId']
+        get_uploadid_sql = 'SELECT uploadId FROM codeupload WHERE uploadId = (SELECT MAX(uploadId) FROM codeupload WHERE deviceId = %s)'
+        uploadid = exec_query(get_uploadid_sql, (deviceid,))[0]['uploadId']
 
         # construct path to put code file and make upload dir if doesn't already exist
         filename = get_code_filename(uploadid)
@@ -248,11 +282,8 @@ def store_code():
         file.save(path)
 
         # update uploadid row to have path
-        upload_path_update_sql = 'UPDATE codeupload SET path = {} WHERE uploadId = {}'.format(
-            path,
-            uploadid
-        )
-        exec_query(upload_path_update_sql)
+        upload_path_update_sql = 'UPDATE codeupload SET codePath = %s WHERE uploadId = %s'
+        exec_query(upload_path_update_sql, (path, uploadid))
 
         return ''
 
@@ -276,20 +307,16 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def handle_codeupload_response(deviceid, error_msg):
-    handling_sql = 'INSERT INTO errors (deviceId, timestamp) VALUES (\'{}\', \'{}\')'.format(
-        deviceid,
-        datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-    )
-    exec_query(handling_sql)
+    handling_sql = 'INSERT INTO errors (deviceId, timestamp) VALUES (%s, %s)'
+    timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
+    exec_query(handling_sql, (deviceid, timestamp))
 
     # can't be race condition here because one Pi can't be trying to upload two things at same time
 
     if error_msg is not None:
         # get errorid of row just inserted
-        get_errorid_sql = 'SELECT errorId FROM errors WHERE errorId = (SELECT MAX(errorId) FROM errors WHERE deviceId = {})'.format(
-            deviceid
-        )
-        errorid = exec_query(get_errorid_sql)[0]['errorId']
+        get_errorid_sql = 'SELECT errorId FROM errors WHERE errorId = (SELECT MAX(errorId) FROM errors WHERE deviceId = %s)'
+        errorid = exec_query(get_errorid_sql, (deviceid,))[0]['errorId']
 
         if not os.path.exists(ERROR_FOLDER):
             os.makedirs(ERROR_FOLDER)
@@ -302,43 +329,71 @@ def handle_codeupload_response(deviceid, error_msg):
         text_file.write(error_msg)
         text_file.close()
 
-        update_path_sql = 'UPDATE errors SET path = \'{}\' WHERE errorId = {}'.format(
-            path,
-            errorid
-        )
-        exec_query(update_path_sql)
+        update_path_sql = 'UPDATE errors SET path = %s WHERE errorId = %s'
+        exec_query(update_path_sql, (path, errorid))
 
     # once stored error message and created row, can finally mark as handled
-    mark_handled_sql = 'UPDATE codeupload SET handled = 1 WHERE deviceId = {}'.format(deviceid)
-    exec_query(mark_handled_sql)
+    mark_handled_sql = 'UPDATE codeupload SET handled = 1 WHERE deviceId = %s'
+    exec_query(mark_handled_sql, (deviceid,))
 
+def validate_table_name(table_name):
+    # pull list of table names
+    cursor = conn.cursor()
+    cursor.execute('SHOW TABLES')
+    valid_tables = [column[0] for column in cursor.fetchall()]
+    print(valid_tables)
+
+    if table_name not in valid_tables:
+        raise HttpRequestParamError('Query has invalid table name')
+
+def split_csv(csv):
+    return [field.strip() for field in csv.split(',')]
+
+def split_and_validate_column_name_csv(table_name, column_name_csv):
+    column_names = split_csv(column_name_csv)
+    validate_column_name(table_name, column_names)
+    return column_names
+
+def validate_column_name(table_name, column_names):
+    # validate table name first
+    validate_table_name(table_name)
+
+    # pull list of columns for table
+    cursor = conn.cursor()
+    cursor.execute('SELECT column_name FROM information_schema.columns WHERE table_name = %s', table_name)
+    valid_columns = [column[0] for column in cursor.fetchall()]
+
+    for column_name in column_names:
+        if column_name not in valid_columns:
+            raise HttpRequestParamError('Query has invalid column name')
+
+# TODO: find better name for this
+def interleave(lhss, statement_sep, rhs, sep):
+    statements = [lhs + statement_sep + rhs for lhs in lhss]
+    return sep.join(statements)
 
 def construct_profile_json(google_id):
     # fetch user info
-    fetch_user_sql = 'SELECT * FROM user WHERE googleId = {};'.format(
-        google_id
-    )
-    user_data = exec_query(fetch_user_sql)[0]
+    fetch_user_sql = 'SELECT * FROM user WHERE googleId = %s'
+    user_data = exec_query(fetch_user_sql, (google_id,))[0]
 
     # use user info to fetch projects
-    projects_id_sql = 'SELECT * FROM owners WHERE userId = {};'.format(
-		user_data['userId']
-    )
-    project_ids = [owner_row['projectId'] for owner_row in exec_query(projects_id_sql)]
+    projects_id_sql = 'SELECT * FROM owners WHERE userId = %s'
+    project_ids = [owner_row['projectId'] for owner_row in exec_query(projects_id_sql, (user_data['userId'],))]
 
 
-    projects_sql = 'SELECT * FROM project WHERE {};'.format(
+    projects_sql = 'SELECT * FROM project WHERE {}'.format(
         build_condition('projectId', project_ids)
     )
 
-    projects = exec_query(projects_sql)
+    projects = exec_query(projects_sql, tuple(project_ids))
 
     #fetch_device
     devices_sql = 'SELECT * FROM device WHERE {}'.format(
         build_condition('projectId', project_ids)
     )
 
-    devices = exec_query(devices_sql)
+    devices = exec_query(devices_sql, tuple(project_ids))
 
     device_ids = [device['deviceId'] for device in devices]
 
@@ -347,7 +402,7 @@ def construct_profile_json(google_id):
         build_condition('deviceId', device_ids)
     )
 
-    sensors = exec_query(sensors_sql)
+    sensors = exec_query(sensors_sql, tuple(device_ids))
 
     sensors_dict = {}
     devices_dict = {}
@@ -408,17 +463,17 @@ def construct_profile_json(google_id):
 def build_all_sensors_dict():
     # fetch all projects
     projects_sql = 'SELECT * FROM project;'
-    projects = exec_query(projects_sql)
+    projects = exec_query(projects_sql, ())
 
     # fetch all devices
     devices_sql = 'SELECT * FROM device;'
-    devices = exec_query(devices_sql)
+    devices = exec_query(devices_sql, ())
 
     device_ids = [device['deviceId'] for device in devices]
 
     # fetch all sensors
     sensors_sql = 'SELECT * FROM sensor'
-    sensors = exec_query(sensors_sql)
+    sensors = exec_query(sensors_sql, ())
 
     sensors_dict = {}
     devices_dict = {}
@@ -470,7 +525,9 @@ def build_all_sensors_dict():
     return_string = json.dumps(project_dict, default = jsonconverter)
     return return_string
 
-
+'''
+This function is safe to string format into WHERE clause
+'''
 def build_condition(column_name, list_of_vals):
     if len(list_of_vals) == 1:
         return '{} = {}'.format(
@@ -478,20 +535,33 @@ def build_condition(column_name, list_of_vals):
             list_of_vals[0]
         )
     else:
-        return '{} IN {}'.format(
+        return '{} IN ({})'.format(
             column_name,
-            str(tuple(list_of_vals))
+            ','.join(['%s'] * len(list_of_vals))
         )
 
 
-def exec_query(sql_string):
+'''
+Generic way to execute queries and return results as a dictionary.
+
+param formatted_sql_string: string with `%s` where userinput will be placed
+param param_tuple: tuple with same number of elements as `%s` in formatted_sql_string
+'''
+def exec_query(formatted_sql_string, param_tuple):
+    assert isinstance(formatted_sql_string, str), 'DB Call does not have sql string'
+    assert type(param_tuple) is tuple, 'DB Call does not have user input tuple'
+    assert formatted_sql_string.count('%s') == len(param_tuple), 'DB Call has mismatching number of user inputs'
+
     cursor = conn.cursor()
     descriptions = None
     data = None
 
     try:
+        print('About to execute SQL Query', formatted_sql_string)
         # Execute the SQL command
-        cursor.execute(sql_string)
+        cursor.execute(formatted_sql_string, param_tuple)
+
+        print('Executed SQL Query: ', cursor._last_executed)
 
         # Fetch all the rows in a list of lists.
         descriptions = cursor.description
@@ -503,7 +573,7 @@ def exec_query(sql_string):
 
     # handle query not returning anything - this could mean error or insert/update
     if data is None or descriptions is None:
-        print("Query ({}) didn't return anything".format(sql_string))
+        print("Query ({}) didn't return anything".format(formatted_sql_string))
 
         # in case it is an insert/update, need to commit
         conn.commit()
@@ -532,18 +602,13 @@ def validate_user(id_token):
     email = idinfo['email']
     name = idinfo['name']
 
-    # TODO: protect against SQL injection
-    user_exists_sql = 'SELECT * FROM user WHERE googleId = {}'.format(
-        googleid
-    )
-    result = exec_query(user_exists_sql)
+    user_exists_sql = 'SELECT * FROM user WHERE googleId = %s'
+    result = exec_query(user_exists_sql, (googleid,))
 
     if result == []:
         # user doesn't exist in system yet, add to db and redirect
-        insert_user_sql = 'INSERT INTO user (email, name, googleId) VALUES (\'{}\', \'{}\', \'{}\');'.format(
-            email, name, googleid
-        )
-        exec_query(insert_user_sql)
+        insert_user_sql = 'INSERT INTO user (email, name, googleId) VALUES (%s, %s, %s)'
+        exec_query(insert_user_sql, (email, name, googleid))
 
         raise UserDeniedException('User was not found in DB')
     elif ord(result[0]['approved']) == False:
@@ -556,8 +621,8 @@ def validate_user(id_token):
 def validate_admin(id_token):
     googleid = validate_user(id_token)
     print('admin is good to go')
-    is_admin_sql = 'SELECT isAdmin FROM user WHERE googleId = {}'.format(googleid)
-    is_admin = exec_query(is_admin_sql)
+    is_admin_sql = 'SELECT isAdmin FROM user WHERE googleId = %s'
+    is_admin = exec_query(is_admin_sql, (googleid,))
     if ord(is_admin[0]['isAdmin']) == False:
         raise UserDeniedException('Currently logged in user trying to approve user is not admin')
 
@@ -581,7 +646,7 @@ def send_approval_email(name, email, userid):
 
     # get list of admin emails
     get_admins_sql = 'SELECT email FROM user WHERE isAdmin = 1'
-    admins = exec_query(get_admins_sql)
+    admins = exec_query(get_admins_sql, ())
     admin_emails = [admin['email'] for admin in admins]
 
     sendEmail(
@@ -616,4 +681,7 @@ def jsonconverter(o):
 
 
 class UserDeniedException(Exception):
+    pass
+
+class HttpRequestParamError(Exception):
     pass
