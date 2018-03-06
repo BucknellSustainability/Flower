@@ -341,7 +341,6 @@ def validate_table_name(table_name):
     cursor = conn.cursor()
     cursor.execute('SHOW TABLES')
     valid_tables = [column[0] for column in cursor.fetchall()]
-    print(valid_tables)
 
     if table_name not in valid_tables:
         raise HttpRequestParamError('Query has invalid table name')
@@ -521,8 +520,6 @@ def build_all_sensors_dict():
 
     project_dict = {'projects': project_list}
 
-    pprint.pprint(project_dict)
-
     # return result as string
     return_string = json.dumps(project_dict, default = jsonconverter)
     return return_string
@@ -622,7 +619,6 @@ def validate_user(id_token):
 
 def validate_admin(id_token):
     googleid = validate_user(id_token)
-    print('admin is good to go')
     is_admin_sql = 'SELECT isAdmin FROM user WHERE googleId = %s'
     is_admin = exec_query(is_admin_sql, (googleid,))
     if ord(is_admin[0]['isAdmin']) == False:
