@@ -1,0 +1,31 @@
+.device-container-header{
+	border: 4px double white;
+	background-color: #91836b !important;
+}
+
+.device-container-title{
+	margin-top: 3px;
+	margin-bottom: 0px;
+	color: white;
+}
+
+.device-container-body{
+	border: 2px solid #CCCC99;
+}
+
+.sensor-container{
+	border:none;
+}
+
+.sensor-container-header{
+	background-color: #CCCC99 !important;
+}
+
+.sensor-container-title{
+	float: center;
+	color: white;
+}
+
+
+
+

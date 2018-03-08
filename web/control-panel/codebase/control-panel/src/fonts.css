@@ -1,0 +1,14 @@
+@import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700');
+@import url('https://fonts.googleapis.com/css?family=Black+Ops+One|Concert+One');
+
+.linda{
+    font-family: 'Concert One';
+}
+
+.concert{
+	font-family: 'Concert One', cursive;
+}
+
+.bold{
+	font-weight: bold;
+}

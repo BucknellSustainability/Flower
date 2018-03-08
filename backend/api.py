@@ -43,6 +43,7 @@ def get():
           request.values.get('table'),
           request.values.get('condition')
     )
+    print(sql_string)
     result = exec_query(sql_string)
     return json.dumps(result)
 

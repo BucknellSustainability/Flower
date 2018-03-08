@@ -1,0 +1,9 @@
+h1.title{
+	color: black;
+}
+
+.code-btn{
+	background-color: transparent;
+	border: thin solid white;
+	vertical-align: middle;
+}
