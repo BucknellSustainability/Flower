@@ -8,7 +8,6 @@ HIH61xx hih;
 AsyncDelay samplingInterval;
 Packet p;
 
-bool printed = true;
 void setup(void){
     hih.initialise(A4, A5);
     samplingInterval.start(3000, AsyncDelay::MILLIS);
@@ -24,7 +23,6 @@ void loop(void){
     hih.process();
 
     if (hih.isFinished()) {
-        printed = true;
         p.start_packet();
         p.add_double_field("AirTemp(deg C)", hih.getAmbientTemp() / 100.0, DOUBLE_PRECISION);
         p.add_double_field("RelHumidity", hih.getRelHumidity() / 100.0, DOUBLE_PRECISION);
