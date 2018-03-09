@@ -23,7 +23,7 @@ function initMap() {
 
 
     var siteList = [];
-    $.when(readDB("site","1","*")).then(
+    $.when(readDB("site","*", null, null)).then(
         function successHandler(json){
           //get data from ajax request
           $.each(JSON.parse(json), function(key,value) {

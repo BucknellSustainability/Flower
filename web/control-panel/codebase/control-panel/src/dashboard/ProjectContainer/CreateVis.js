@@ -8,7 +8,7 @@ export class CreateVis extends React.Component {
   constructor(props, context) {
     super(props, context);
 
-    this.chartUrl = 'http://localhost:8001/create/'
+    this.chartUrl = 'http://linuxremote1.bucknell.edu/create/'
 
     this.handleHide = this.handleHide.bind(this);
     this.showModal = this.showModal.bind(this);
@@ -143,7 +143,7 @@ export class CreateVis extends React.Component {
 
   getAllProjects(){
       var xhr = new XMLHttpRequest();
-      var url = 'http://127.0.0.1:5000/get-all-sensors';
+      var url = 'http://linuxremote1.bucknell.edu:5001/get-all-sensors';
       xhr.open('GET', url);
       xhr.withCredentials = true;
       xhr.responseType = 'json';

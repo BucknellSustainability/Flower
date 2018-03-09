@@ -60,20 +60,28 @@ def get():
 
         condition_fields = split_and_validate_column_name_csv(table, request.values.get('condition_fields'))
         condition_values = split_csv(request.values.get('condition_values'))
-        assert len(condition_fields) == len(condition_values), 'Condition Fields and Values parameters are not equal length'
+        assert (condition_fields == ['null'] and condition_values == ['null']) or (len(condition_fields) == len(condition_values)), 'Condition Fields and Values parameters are not equal length'
 
     except (HttpRequestParamError, AssertionError) as e:
         print(e)
         return ''
 
     # Build sql string with constructed fields and condition fields parts with `%s`s
-    sql_string = 'SELECT {} FROM {} WHERE {};'.format(
+    sql_string = 'SELECT {} FROM {}'.format(
           ','.join(fields),
-          table,
-          interleave(condition_fields, ' = ', '%s', ' AND ')
+          table
     )
 
-    result = exec_query(sql_string, tuple(condition_values))
+    result = None
+    # TODO: do something better than the string `null`
+    if condition_fields != ['null']:
+        sql_string += 'WHERE {}'.format(
+            interleave(condition_fields, ' = ', '%s', ' AND ')
+        )
+        result = exec_query(sql_string, tuple(condition_values))
+    else:
+        result = exec_query(sql_string, ())
+    
     return json.dumps(result, default = jsonconverter)
 
 @app.route('/insert', methods = ['POST'])
@@ -364,6 +372,9 @@ def validate_column_name(table_name, column_names):
     valid_columns = [column[0] for column in cursor.fetchall()]
     # allow * queries
     valid_columns.append('*')
+
+    # TODO: not sure if this is super safe
+    valid_columns.append('null')
 
     for column_name in column_names:
         if column_name not in valid_columns:
