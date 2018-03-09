@@ -75,7 +75,7 @@ def get():
     result = None
     # TODO: do something better than the string `null`
     if condition_fields != ['null']:
-        sql_string += 'WHERE {}'.format(
+        sql_string += ' WHERE {}'.format(
             interleave(condition_fields, ' = ', '%s', ' AND ')
         )
         result = exec_query(sql_string, tuple(condition_values))
