@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import '../../fonts.css'
-import graph from '../../images/graph.svg'
 import './CreateVis.css'
 import {Button, ButtonGroup, Modal, Row, Col, SplitButton, MenuItem, Badge, Well, ButtonToolbar, ToggleButton, ToggleButtonGroup, Form, FormGroup, FormControl, ControlLabel} from 'react-bootstrap'
 
