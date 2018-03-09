@@ -28,13 +28,12 @@ export class ClaimDeviceForm extends React.Component {
   claimDevice() {
     var form_data = new FormData();
 
-    let pairs = ' projectId='+this.props.activeProject.id + ', name="'+this.state.deviceName + '"';
-    let cond = ' deviceId='+ this.props.device.deviceId + ' ';
-
     form_data.append('id_token', this.props.token);
     form_data.append('table', 'device')
-    form_data.append('modify_pairs', pairs)
-    form_data.append('condition', cond)
+    form_data.append('fields', 'projectId, name')
+    form_data.append('values', this.props.activeProject.id + ', ' + this.state.deviceName)
+    form_data.append('condition_fields', 'deviceId')
+    form_data.append('condition_values', this.props.device.deviceId)
 
     var xhr = new XMLHttpRequest();
     xhr.open('POST', 'http://localhost:5000/update');

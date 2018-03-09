@@ -4,7 +4,6 @@ import './fonts.css'
 import {Dashboard} from './dashboard/Dashboard.js'
 import {DashboardHeader} from './dashboard/DashboardHeader.js'
 
-var gUser = {}
 class App extends Component {
   constructor() {
     super();
