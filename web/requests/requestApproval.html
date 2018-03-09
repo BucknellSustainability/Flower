@@ -27,9 +27,8 @@
           form_data.append('idtoken', id_token);
 
           var xhr = new XMLHttpRequest();
-          xhr.open('GET', deploy_config["FLASK_SERVER"] + '/request-access');
+          xhr.open('POST', deploy_config["FLASK_SERVER"] + '/request-access');
           xhr.withCredentials = true;
-          xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
           xhr.onload = function() {
               console.log('Signed in as: ' + xhr.responseText);
           };
