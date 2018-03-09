@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import './DeviceNav.css';
 import '../../../fonts.css';
-import {Button, Nav, NavItem, Well, Row, Col, Panel} from 'react-bootstrap/lib/';
+import {Button, Nav, NavItem, Well, Row, Col, Panel, Badge} from 'react-bootstrap/lib/';
 
 
 export class DeviceNav extends Component{
@@ -16,10 +16,7 @@ export class DeviceNav extends Component{
   }
 
   handleSelect(selectedKey) {
-    this.setState({activeKey: selectedKey});
-    if(selectedKey != 10000){
-      this.props.handler(selectedKey);
-    }
+    this.props.handler(selectedKey);
   }
 
   render() {
@@ -38,9 +35,9 @@ export class DeviceNav extends Component{
                   </Panel.Heading>
                   <Panel.Body className="device-nav-body">
                       <Well className="device-nav-well" bsSize="small">
-                          <Nav className="device-nav" bsStyle="pills" stacked activeKey={this.state.activeKey} onSelect={this.handleSelect}>
+                          <Nav className="device-nav" bsStyle="pills" stacked activeKey={this.props.device} onSelect={this.handleSelect}>
                               {this.props.devices.map((device, i) =>
-                                <NavItem eventKey={i}>{device.name}</NavItem>
+                                <NavItem eventKey={i} className="raise concert"> <Badge style={{marginRight:5}}> {device.id} </Badge> {device.name}</NavItem>
                               )}
                         </Nav>
                     </Well>

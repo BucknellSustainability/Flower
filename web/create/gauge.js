@@ -115,19 +115,19 @@ requestSensorInfo('*',
 
 
 setInterval(function () {
-	console.log("IN FUNC")
     //Speed
     let point;
     let data;
     if(chart){
     	point = chart.series[0].points[0];
 	      var xhr = new XMLHttpRequest();
-	      xhr.open('GET', flaskUrl + '/read?fields=value&table=data&condition=sensorId='+result.id + ' ORDER BY dataId DESC LIMIT 1');
+	      xhr.open('GET', flaskUrl + '/read?fields=value,dataId&table=data&condition=sensorId='+result.id + ' ORDER BY dataId DESC LIMIT 1');
 	      xhr.responseType = 'json';
 	      xhr.withCredentials = true;
 	      xhr.onload = function() {
 	      	data = xhr.response[0].value;
 	      	console.log(data)
+            console.log(xhr.response[0].dataId)
 	      	point.update(Math.round(data * 100) / 100);
 	      };
 	      xhr.send();

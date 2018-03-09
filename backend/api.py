@@ -59,7 +59,10 @@ def get():
           request.values.get('table'),
           request.values.get('condition')
     )
+
+    print(sql_string)
     result = exec_query(sql_string)
+    print(result)
     return json.dumps(result, default = jsonconverter)
 
 @app.route('/insert', methods = ['POST'])
@@ -98,6 +101,7 @@ def modify():
         request.values.get('modify_pairs'),
         request.values.get('condition')
     )
+    print(sql_string);
     result = exec_query(sql_string)
     return json.dumps(result, default = jsonconverter)
 
@@ -464,7 +468,7 @@ def build_all_sensors_dict():
 
     project_dict = {'projects': project_list}
 
-    pprint.pprint(project_dict)
+    #pprint.pprint(project_dict)
 
     # return result as string
     return_string = json.dumps(project_dict, default = jsonconverter)
@@ -498,6 +502,7 @@ def exec_query(sql_string):
 
         # Fetch all of the data
         data = cursor.fetchall()
+        conn.commit()
     except Exception as e:
         print("Error: Couldn't fetch data: {}".format(str(e)))
 

@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import '../../fonts.css'
+import graph from '../../images/graph.svg'
 import './CreateVis.css'
 import {Button, ButtonGroup, Modal, Row, Col, SplitButton, MenuItem, Badge, Well, ButtonToolbar, ToggleButton, ToggleButtonGroup, Form, FormGroup, FormControl, ControlLabel} from 'react-bootstrap'
 
@@ -11,6 +12,7 @@ export class CreateVis extends React.Component {
     this.chartUrl = 'http://localhost:8001/create/'
 
     this.handleHide = this.handleHide.bind(this);
+    this.showModal = this.showModal.bind(this);
     this.sensorToggleClick = this.sensorToggleClick.bind(this);
     this.handleChartTypeChange = this.handleChartTypeChange.bind(this);
 
@@ -30,7 +32,6 @@ export class CreateVis extends React.Component {
   }
 
   getToggleType(){
-    if(this.state.chartType === 0) return 'checkbox'
     if(this.state.chartType === 1) return 'radio'
     else return 'checkbox'
   }
@@ -51,7 +52,7 @@ export class CreateVis extends React.Component {
     let out; 
     let sensors = JSON.stringify(this.state.selectedSensors).slice(1,-1) 
     if(this.state.chartType === 0){
-      out = this.chartUrl + "visualize.html?id=" + sensors
+      out = this.chartUrl + "visualize.html?id=" + sensors + '&projectId=' + this.state.activeProject.id;
     }
     if(this.state.chartType === 1){
       out = this.chartUrl + "gauge.html?max=" + this.state.gaugeMax + "&min=" + this.state.gaugeMin + "&id=" + sensors
@@ -113,20 +114,27 @@ export class CreateVis extends React.Component {
     this.setState({ chartType: e , selectedSensors: []});
   }
 
-  showModal(){
-      let proj = this.getActiveProject(this.state.allProjects)
-      this.setState({show: true, activeProject: proj});
-  }
-
   componentWillMount(){
       this.getAllProjects();
+  }
+
+  showModal(){
+      let proj = this.getActiveProject(this.state.allProjects);
+      let sensors = this.getInitialSensors(proj);
+      this.setState({show: true, activeProject: proj, selectedSensors: sensors, chartType: 0});
+  }
+
+  getInitialSensors(activeProject){
+      let i; let ids = [];
+      for (i in activeProject.sensors){
+        ids.push(activeProject.sensors[i].id);
+      }
+      return ids;
   }
 
   getActiveProject(xhrProjects){
     let i;
     for (i in xhrProjects){
-      alert(xhrProjects[i].id)
-      alert(this.props.activeProject.id)
       if (xhrProjects[i].id === this.props.activeProject.id ){
         return xhrProjects[i];
       }
@@ -147,18 +155,18 @@ export class CreateVis extends React.Component {
         scope.setState({allProjects: xhr.response.projects, activeProject: xhr.response.projects[0]});
       };
       xhr.send();
-      //this.setState({show: true})
   }
 
   render() {
     return (
       <div className="modal-container">
-        <Button className="code-btn center-text concert"
-          bsStyle="info"
-          onClick={() => {this.showModal()}}
+        <button className="ui-btn raise code-btn center-text concert"
+          onClick={this.showModal}
+          style={{marginTop:3}}
         >
           Generate Graph
-        </Button>
+          <span className="glyphicon glyphicon-random" aria-hidden="true" style={{marginLeft:5}}></span>
+        </button>
 
         <Modal 
           show={this.state.show}

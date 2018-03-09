@@ -72,7 +72,7 @@ export class SensorForm extends React.Component {
                 <ControlLabel>Sensor Name</ControlLabel>{' '}
                 <FormControl
                   type="text"
-                  value={this.state.name}
+                  value={this.props.sensor.name}
                   onChange={this.handleChangeName}/>
                 <FormControl.Feedback />
                 <HelpBlock>{this.state.maxLength} character limit</HelpBlock>
@@ -83,7 +83,7 @@ export class SensorForm extends React.Component {
                 <ControlLabel>Units</ControlLabel>{' '}
                 <FormControl
                   type="text"
-                  value={this.state.units}
+                  value="degree F"
                   onChange={this.handleChangeUnits}/>
                 <FormControl.Feedback />
                 <HelpBlock>{this.state.maxLength} character limit</HelpBlock>
