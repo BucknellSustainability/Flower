@@ -1,29 +1,17 @@
-# Dependencies
-In order to use some of the scripts in this project, dependencies must be satisfied.
+# Overview
+Flower is a data collection and visualization system made for the Renewable Energy Scholars at Bucknell University. It is made of several components that require each other to function. The purpose of the project is to make research easier as well as publicize the sustainability efforts at Bucknell.
 
-Dependencies for the backend scripts can be found in the backend directory's README
+# How to use this project
+There are `README.md`s in each of the main directories for how to use each component of the project. You will need a MySQL DB running (`/backend/sql`), run the Flask server (`/backend`), compile the React code and run the php server (`/web`), and put code on the Raspberry Pis (`/raspberrypi`), and load programs onto Arduinos (`/arduino`).  
 
-# Getting Started (Local Development)
-Navigate to the WebServer directory with your terminal. Both of these options
-assume `index.html` is located in WebServer. This is the page that is served
-when navigating to the root of the website (i.e. `localhost:8000` for php-server).
+# Running system at Bucknell
+We suggest running this system with Bucknell linuxremote servers because that is what we developed on. Any other system is not guarenteed to work, but we will have instructions to give it a shot.
 
-## Command-line Option
-Use `brew install php` on Mac or `apt install php` and choose the appropriate php version to install.  You will also need to make sure that you install the mysqli plugin.  Make sure that you installed php by running `php --version` and this should output some version number.  Navigate to your `WebServer` directory and run `php -S localhost:8000`.  If this runs without error, then you can try pulling up the page `localhost:8000` on your browser.  If all goes well, then you are set.
+If attempting to run on Bucknell systems, we advise cloning the repo into a user's `~/public_html/` directory (create it if it doesn't exist) to enable the Bucknell Apache server to handle the web page serving.
 
-## Atom Package Option (Continuous Change Integration Support)
-__Note:__ You can use `CTRL+SHIFT+P` to bring up a search you can use to quickly
-execute commands available in Atom, including those added through packages.
+# API Keys and Deployment Specific Values
+API Keys and other deployment specific values have been removed from the repo to ensure security and flexibility for different deployments.  You will NEED to complete steps 1-6 to have any component of the project to work.
 
-Open Atom. Navigate to `Packages->Settings View->Install Packages/Themes`.
-Search for `php-server` and install the package of the same name.
-Open the `index.html` file in Atom and then use `Packages->PHP Server->Start in folder of current file` to
-start the server on port __8000__. Your browser will automatically open the root
-of the live server, defaulting to `index.html` if present.
-
-
-## API Keys and Deployment Specific Values
-API Keys should not be committed to the repo so  we've made a way for each developer to use their own.
 1. Create a file called `config.json` in the repo's root directory.
 2. Add this code:
 ```
@@ -71,21 +59,6 @@ API Keys should not be committed to the repo so  we've made a way for each devel
 `KEY_NAME` is the key string in your config file such as `DB_NAME` or `FLASK_SERVER`.
 
 This `config.json` and `deployment.json` won't get committed because it is in the `.gitignore` so you will need to do this for each clone of the repo, but it should persist unless you delete the file.
-
-## PHP with Bucknell Apache Hosting
-### Introduction
-Bucknell linux accounts have a public-facing `~\public_html` which can be accessed
-by navigating to `https://eg.bucknell.edu/~username` where `username` is the
-user's username. Accessing a PHP file by navigating to it relative to this URL
-will run the script on the server which will return the output of the PHP script
-to the browser. (e.g. `public_html/index.html` can be found at
-  `eg.bucknell.edu/~username/index.html`)
-### Setup
-By default, files are not readable by just anybody, so they won't be served
-until you add the read permission to the 'Other' group for any files you want to
-serve. Clone the repo into your `~\public_html` directory and use
-`chmod o=r ./WebServer/*` __or__ cd into `WebServer` and run `./WebServer/setup.sh`
-to make all the files in the `WebServer` directory accessible over http.
 
 ##Linters
 
