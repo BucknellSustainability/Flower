@@ -1,7 +1,7 @@
 import React, {Component} from 'react';
 import './ProjectNav.css';
 import '../../fonts.css';
-import {Button, Nav, NavItem, Well, Row, Col} from 'react-bootstrap/lib/';
+import {Button, Nav, NavItem, Well, Row, Col, Badge} from 'react-bootstrap/lib/';
 
 
 export class ProjectNav extends Component{
@@ -26,21 +26,18 @@ export class ProjectNav extends Component{
           <Well className="project-nav-well" bsSize="small">
           <Nav bsStyle="pills project-nav" stacked activeKey={this.state.activeKey} onSelect={this.handleSelect}>
               {this.props.user.projects.map((project, i) =>
-                <NavItem className="linda bold border border-black" eventKey={i}>
+                <NavItem className="raise grow concert bold border border-black" eventKey={i} style={{marginLeft: 15, marginRight:15}}>
                   <div className="card p-3 text-center">
                     <Row>
-                      <Col md="8">
+                      <Col lg={10} md={10} sm={10} lgOffset={1} mdOffset={1} smOffset={1}>
                         <div class="card-header">
-                          {project.name}
+                          <Badge style={{marginRight:5}}> {project.id} </Badge> {project.name}
                         </div>
                         <div class="card-block">
                         </div>
                         <div class="card-footer text-muted">
                           2 days ago
                         </div>
-                      </Col>
-                      <Col md="4">
-                        <Button> Remove </Button>
                       </Col>
                     </Row>
                   </div>

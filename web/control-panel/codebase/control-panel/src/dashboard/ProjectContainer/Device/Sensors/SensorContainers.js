@@ -38,10 +38,13 @@ export class SensorContainers extends React.Component {
                 <Panel.Heading className="sensor-container-header">
                   <Row>
                     <Col lg={6} md={6} sm={6} lgOffset={3} mdOffset={3} smOffset={3}>
-                          <Panel.Title className="sensor-container-title concert" componentClass="h4" toggle>{sensor_i.name}</Panel.Title>
+                          <Panel.Title className="sensor-container-title concert" componentClass="h4" toggle>
+                            {sensor_i.name}
+                            <span className="glyphicon glyphicon-chevron-down" aria-hidden="false" style={{marginLeft:5}}></span>
+                          </Panel.Title>
                     </Col>
                     <Col lg={3} md={3} sm={3}>
-                          <AlertLog sensor={sensor_i}/>
+                          <AlertLog id="sensor{i}" sensor={sensor_i}/>
                     </Col>
                   </Row>
                 </Panel.Heading>

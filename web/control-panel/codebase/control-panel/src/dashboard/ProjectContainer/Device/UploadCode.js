@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import './UploadCode.css';
 import '../../../fonts.css';
+import {UploadAlert} from './UploadAlert.js'
 import {Button, ButtonGroup, Modal, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap'
 
 
@@ -25,18 +26,17 @@ export class UploadCode extends React.Component {
   }
 
   handleHide() {
-    this.setState({ show: false });
+    this.setState({ show: false});
   }
 
   render() {
     return (
       <div className="modal-container">
-        <Button className="code-btn center-text concert"
-          bsStyle="info"
+        <button className="ui-btn raise code-btn center-text concert"
           onClick={() => this.setState({ show: true })}
         >
           Upload Code
-        </Button>
+        </button>
 
         <Modal
           show={this.state.show}

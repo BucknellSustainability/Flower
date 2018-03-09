@@ -39,13 +39,13 @@ export class ClaimDevice extends React.Component {
   render() {
     return (
       <div className="modal-container">
-
-        <Button className="code-btn center-text concert"
-          bsStyle="info"
+        <button className="ui-btn raise code-btn center-text concert"
           onClick={() => {this.getUnclaimedDevices()}}
+          style={{marginLeft:15 , marginRight:10, marginTop:3}}
         >
           Claim Device
-        </Button>
+          <span className="glyphicon glyphicon-plus" aria-hidden="true" style={{marginLeft:5}}></span>
+        </button>
 
         <Modal
           show={this.state.show}
@@ -63,7 +63,7 @@ export class ClaimDevice extends React.Component {
               {this.state.unclaimedDevices.map((device, i) =>
                 <Col key={i} xl={6} lg={6} md={6} sm={12} xs={12}>
                   <div className="card text-center card-inverse unclaimed-device">
-                      <ClaimDeviceForm device={device}> </ClaimDeviceForm>
+                      <ClaimDeviceForm device={device} activeProject={this.props.activeProject} token={this.props.token}> </ClaimDeviceForm>
                   </div>
                 </Col>
               )}

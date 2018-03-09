@@ -21,7 +21,11 @@
 .rowC{
   display:flex; 
   flex-direction:row;
-  margin-right: 5px;
+  align-items: stretch;
+}
+
+.colC{
+  flex-basis: 50%;
 }
 
 .unclaimed-device{

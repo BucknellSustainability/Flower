@@ -72,6 +72,7 @@ def get():
           table,
           interleave(condition_fields, ' = ', '%s', ' AND ')
     )
+
     result = exec_query(sql_string, tuple(condition_values))
     return json.dumps(result, default = jsonconverter)
 
@@ -567,6 +568,7 @@ def exec_query(formatted_sql_string, param_tuple):
 
         # Fetch all of the data
         data = cursor.fetchall()
+        conn.commit()
     except Exception as e:
         print("Error: Couldn't fetch data: {}".format(str(e)))
 

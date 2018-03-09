@@ -4,13 +4,16 @@ import './fonts.css'
 import {Dashboard} from './dashboard/Dashboard.js'
 import {DashboardHeader} from './dashboard/DashboardHeader.js'
 
+var gUser = {}
 class App extends Component {
   constructor() {
     super();
+    this.loadProfile = this.loadProfile.bind(this);
 
     this.state = {
       researcher: undefined,
-      permission: false
+      permission: false,
+      idtoken: 0
     }
   }
 
@@ -27,8 +30,14 @@ class App extends Component {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', 'http://127.0.0.1:5000/get-profile');
     xhr.withCredentials = true;
+    xhr.responseType = 'json';
+
+    const scope = this;
     xhr.onload = function() {
-      console.log(xhr.responseText);
+      //if use is verified
+      if(xhr.response !== ""){
+        scope.setState({researcher: xhr.response, permission: true, idtoken: id_token})
+      }
     };
     xhr.send(form_data);
   }
@@ -45,10 +54,10 @@ class App extends Component {
   }
 
   render() {
-    const dashboard = <Dashboard />
+    const dashboard = <Dashboard researcher={this.state.researcher}  token={this.state.idtoken}/>
     const dashboardHeader = <DashboardHeader />
 
-    if (this.state.permission == false) { //================= NOT SIGNED IN
+    if (this.state.permission === false) { //================= NOT SIGNED IN
       return (
         <div className="App">
           <header className="App-header">
@@ -56,13 +65,13 @@ class App extends Component {
 
           </header>
 
-          <h1 className="App-title">You must log in to view this page</h1>
-          <div className="signIn" id="my-signin2"></div>
+          <h1 className="App-title concert bold">You must log in to view this page</h1>
+          <div className="signIn raise" id="my-signin2"></div>
 
         </div>
       );//
     } else { //============================================ PROFILE STILL LOADING
-      if (typeof this.state.researcher == 'undefined') {
+      if (typeof this.state.researcher === 'undefined') {
         return (
           <div className="App">
             <header className="App-header">

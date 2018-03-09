@@ -9,25 +9,18 @@ import {Button, ButtonGroup, Panel, Form, FormGroup, FormControl, ControlLabel, 
 export class ProjectContainer extends React.Component {
   constructor(props, context) {
     super(props, context);
-    this.deviceNavHandler = this.deviceNavHandler.bind(this);
 
     this.state = {
-      activeDevice: 0,
       showVis: false,
       showClaimDevice: false
     };
 
   }
 
-  deviceNavHandler(active){
-    this.setState({
-      activeDevice: active
-    })
-  }
-
 
   render() {
     const currProject = this.props.user.projects[this.props.activeProject];
+    console.log(currProject.devices)
     return (
           <div>
 
@@ -35,12 +28,12 @@ export class ProjectContainer extends React.Component {
                   <Panel.Heading className="project-info-panel-header">
                     <Panel.Title >
                         <Row>
-                          <Col lg={6} md={6} sm={6} lgOffset={3} mdOffset={1} smOffset={0}>
+                          <Col lg={6} md={6} sm={6} lgOffset={1} mdOffset={1} smOffset={0}>
                               <h3 className="project-info-title concert bold"> Project Information: {currProject.name} </h3>
                           </Col>
-                          <Col lg={3} md={5} sm={6}>
+                          <Col lg={5} md={5} sm={6}>
                             <div className="rowC">
-                              <ClaimDevice style={{marginRight:"15px"}}/>
+                              <ClaimDevice activeProject={currProject} token={this.props.token}/>
                               <CreateVis activeProject={currProject}/>
                             </div>
                           </Col>
@@ -76,10 +69,10 @@ export class ProjectContainer extends React.Component {
 
                           <Row>
                               <Col md={3}>
-                                <DeviceNav devices={currProject.devices} handler={this.deviceNavHandler}></DeviceNav>
+                                <DeviceNav devices={currProject.devices} device={this.props.activeDevice} handler={this.props.handler}></DeviceNav>
                               </Col>
                               <Col md={9}>
-                                   <DeviceContainer device={currProject.devices[this.state.activeDevice]}/>
+                                   <DeviceContainer device={currProject.devices[this.props.activeDevice]}/>
                               </Col>
 
                           </Row>
