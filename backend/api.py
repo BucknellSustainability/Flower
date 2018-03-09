@@ -72,6 +72,7 @@ def get():
           table,
           interleave(condition_fields, ' = ', '%s', ' AND ')
     )
+
     result = exec_query(sql_string, tuple(condition_values))
     return json.dumps(result, default = jsonconverter)
 
@@ -519,7 +520,7 @@ def build_all_sensors_dict():
 
     project_dict = {'projects': project_list}
 
-    pprint.pprint(project_dict)
+    #pprint.pprint(project_dict)
 
     # return result as string
     return_string = json.dumps(project_dict, default = jsonconverter)
@@ -568,6 +569,7 @@ def exec_query(formatted_sql_string, param_tuple):
 
         # Fetch all of the data
         data = cursor.fetchall()
+        conn.commit()
     except Exception as e:
         print("Error: Couldn't fetch data: {}".format(str(e)))
 

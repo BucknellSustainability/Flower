@@ -114,7 +114,6 @@ requestSensorInfo('*',
 
 
 setInterval(function () {
-	console.log("IN FUNC")
     //Speed
     let point;
     let data;
@@ -127,6 +126,7 @@ setInterval(function () {
 	      xhr.onload = function() {
 	      	data = xhr.response[0].value;
 	      	console.log(data)
+            console.log(xhr.response[0].dataId)
 	      	point.update(Math.round(data * 100) / 100);
 	      };
 	      xhr.send();

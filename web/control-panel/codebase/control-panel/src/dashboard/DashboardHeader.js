@@ -16,7 +16,7 @@ export class DashboardHeader extends Component {
             </Navbar.Header>
             <Navbar.Collapse>
               <Navbar.Text>
-                    <h2 className="App-title concert">Energy Hill Dashboard</h2>
+                    <h2 className="App-title bold concert">Energy Hill Dashboard</h2>
               </Navbar.Text>
               <Navbar.Text className="App-sub-text concert" pullRight>Signed in as: <Navbar.Link className="App-sub-text" href="#">jav017@bucknell.edu</Navbar.Link></Navbar.Text>
             </Navbar.Collapse>

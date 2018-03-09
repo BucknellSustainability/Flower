@@ -16,6 +16,27 @@ export class AlertLog extends React.Component {
     };
   }
 
+  handleAlert() {
+    var form_data = new FormData();
+
+    let pairs = 'handled=2';
+    let cond = ' deviceId='+ this.props.device.deviceId + ' ';
+
+    form_data.append('id_token', this.props.token);
+    form_data.append('table', 'alerts')
+    form_data.append('modify_pairs', pairs)
+    form_data.append('condition', cond)
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'http://localhost:5000/update');
+    xhr.withCredentials = true;
+
+    xhr.onload = function() {
+        //window.location.reload();
+    };
+    xhr.send(form_data);
+  }
+
   handleHide() {
     this.setState({ show: false });
   }
@@ -41,7 +62,6 @@ export class AlertLog extends React.Component {
   }
 
   componentWillMount(){
-    this.getAlerts()
   }
 
   getAlerts(){
@@ -54,7 +74,7 @@ export class AlertLog extends React.Component {
     
     const scope = this;
     xhr.onload = function() {
-        scope.setState({alertData: xhr.response});
+        scope.setState({alertData: xhr.response, show:true});
     };
     xhr.send();
   }
@@ -62,7 +82,7 @@ export class AlertLog extends React.Component {
   render() {
     return (
       <div className="modal-container">
-        <Button bsSize="small" className="alert-log-btn concert" onClick={() => {this.showModal()}}>Alert Log</Button>
+        <button bsSize="small" className="ui-btn raise concert" onClick={() => {this.getAlerts()}}>Alert Log</button>
 
         <Modal
           bsSize="large"

@@ -1,12 +1,12 @@
 @import url('https://fonts.googleapis.com/css?family=Roboto:300,400,500,700');
-@import url('https://fonts.googleapis.com/css?family=Black+Ops+One|Concert+One');
+@import url('https://fonts.googleapis.com/css?family=Black+Ops+One|Concert+One|Play');
 
 .linda{
-    font-family: 'Concert One';
+    font-family: 'Play';
 }
 
 .concert{
-	font-family: 'Concert One', cursive;
+	font-family: 'Play', sans-serif;
 }
 
 .bold{
