@@ -28,7 +28,7 @@ export class AlertLog extends React.Component {
     form_data.append('condition', cond)
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://localhost:5000/update');
+    xhr.open('POST', 'http://linuxremote1.bucknell.edu:5001/update');
     xhr.withCredentials = true;
 
     xhr.onload = function() {
@@ -66,7 +66,7 @@ export class AlertLog extends React.Component {
 
   getAlerts(){
     var xhr = new XMLHttpRequest();
-    var url = 'http://127.0.0.1:5000/read?table=alerts&fields=alertId,handled,alertTime&condition=sensorId=' + this.props.sensor.id;
+    var url = 'http://linuxremote1.bucknell.edu:5001/read?table=alerts&fields=alertId,handled,alertTime&condition_fields=sensorId&condition_values=' + this.props.sensor.id;
     xhr.open('GET', url);
     xhr.withCredentials = true;
     xhr.responseType = 'json';

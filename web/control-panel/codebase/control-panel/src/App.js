@@ -27,7 +27,8 @@ class App extends Component {
     form_data.append('idtoken', id_token);
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://127.0.0.1:5000/get-profile');
+    // TODO: make this address dynamic
+    xhr.open('POST', 'http://linuxremote1.bucknell.edu:5001/get-profile');
     xhr.withCredentials = true;
     xhr.responseType = 'json';
 

@@ -36,7 +36,7 @@ export class ClaimDeviceForm extends React.Component {
     form_data.append('condition_values', this.props.device.deviceId)
 
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://localhost:5000/update');
+    xhr.open('POST', 'http://linuxremote1.bucknell.edu:5001/update');
     xhr.withCredentials = true;
 
     xhr.onload = function() {
