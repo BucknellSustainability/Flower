@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import '../../fonts.css'
 import './CreateVis.css'
+import Requests from '../../Requests.js'
 import {Button, ButtonGroup, Modal, Row, Col, SplitButton, MenuItem, Badge, Well, ButtonToolbar, ToggleButton, ToggleButtonGroup, Form, FormGroup, FormControl, ControlLabel} from 'react-bootstrap'
 
 export class CreateVis extends React.Component {
@@ -8,12 +9,14 @@ export class CreateVis extends React.Component {
   constructor(props, context) {
     super(props, context);
 
-    this.chartUrl = 'http://linuxremote1.bucknell.edu/create/'
+    this.chartUrl = Requests.getChartURL();
 
     this.handleHide = this.handleHide.bind(this);
     this.showModal = this.showModal.bind(this);
     this.sensorToggleClick = this.sensorToggleClick.bind(this);
     this.handleChartTypeChange = this.handleChartTypeChange.bind(this);
+
+    this.getAllProjects = Requests.getAllProjects.bind(this);
 
     this.newMin = this.newMin.bind(this);
     this.newMax = this.newMax.bind(this);
@@ -109,7 +112,6 @@ export class CreateVis extends React.Component {
   }
 
   handleChartTypeChange(e) {
-    console.log(e);
     this.setState({ chartType: e , selectedSensors: []});
   }
 
@@ -139,21 +141,6 @@ export class CreateVis extends React.Component {
       }
     }
     return;
-  }
-
-  getAllProjects(){
-      var xhr = new XMLHttpRequest();
-      var url = 'http://linuxremote1.bucknell.edu:5001/get-all-sensors';
-      xhr.open('GET', url);
-      xhr.withCredentials = true;
-      xhr.responseType = 'json';
-      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-      
-      const scope = this;
-      xhr.onload = function() {
-        scope.setState({allProjects: xhr.response.projects, activeProject: xhr.response.projects[0]});
-      };
-      xhr.send();
   }
 
   render() {

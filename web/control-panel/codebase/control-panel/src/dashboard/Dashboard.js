@@ -20,22 +20,6 @@ export class Dashboard extends React.Component {
       }
     }
 
-  componentDidMount(){
-      var xhr = new XMLHttpRequest();
-      var url = 'http://linuxremote1.bucknell.edu:5001/read?table=device&fields=*&condition_fields=projectId&condition_values=null';
-      xhr.open('GET', url);
-      xhr.withCredentials = true;
-      xhr.responseType = 'json';
-      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-      const scope = this;
-      xhr.onload = function() {
-        scope.setState({unclaimedDevices: xhr.response, show: true});
-      };
-      xhr.send();
-      //this.setState({show: true})
-  }
-
   projectNavHandler(active) {
     this.setState({
       activeProject: active,

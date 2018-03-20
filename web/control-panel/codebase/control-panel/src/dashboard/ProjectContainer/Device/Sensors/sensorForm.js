@@ -1,27 +1,25 @@
 import React, { Component } from 'react';
-import {Form, FormGroup, FormControl, HelpBlock, ControlLabel, Row, Col} from 'react-bootstrap'
+import Requests from '../../../../Requests.js'
+import {Form, FormGroup, FormControl, HelpBlock, ControlLabel, Row, Col, Button} from 'react-bootstrap'
 
 export class SensorForm extends React.Component {
   constructor(props, context) {
     super(props, context);
 
+    this.updateSensor = Requests.updateSensor.bind(this)
+
     this.state = {
       name: this.props.sensor.name,
-      units: this.props.sensor.id, //TODO: need to figure out data lifecycle
-      limHigh: 0,
-      limLow: 100,
+      id: this.props.sensor.id,
+      units: "degree F", //TODO: need to figure out data lifecycle
+      limHigh: 100,
+      limLow: 0,
       maxLength: 20
     };
   }
 
   ComponentWillMount() {
     //update any changes to sensor info
-  }
-
-  handleSubmit = () => {
-    //update database
-    //check validation state before continuing
-    console.log("Submit button pressed! Nothing happened.");
   }
 
   handleChangeName = (e) => {
@@ -60,7 +58,6 @@ export class SensorForm extends React.Component {
     }
   }
 
-
   render() {
     return (
       <Form>
@@ -72,7 +69,7 @@ export class SensorForm extends React.Component {
                 <ControlLabel>Sensor Name</ControlLabel>{' '}
                 <FormControl
                   type="text"
-                  value={this.props.sensor.name}
+                  value={this.state.name}
                   onChange={this.handleChangeName}/>
                 <FormControl.Feedback />
                 <HelpBlock>{this.state.maxLength} character limit</HelpBlock>
@@ -83,7 +80,7 @@ export class SensorForm extends React.Component {
                 <ControlLabel>Units</ControlLabel>{' '}
                 <FormControl
                   type="text"
-                  value="degree F"
+                  value={this.state.units}
                   onChange={this.handleChangeUnits}/>
                 <FormControl.Feedback />
                 <HelpBlock>{this.state.maxLength} character limit</HelpBlock>
@@ -93,7 +90,7 @@ export class SensorForm extends React.Component {
             <FormGroup
               controlId="sensorRanges"
               validationState={this.noValidation()}>
-                <ControlLabel>Lower Limit</ControlLabel>{' '}
+                <ControlLabel>Upper Limit</ControlLabel>{' '}
                 <FormControl
                   type="number"
                   value={this.state.limHigh}
@@ -103,7 +100,7 @@ export class SensorForm extends React.Component {
             <FormGroup
               controlId="formInlineUnits"
               validationState={this.noValidation()}>
-                <ControlLabel>Upper Limit</ControlLabel>{' '}
+                <ControlLabel>Lower Limit</ControlLabel>{' '}
                 <FormControl
                   type="number"
                   value={this.state.limLow}
@@ -112,6 +109,12 @@ export class SensorForm extends React.Component {
             </FormGroup>
           </Col>
         </Row>
+        <br/>
+        <button 
+          type="button"
+          className="raise center-text concert"
+          onClick={() => {this.updateSensor()}}
+          style={{marginLeft:15 , marginRight:10, marginTop:3}}> Submit </button>
       </Form>
     );}
   }
