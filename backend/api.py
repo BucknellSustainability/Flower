@@ -60,6 +60,7 @@ def get():
 
         condition_fields = split_and_validate_column_name_csv(table, request.values.get('condition_fields'))
         condition_values = split_csv(request.values.get('condition_values'))
+        # TODO: handle if there is a list and one fields is null...
         assert (condition_fields == ['null'] and condition_values == ['null']) or (len(condition_fields) == len(condition_values)), 'Condition Fields and Values parameters are not equal length'
 
     except (HttpRequestParamError, AssertionError) as e:
@@ -76,7 +77,7 @@ def get():
     # TODO: do something better than the string `null`
     if condition_fields != ['null']:
         sql_string += ' WHERE {}'.format(
-            interleave(condition_fields, ' = ', '%s', ' AND ')
+            build_basic_condition(condition_fields, condition_values)
         )
         result = exec_query(sql_string, tuple(condition_values))
     else:
@@ -143,8 +144,8 @@ def modify():
     # Build sql string with constructed fields and condition fields parts with `%s`s
     sql_string = 'UPDATE {} SET {} WHERE {};'.format(
         table,
-        interleave(fields, ' = ', '%s', ' , '),
-        interleave(condition_fields, ' = ', '%s', ' AND ')
+        build_basic_set(fields),
+        build_basic_condition(condition_fields, condition_values)
     )
 
     # execute query with laundry list of values to sub in
@@ -381,10 +382,25 @@ def validate_column_name(table_name, column_names):
         if column_name not in valid_columns:
             raise HttpRequestParamError('Query has invalid column name')
 
-# TODO: find better name for this
-def interleave(lhss, statement_sep, rhs, sep):
-    statements = [lhs + statement_sep + rhs for lhs in lhss]
-    return sep.join(statements)
+def build_basic_set(lhs_list):
+    statements = [lhs + ' = %s' for lhs in lhs_list]
+    return ','.join(statements)
+
+def build_basic_condition(lhs_list, rhs_list):
+    statements = []
+    null_indicies = []
+    for i in range(len(lhs_list)):
+        if rhs_list[i] != 'null':
+            statements.append(lhs_list[i] + ' = %s')
+        else: # the item is 'null'
+            statements.append(lhs_list[i] + ' IS null')
+            null_indicies.append(i)
+    
+    # removes the null values in the right hand side list
+    for index in reversed(null_indicies):
+        rhs_list.pop(index)
+
+    return ' AND '.join(statements)
 
 def construct_profile_json(google_id):
     # fetch user info
