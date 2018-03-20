@@ -32,23 +32,25 @@ UPLOAD_FOLDER = 'uploads/'
 # DO NOT ALLOW PHP FILES BECAUSE THEN USERS CAN EXECUTE ARBITRARY CODE
 ALLOWED_EXTENSIONS = set(['hex'])
 
-app = Flask(__name__)
-CORS(app, supports_credentials=True)
+def makeApp(preprefix):
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    app = Flask(__name__)
+    CORS(app, supports_credentials=True)
 
-# give mysql plug the db info
-app.config.update(
-    MYSQL_DATABASE_HOST = config['DB_URL'],
-    MYSQL_DATABASE_USER = config['DB_USERNAME'],
-    MYSQL_DATABASE_PASSWORD = config['DB_PASSWORD'],
-    MYSQL_DATABASE_DB = config['DB_NAME']
-)
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Intialize mysql flask plugin
-mysql = MySQL()
-mysql.init_app(app)
-conn = mysql.connect()
+    # give mysql plug the db info
+    app.config.update(
+        MYSQL_DATABASE_HOST = config['DB_URL'],
+        MYSQL_DATABASE_USER = config['DB_USERNAME'],
+        MYSQL_DATABASE_PASSWORD = config['DB_PASSWORD'],
+        MYSQL_DATABASE_DB = config['DB_NAME']
+    )
+
+    # Intialize mysql flask plugin
+    mysql = MySQL()
+    mysql.init_app(app)
+    conn = mysql.connect()
 
 @app.route('/read', methods = ['GET'])
 def get():

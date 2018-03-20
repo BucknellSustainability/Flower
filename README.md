@@ -9,6 +9,18 @@ We suggest running this system with Bucknell linuxremote servers because that is
 
 If attempting to run on Bucknell systems, we advise cloning the repo into a user's `~/public_html/` directory (create it if it doesn't exist) to enable the Bucknell Apache server to handle the web page serving.
 
+The system needs to be run on linuxremote3 for the below part to function.
+
+You will also need to setup the system to use https. You need to add a file called `runwsgi.sh` in the same directory that your cloned directory (most likely called `Flower` unless otherwise specified) with the contents of 
+```
+#!/bin/bash
+#source activate e2
+source .conda/envs/e2/bin/activate e2
+cd {your_cloned_dir}
+python runwsgi.py
+```
+and you will need to contact ENST to have there be a redirect on a certain port. It will look something like `www.eg.bucknell.edu/{your_extension}` with a certain port that they give you.  For our production, it is `www.eg.bucknell.edu/energyhill:4004`. 
+
 # API Keys and Deployment Specific Values
 API Keys and other deployment specific values have been removed from the repo to ensure security and flexibility for different deployments.  You will NEED to complete steps 1-6 to have any component of the project to work.
 
