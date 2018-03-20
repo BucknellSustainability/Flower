@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import Requests from '../../Requests.js'
 import '../../fonts.css'
 import {Button, ButtonGroup, Modal, Row, Col, Form, FormGroup, FormControl ,ControlLabel, FormLabel, HelpBlock} from 'react-bootstrap'
 
@@ -7,7 +8,7 @@ export class ClaimDeviceForm extends React.Component {
     super(props, context);
 
     this.handleNameChange = this.handleNameChange.bind(this);
-    this.claimDevice = this.claimDevice.bind(this);
+    this.claimDevice = Requests.claimDevice.bind(this);
 
     this.state = {
       deviceName: '',
@@ -23,26 +24,6 @@ export class ClaimDeviceForm extends React.Component {
 
   handleNameChange(e) {
     this.setState({ deviceName: e.target.value });
-  }
-
-  claimDevice() {
-    var form_data = new FormData();
-
-    form_data.append('id_token', this.props.token);
-    form_data.append('table', 'device')
-    form_data.append('fields', 'projectId, name')
-    form_data.append('values', this.props.activeProject.id + ', ' + this.state.deviceName)
-    form_data.append('condition_fields', 'deviceId')
-    form_data.append('condition_values', this.props.device.deviceId)
-
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://linuxremote1.bucknell.edu:5001/update');
-    xhr.withCredentials = true;
-
-    xhr.onload = function() {
-        //window.location.reload();
-    };
-    xhr.send(form_data);
   }
 
   render() {

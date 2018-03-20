@@ -50,8 +50,6 @@ export class SensorContainers extends React.Component {
                 </Panel.Heading>
                 <Panel.Body className="sensor-container-body" collapsible>
                   <SensorForm sensor = {sensor_i}/>
-                  <br/>
-                  <Button type="submit">Submit Changes</Button>
                 </Panel.Body>
               </Panel>
 

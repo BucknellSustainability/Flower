@@ -1,13 +1,14 @@
 import React, { Component } from 'react';
 import './App.css';
 import './fonts.css'
+import Requests from './Requests.js'
 import {Dashboard} from './dashboard/Dashboard.js'
 import {DashboardHeader} from './dashboard/DashboardHeader.js'
 
 class App extends Component {
   constructor() {
     super();
-    this.loadProfile = this.loadProfile.bind(this);
+    this.loadProfile = Requests.loadProfile.bind(this);
 
     this.state = {
       researcher: undefined,
@@ -18,28 +19,6 @@ class App extends Component {
 
   componentDidMount() {
     this.renderButton();
-  }
-
-  loadProfile(googleUser) {
-    var id_token = googleUser.getAuthResponse().id_token;
-
-    var form_data = new FormData();
-    form_data.append('idtoken', id_token);
-
-    var xhr = new XMLHttpRequest();
-    // TODO: make this address dynamic
-    xhr.open('POST', 'http://linuxremote1.bucknell.edu:5001/get-profile');
-    xhr.withCredentials = true;
-    xhr.responseType = 'json';
-
-    const scope = this;
-    xhr.onload = function() {
-      //if use is verified
-      if(xhr.response !== ""){
-        scope.setState({researcher: xhr.response, permission: true, idtoken: id_token})
-      }
-    };
-    xhr.send(form_data);
   }
 
   renderButton() {

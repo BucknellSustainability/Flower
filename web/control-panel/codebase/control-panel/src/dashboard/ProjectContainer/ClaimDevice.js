@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import Requests from '../../Requests.js'
 import '../../fonts.css';
 import {ClaimDeviceForm} from './ClaimDeviceForm.js';
 import {Button, ButtonGroup, Modal, Row, Col, Form, FormGroup, FormControl ,ControlLabel, FormLabel, HelpBlock} from 'react-bootstrap';
@@ -8,6 +9,7 @@ export class ClaimDevice extends React.Component {
   constructor(props, context) {
     super(props, context);
     this.handleHide = this.handleHide.bind(this);
+    this.getUnclaimedDevices = Requests.getUnclaimedDevices.bind(this);
 
     this.state = {
       show: false,
@@ -17,22 +19,6 @@ export class ClaimDevice extends React.Component {
 
   handleHide() {
     this.setState({ show: false });
-  }
-
-  getUnclaimedDevices(){
-      var xhr = new XMLHttpRequest();
-      var url = 'http://linuxremote1.bucknell.edu:5001/read?table=device&fields=*&condition_fields=projectId&condition_values=null';
-      xhr.open('GET', url);
-      xhr.withCredentials = true;
-      xhr.responseType = 'json';
-      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-
-      const scope = this;
-      xhr.onload = function() {
-        scope.setState({unclaimedDevices: xhr.response, show: true});
-      };
-      xhr.send();
-      //this.setState({show: true})
   }
 
 
