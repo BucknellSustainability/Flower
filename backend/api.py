@@ -124,6 +124,7 @@ def modify():
         return ''
 
     try:
+        print("WE ARE HERE")
         table = request.values.get('table')
         validate_table_name(table)
 
@@ -613,6 +614,8 @@ def validate_user(id_token):
     googleid = idinfo['sub']
     email = idinfo['email']
     name = idinfo['name']
+
+    print(googleid)
 
     user_exists_sql = 'SELECT * FROM user WHERE googleId = %s'
     result = exec_query(user_exists_sql, (googleid,))

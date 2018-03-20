@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import Requests from '../../../../Requests.js'
 import './AlertLog.css'
 import '../../../../fonts.css';
 import {ButtonGroup, Button, Modal} from 'react-bootstrap'
@@ -9,32 +10,13 @@ export class AlertLog extends React.Component {
     super(props, context);
 
     this.handleHide = this.handleHide.bind(this);
-    this.getAlerts = this.getAlerts.bind(this);
+    this.getAlerts = Requests.getAlerts.bind(this);
+    this.handleAlert = Requests.handleAlerts.bind(this)
+
     this.state = {
       show: false,
       alertData: []
     };
-  }
-
-  handleAlert() {
-    var form_data = new FormData();
-
-    let pairs = 'handled=2';
-    let cond = ' deviceId='+ this.props.device.deviceId + ' ';
-
-    form_data.append('id_token', this.props.token);
-    form_data.append('table', 'alerts')
-    form_data.append('modify_pairs', pairs)
-    form_data.append('condition', cond)
-
-    var xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://linuxremote1.bucknell.edu:5001/update');
-    xhr.withCredentials = true;
-
-    xhr.onload = function() {
-        //window.location.reload();
-    };
-    xhr.send(form_data);
   }
 
   handleHide() {
@@ -50,33 +32,11 @@ export class AlertLog extends React.Component {
     }
   }
 
-  addHandledBtn(handled) {
-    if (handled == 1){
-      return <td className="text-center"><Button>Mark Handled</Button></td>
-    }
-    return <td className="text-center"></td>
-  }
-
   showModal(){
       this.setState({show: true});
   }
 
   componentWillMount(){
-  }
-
-  getAlerts(){
-    var xhr = new XMLHttpRequest();
-    var url = 'http://linuxremote1.bucknell.edu:5001/read?table=alerts&fields=alertId,handled,alertTime&condition_fields=sensorId&condition_values=' + this.props.sensor.id;
-    xhr.open('GET', url);
-    xhr.withCredentials = true;
-    xhr.responseType = 'json';
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    
-    const scope = this;
-    xhr.onload = function() {
-        scope.setState({alertData: xhr.response, show:true});
-    };
-    xhr.send();
   }
 
   render() {
@@ -115,7 +75,6 @@ export class AlertLog extends React.Component {
                     <td className="text-center">{alert.alertId}</td>
                     <td className="text-center">{alert.alertTime}</td>
                     {this.getHandledText(alert.handled)}
-                    {this.addHandledBtn(alert.handled)}
                 </tr>
               )}
 
@@ -126,6 +85,7 @@ export class AlertLog extends React.Component {
           </Modal.Body>
           <Modal.Footer>
             <ButtonGroup>
+              <Button bsStyle="success" onClick={this.handleAlert}>Mark Alerts Handled</Button>
               <Button bsStyle="danger" onClick={this.handleHide}>Exit</Button>
             </ButtonGroup>
           </Modal.Footer>
