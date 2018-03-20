@@ -33,4 +33,17 @@ serve. After cloning the repo into your `~\public_html` directory and use
 to make all the files in the `/web` directory accessible over http.
 
 # Compiling React Code
-Under construction
+First you need to do a module load of the node module by running
+```
+module load node
+```
+
+Then you cd to the directory with the package.json file which in our case is `web/control-panel/codebase/control-panel`.  They you want to install all the packages:
+```
+npm install react react-scripts react-bootstrap react-dom
+```
+
+Then you need to compile the react code by running
+```
+npm start
+```
