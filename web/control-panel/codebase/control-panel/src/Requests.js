@@ -54,7 +54,8 @@ class Requests {
   */
   getUnclaimedDevices(){
       var xhr = new XMLHttpRequest();
-      var url = flaskURL + 'read?table=device&fields=*&condition_fields=projectId&condition_values=1';
+      var url = flaskURL + 'read?table=device&fields=*&condition_fields=projectId&condition_values=null';
+
       xhr.open('GET', url);
       xhr.withCredentials = true;
       xhr.responseType = 'json';
