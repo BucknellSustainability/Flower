@@ -387,12 +387,18 @@ def build_basic_set(lhs_list):
 
 def build_basic_condition(lhs_list, rhs_list):
     statements = []
+    null_indicies = []
     for i in range(len(lhs_list)):
         if rhs_list[i] != 'null':
             statements.append(lhs_list[i] + ' = %s')
         else: # the item is 'null'
             statements.append(lhs_list[i] + ' IS null')
+            null_indicies.append(i)
     
+    # removes the null values in the right hand side list
+    for index in reversed(null_indicies):
+        rhs_list.pop(index)
+
     return ' AND '.join(statements)
 
 def construct_profile_json(google_id):
