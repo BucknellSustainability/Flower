@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xml xmlns="http://www.w3.org/1999/xhtml">
+  <block type="onfirstboot" id="onfirstboot" x="96" y="20">
+    <next>
+      <block type="changepass" id="|_eyNXRE32ExiUDGZa~b">
+        <field name="1"></field>
+        <next>
+          <block type="wifisetup" id="S,9g_GmgR-skpfm.l}W[">
+            <field name="1"></field>
+            <field name="2"></field>
+            <field name="3"></field>
+            <next>
+              <block type="packageinstall" id="HVuem|%/:0zJL,r4JR*M">
+                <field name="1">git</field>
+                <next>
+                  <block type="runcommand" id="UP2Gu}j}CUv^QLW2d?Cz">
+                    <field name="1">git clone https://github.com/BucknellSustainability/Flower ~/Flower &gt;&gt; log.txt</field>
+                    <field name="2">pi</field>
+                    <next>
+                      <block type="runcommand" id="+4nW_zZpA-!3+L0zvg9m">
+                        <field name="1">chmod +x ~/Flower/raspberrypi/server.py &gt;&gt; log.txt</field>
+                        <field name="2">pi</field>
+                        <next>
+                          <block type="packageinstall" id="_Q0pGo;3={eu~%5+CZ3[">
+                            <field name="1">python3-pip</field>
+                            <next>
+                              <block type="runcommand" id="EvV@{H,c.7IvQL;wZkif">
+                                <field name="1">pip3 install pyserial &gt;&gt; log.txt</field>
+                                <field name="2">root</field>
+                                <next>
+                                  <block type="runcommand" id="RMEX}ho)]Uw8XgR%YNoL">
+                                    <field name="1">pip3 install pymysql &gt;&gt; log.txt</field>
+                                    <field name="2">root</field>
+                                  </block>
+                                </next>
+                              </block>
+                            </next>
+                          </block>
+                        </next>
+                      </block>
+                    </next>
+                  </block>
+                </next>
+              </block>
+            </next>
+          </block>
+        </next>
+      </block>
+    </next>
+  </block>
+  <block type="onboot" id="eb!5j[Q=_W*/D5e-VA{[" x="370" y="68">
+    <next>
+      <block type="runcommand" id=")vR0S.kSug9zf+jfs]}g">
+        <field name="1">~/Flower/raspberrypi/server.py</field>
+        <field name="2">pi</field>
+      </block>
+    </next>
+  </block>
+  <firstboot>1</firstboot>
+</xml>
