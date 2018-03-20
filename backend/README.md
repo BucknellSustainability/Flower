@@ -51,7 +51,7 @@ Generally, hardcoding the URL shouldn't be in code, but instead you should use t
 - parameters:
     - `table`: the table which to pull data from. Must be a valid table in the DB.
     - `fields`: the column names which should be retrieved. Must be valid column of `table`
-    - `condition_fields`: the condition field to compare a value equal to.  Must be a valid column name for `table`
+    - `condition_fields`: the condition field to compare a value equal to.  Must be a valid column name for `table` or `null` (if `null`, then values must also be `null`)
     - `condition_values`: the values that must match up with the `condition_fields` to make a condition. Each subsequent field/value pair will be `AND`ed with the others.
 - form: `SELECT fields FROM table WHERE condition_fields[0] = condition_values[0] AND condition_fields[1] = condition_value[1] AND ...`
 - returns: JSON serialization of DB output
@@ -75,7 +75,7 @@ Generally, hardcoding the URL shouldn't be in code, but instead you should use t
     - `table`: the table which to pull data from. Must be valid table in DB.
     - `fields`: the columns of which to update information with. Must be valid columns in `table`
     - `values`: the values to update into the fields columns in the same order that the fields are in.
-    - `condition_fields`: the condition field to compare a value equal to.  Must be a valid column name for `table`
+    - `condition_fields`: the condition field to compare a value equal to.  Must be a valid column name for `table` or `null` (if `null`, then values must also be `null`)
     - `condition_values`: the values that must match up with the `condition_fields` to make a condition. Each subsequent field/value pair will be `AND`ed with the others.
 - form: `UPDATE table SET (fields[0] = values[0], fields[1] = values[1], ...) WHERE condition_fields[0] = condition_values[0] AND condition_fields[1] = condition_value[1] AND ...`
 - returns: JSON serialization of DB output
