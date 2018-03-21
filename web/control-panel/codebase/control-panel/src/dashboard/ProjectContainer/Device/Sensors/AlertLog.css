@@ -1,0 +1,15 @@
+.alert-log-btn{
+    padding: 5px;
+    height: 30px;
+    background-color: transparent;
+    border: thin solid white;
+    color: white;
+}
+
+.false-handled{
+	color: red;
+}
+
+.true-handled{
+	color: green;
+}

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>Info windows</title>
+
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.0/jquery.min.js"></script>
+    <script src = "https://code.highcharts.com/highcharts.js"></script>
+    <script type="text/javascript" src="../common/db.js"></script>
+    <link rel="stylesheet" href="style.css">
+
+  </head>
+  <body>
+    <!-- multistep form -->
+    <form id="msform">
+    	<!-- progressbar -->
+    	<ul id="progressbar" name="progrssbar">
+    		<li class="active">Choose Site</li>
+    		<li>Choose Project</li>
+    		<li>Choose Sensors</li>
+            <li>Embed</li>
+    	</ul>
+    	<!-- fieldsets -->
+    	<fieldset id='field1' name='siteField'>
+    		<h2 class="fs-title">Site</h2>
+    		<h3 class="fs-subtitle">Choose a Site</h3>
+
+            <div id="siteRadios" name="siteRadios" class="radioIn">
+            </div>
+
+    		<input id="siteNext" type="button" name="siteNext" class="next action-button" value="Next" disabled/>
+    	</fieldset>
+
+    	<fieldset id='field2' name='projectField'>
+    		<h2 class="fs-title">Choose a Project</h2>
+            <div id="projectRadios" name="projectRadios" class="radioIn">
+            </div>
+
+    		<input type="button" name="previous" class="previous action-button" value="Previous" />
+    		<input id="projectNext" type="button" name="projectNext" class="next action-button" value="Next" disabled/>
+    	</fieldset>
+
+        <fieldset id='field3' name='sensorField'>
+            <h2 class="fs-title">Choose Sensors</h2>
+            <div id="sensorRadios" name="sensorRadios" class="radioIn">
+            </div>
+
+            <input type="button" name="previous" class="previous action-button" value="Previous" />
+            <input id="sensorNext" type="button" name="sensorNext" class="next action-button" value="Next" disabled/>
+        </fieldset>
+
+        <fieldset id='field4' name='submitField'
+            <h2 class="fs-title">Embed in Wordpress</h2>
+
+            <div id="viewBox" name="viewBox" height=500px>
+            </div>
+
+            <div id="embedInstr" name="embedInstr" align="left">
+                <h2 id="instructions" text-align="center"> Instructions to Embed Chart</h2>
+                <p id="instr1" text-align="left">1) Go to your wordpress post (sign in and edit)</p>
+                <p id="instr2">2) Copy "iframe" element below into wordpress text section.</p>
+                <textarea rows="2" cols = "50" id="iframeTxtWP"></textarea>
+                <textarea rows="2" cols = "50" id="iframeTxtHTML"></textarea>
+            </div>
+
+            <input type="button" name="previous" class="previous action-button" value="Previous" />
+        </fieldset>
+    </form>
+
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.9.1/jquery.min.js" type="text/javascript"></script>
+    <!-- jQuery easing plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js" type="text/javascript"></script>
+    <script src="script.js" type="text/javascript"></script>
+  </body>
+</html>

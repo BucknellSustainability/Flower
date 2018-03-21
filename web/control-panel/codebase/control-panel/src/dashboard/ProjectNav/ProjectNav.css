@@ -1,0 +1,35 @@
+.ProjectNav {
+  text-align: center;
+  margin: 0 auto;
+}
+
+a {
+    color: #080808;
+    text-decoration: none;
+}
+
+.nav {
+    padding-left: 0;
+    padding-right: 0;
+    margin-bottom: 0;
+    list-style: none;
+}
+
+
+
+.project-nav>li.active>a, .project-nav>li.active>a:focus, .project-nav>li.active>a:hover {
+    color: #fff;
+    width: 100%;
+    background: #287241;
+    text-align: center;
+}
+
+.project-nav-header{
+    margin-top: 0px;
+    color: white;
+}
+
+.project-nav-well{
+    padding-left: 0px;
+    padding-right: 0px;
+}

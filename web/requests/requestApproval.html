@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <title>Bucknell Sustainability</title>
+
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta name="google-signin-client_id" content="438120227370-65o4j0kmk9mbij1bp3dqvnts9dh4kfrf.apps.googleusercontent.com">
+
+    <meta charset="utf-8">
+  </head>
+
+  <style>
+  </style>
+
+  <body>
+      <h1>Looks like you don't have access to the dashboard.  If you think this is a mistake, click the button below.</h1>
+      <div class="g-signin2" data-onsuccess="onSignIn"></div>
+      <script src="https://apis.google.com/js/platform.js" async defer></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script> 
+      <script type="text/javascript" src="../common/load-deployment.js" ></script>
+      <script>
+      function onSignIn(googleUser) {
+          var id_token = googleUser.getAuthResponse().id_token;
+
+          var form_data = new FormData();
+          form_data.append('idtoken', id_token);
+
+          var xhr = new XMLHttpRequest();
+          xhr.open('POST', deploy_config["FLASK_SERVER"] + '/request-access');
+          xhr.withCredentials = true;
+          xhr.onload = function() {
+              console.log('Signed in as: ' + xhr.responseText);
+          };
+          xhr.send(form_data);
+        }
+      </script>
+  </body>
+
+
+</html>
+

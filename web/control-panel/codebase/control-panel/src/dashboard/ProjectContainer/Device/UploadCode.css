@@ -1,0 +1,21 @@
+h1.title{
+	color: black;
+}
+
+.code-btn{
+	background-color: transparent;
+	border: thin solid white;
+	vertical-align: middle;
+}
+
+.formControlsFile{
+	text-align: start !important;
+}
+
+#uploadLabel{
+	text-align: start;
+}
+
+#uploadHelp{
+	text-align: start;
+}
