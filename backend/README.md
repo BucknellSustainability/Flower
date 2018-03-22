@@ -32,12 +32,10 @@ module load python/3.6
 pip install --user --upgrade google-auth flask flask-mysql
 ```
 
-4. Run the following commands to actually start running the flask server
+4. Go to the public\_html directory
 ```
-  export FLASK_APP=api.py
-  flask run --host=0.0.0.0 --port=5000
+./runwsgi.sh > out.txt 2>&1 &
 ```
-The values above should match your specific deployment, so look at your `/deployment.json` to consult that everything is the same for your deployment.
 
 
 # Using the api
@@ -149,4 +147,12 @@ Generally, hardcoding the URL shouldn't be in code, but instead you should use t
 - parameters:
     - `deviceid`: the deviceid from the DB that is waiting to be attempted at code upload
 - returns: the error message for the device if failure and `SUCCESS` if success
+
+
+## Get the most recent reading for a sensor
+- `{endpoint}`: `get-sensor-last-reading`
+- allowed http requests: `GET`
+- parameters:
+    - `sensorid`: the id of the sensor that you want the most recent reading from
+- returns: json with one key - `value` which corresponds to the data of the most recent reading
 

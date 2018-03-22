@@ -9,7 +9,7 @@ monkey.patch_all()
 
 from backend.api import makeApp
 
-app = makeApp(preprefix='/energyhill')
+app = makeApp()
 
 @app.before_request
 def redirect_eg():
@@ -17,8 +17,8 @@ def redirect_eg():
 
     # don't redirect static content to https
     # possibel security risk by appending static to a non-static url??
-    if '/static/' in u.path:
-        return None
+    #if '/static/' in u.path:
+    #    return None
 
     # already https
     if u.netloc == 'www.eg.bucknell.edu':# and request.is_secure:
@@ -30,8 +30,8 @@ def redirect_eg():
     # logging.info(request.headers)
     # force https
     x  = urlunparse(('https', 'www.eg.bucknell.edu') + u[2:])
-    logging.info("redirect {} to {}".format(request.url, x))
+    #logging.info("redirect {} to {}".format(request.url, x))
     return redirect(x, code=301)
 
-http_server = WSGIServer(('', 4002), app)
+http_server = WSGIServer(('', 4004), app)
 http_server.serve_forever()

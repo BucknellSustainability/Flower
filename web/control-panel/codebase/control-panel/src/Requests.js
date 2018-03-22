@@ -1,4 +1,4 @@
-var flaskURL = 'http://127.0.0.1:5000/';
+var flaskURL = 'https://www.eg.bucknell.edu/energyhill/';
 var chartURL = 'http://localhost:8001/create/'
 var id_token = ''
 
