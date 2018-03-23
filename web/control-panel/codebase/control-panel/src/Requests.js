@@ -13,6 +13,7 @@ class Requests {
   */
   loadProfile(googleUser) {
     id_token = googleUser.getAuthResponse().id_token;
+
     var form_data = new FormData();
     form_data.append('idtoken', id_token);
 
@@ -24,8 +25,10 @@ class Requests {
 
     const scope = this;
     xhr.onload = function() {
-      if(xhr.response !== ""){
-        scope.setState({researcher: xhr.response, permission: true, idtoken: id_token})
+      if (xhr.response == null) {
+        scope.setState({researcher: null, signInState: 2, profileEmail: googleUser.getBasicProfile().getEmail()})
+      } else {
+        scope.setState({researcher: xhr.response, signInState: 1, profileEmail: googleUser.getBasicProfile().getEmail()})
       }
     };
     xhr.send(form_data);
@@ -41,7 +44,7 @@ class Requests {
       xhr.withCredentials = true;
       xhr.responseType = 'json';
       xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-      
+
       const scope = this;
       xhr.onload = function() {
         scope.setState({allProjects: xhr.response.projects, activeProject: xhr.response.projects[0]});
@@ -76,7 +79,7 @@ class Requests {
     xhr.withCredentials = true;
     xhr.responseType = 'json';
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
-    
+
     const scope = this;
     xhr.onload = function() {
         scope.setState({alertData: xhr.response, show:true});

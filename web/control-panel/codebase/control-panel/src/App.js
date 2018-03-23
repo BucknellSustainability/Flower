@@ -11,10 +11,12 @@ class App extends Component {
     this.loadProfile = Requests.loadProfile.bind(this);
 
     this.state = {
+      signInState: 0,
       researcher: undefined,
-      permission: false,
-      idtoken: 0
+      profileEmail: ''
     }
+
+
   }
 
   componentDidMount() {
@@ -23,6 +25,7 @@ class App extends Component {
 
   renderButton() {
       window.gapi.signin2.render('my-signin2', {
+        'scope': 'profile email',
         'width': 240,
         'height': 50,
         'longtitle': true,
@@ -32,50 +35,54 @@ class App extends Component {
       });
   }
 
-  render() {
-    const dashboard = <Dashboard researcher={this.state.researcher}  token={this.state.idtoken}/>
-    const dashboardHeader = <DashboardHeader />
+  signOut = () => {
+    this.setState({researcher: undefined, signInState: 0, profileEmail: ''})
+    window.location.reload();
+  }
 
-    if (this.state.permission === false) { //================= NOT SIGNED IN
+  render() {
+    const dashboard = <Dashboard researcher={this.state.researcher}  token={this.state.idtoken} />
+    const dashboardHeader = <DashboardHeader email={this.state.profileEmail} gapi={window.gapi} signOut={this.signOut}/>
+
+    if (this.state.signInState == 0) {
       return (
         <div className="App">
+
           <header className="App-header">
             {dashboardHeader}
-
           </header>
 
-          <h1 className="App-title concert bold">You must log in to view this page</h1>
-          <div className="signIn raise" id="my-signin2"></div>
+          <h1 className="App-title">Please sign in to view this page.</h1>
+          <div className="raise signIn" id="my-signin2"></div>
 
         </div>
-      );//
-    } else { //============================================ PROFILE STILL LOADING
-      if (typeof this.state.researcher === 'undefined') {
-        return (
-          <div className="App">
-            <header className="App-header">
-              {dashboardHeader}
+      );
+    } else if (this.state.signInState == 1) {
+      return (
+        <div className="App">
 
-            </header>
+          <header className="App-header">
+            {dashboardHeader}
+          </header>
 
-            <h1 className="App-title">Loading...</h1>
+          {dashboard}
 
-          </div>
-        );
-      } else { //========================================== PERMISSION GRANTED AND PROFILE LOADED
-        return (
-          <div className="App">
-            <header className="App-header">
-              {dashboardHeader}
+        </div>
+      );
+    } else {
+      return (
+        <div className="App">
 
-            </header>
+          <header className="App-header">
+            {dashboardHeader}
+          </header>
 
-            {dashboard}
+          <h1 className="App-title">Permission Denied! Please contact the Administrator</h1>
 
-          </div>
-        );
-      }
+        </div>
+      )
     }
+
   }
 }
 
