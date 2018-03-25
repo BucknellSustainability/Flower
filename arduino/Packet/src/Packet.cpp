@@ -11,12 +11,14 @@ Packet::Packet(void){
 
 int Packet::initialize(String project_name){
     _baud_rate = Packet::DEFAULT_BAUD_RATE;
+    _project_name = project_name;
     Serial.begin(_baud_rate);
     return 0;
 }
 
 int Packet::initialize(String project_name, long baud_rate){
     _baud_rate = baud_rate;
+    _project_name = project_name;
     // TODO: Check for erroneous baud_rate
     Serial.begin(baud_rate);
     return 0;
