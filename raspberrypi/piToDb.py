@@ -13,6 +13,7 @@ import queue
 import time
 import datetime
 import math
+import os.path
 
 # master_queue is a queue of SensorReading objects.
 def database_main(master_queue):
@@ -80,6 +81,7 @@ def database_loop(master_queue):
 	try:
 		# Connect to the database.
 		connection = connectToDB()
+		print(connection)
 
 		while True:
 			# Get all the stuff in the queue.
@@ -203,6 +205,11 @@ def get_sensor_dbid(connection, arduino_id, sensor_name):
 
 
 def connectToDB():
+	config_file_path = '../config.json'	
+
+	if not path.isfile(config_file_path):
+		raise Exception('Error: No config.json found!")
+	
 	try:
 		with open('../config.json', 'r') as f:
 			config = json.load(f)
