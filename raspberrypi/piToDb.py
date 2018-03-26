@@ -13,7 +13,7 @@ import queue
 import time
 import datetime
 import math
-import os.path
+import os
 
 # master_queue is a queue of SensorReading objects.
 def database_main(master_queue):
@@ -81,8 +81,7 @@ def database_loop(master_queue):
 	try:
 		# Connect to the database.
 		connection = connectToDB()
-		print(connection)
-
+	
 		while True:
 			# Get all the stuff in the queue.
 			readings = get_all_readings(master_queue)
@@ -102,7 +101,8 @@ def database_loop(master_queue):
 				connection.commit()
 	finally:
 		# Do cleanup if something goes wrong.
-		connection.close()
+		if connection:
+			connection.close()
 
 def do_select_arduino(connection, cursor, id_string):
 	# Defensive escape, shouldn't ever be an issue.
@@ -207,17 +207,20 @@ def get_sensor_dbid(connection, arduino_id, sensor_name):
 def connectToDB():
 	config_file_path = '../config.json'	
 
-	if not path.isfile(config_file_path):
-		raise Exception('Error: No config.json found!")
+	if not os.path.isfile(config_file_path):
+		raise Exception("Error: No config.json found!")
 	
 	try:
-		with open('../config.json', 'r') as f:
+		with open(config_file_path, 'r') as f:
 			config = json.load(f)
 	except ValueError:
 		# Catch and re-raise with a better error message.
 		raise Exception('Error while parsing json file "../config.json"')
 
 	connection = pymysql.connect(host=config['DB_URL'], user=config['DB_USERNAME'], password=config['DB_PASSWORD'], db=config['DB_NAME'])
+
+	if not connection:
+		raise Exception('Error while connecting to the DB with config: ' + str(config))
 	return connection
 
 
