@@ -51,7 +51,7 @@
   <block type="onboot" id="eb!5j[Q=_W*/D5e-VA{[" x="370" y="68">
     <next>
       <block type="runcommand" id=")vR0S.kSug9zf+jfs]}g">
-        <field name="1">~/Flower/raspberrypi/server.py</field>
+        <field name="1">python3 ~/Flower/raspberrypi/server.py</field>
         <field name="2">pi</field>
       </block>
     </next>
