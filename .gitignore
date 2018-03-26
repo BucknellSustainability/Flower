@@ -2,3 +2,5 @@ config.json
 deployment.json
 *.DS_Store
 backend/api.pyc
+uploads/*
+errors/*

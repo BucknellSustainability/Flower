@@ -1,5 +1,5 @@
 // TODO: have this populate from the deployment.json file
-let deploy_config = {"FLASK_SERVER": 'http://linuxremote1.bucknell.edu:5001'}
+let deploy_config = {"FLASK_SERVER": 'https://eg.bucknell.edu/energyhill'}
 
 function requestProjectInfo(fields, table, condition_fields, condition_values){
       var xhr = new XMLHttpRequest();
