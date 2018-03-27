@@ -1,24 +1,6 @@
 # Setup on any system
 Coming soon to a movie theatre near you
 
-# Quick and easy setup on Bucknell's linuxremote
-1. Change directory to the scripts directory
-```
-cd path/to/scripts
-```
-
-2. Run setup script
-```
-./setup.sh
-```
-
-3. Run flask script
-```
-./start_flask.sh
-```
-
-This will do all the steps below for you in an automated fashion, including installing python packages.
-
 # Manual setting up backend on Bucknell's linuxremote
 1. Make sure that you have a `config.json` and `deployment.json` file in the root directory of the repo. If you don't, read instructions in `/README.md`
 
@@ -32,14 +14,13 @@ module load python/3.6
 pip install --user --upgrade google-auth flask flask-mysql
 ```
 
-4. Go to the public\_html directory
+4. Go to the `scripts` directory and run the flask starting script
 ```
-./runwsgi.sh > out.txt 2>&1 &
+./restart_flask.sh
 ```
-
 
 # Using the api
-Each of these end points need to be accessed by an http request to `http://linuxremote#.bucknell.edu:5000/{endpoint}` where `#` is the number of linuxremote you are running the flask server on and where `{endpoint}` which is described below.  Each http request needs to be accompanied with parameters described below.
+Each of these end points need to be accessed by an http request to `https://eg.bucknell.edu/energyhill/{endpoint}` where `{endpoint}` which is described below.  Each http request needs to be accompanied with parameters described below.
 
 Generally, hardcoding the URL shouldn't be in code, but instead you should use the deployment config setup (information found in `/README.md`)
 
