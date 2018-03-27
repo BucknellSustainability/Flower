@@ -10,7 +10,7 @@ monkey.patch_all()
 from backend.api import makeApp
 
 app = makeApp()
-
+'''
 @app.before_request
 def redirect_eg():
     u = urlparse(request.url)
@@ -32,6 +32,6 @@ def redirect_eg():
     x  = urlunparse(('https', 'www.eg.bucknell.edu') + u[2:])
     #logging.info("redirect {} to {}".format(request.url, x))
     return redirect(x, code=301)
-
+'''
 http_server = WSGIServer(('', 4004), app)
 http_server.serve_forever()

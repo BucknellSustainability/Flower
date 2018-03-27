@@ -1,5 +1,5 @@
 var flaskURL = 'https://www.eg.bucknell.edu/energyhill/';
-var chartURL = 'https://www.eg.bucknell.edu/create/'
+var chartURL = '../create/'
 var id_token = ''
 
 class Requests {
