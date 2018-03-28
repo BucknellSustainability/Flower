@@ -9,6 +9,14 @@ We suggest running this system with Bucknell linuxremote servers because that is
 
 If attempting to run on Bucknell systems, we advise cloning the repo into a user's `~/public_html/` directory (create it if it doesn't exist) to enable the Bucknell Apache server to handle the web page serving.
 
+The system needs to be run on linuxremote3 for the below part to function.
+
+Now go into the script directory and run:
+```
+./restart_flask.sh
+```
+If any changes need to be done to the flask server, just run that script again to restart it
+
 # API Keys and Deployment Specific Values
 API Keys and other deployment specific values have been removed from the repo to ensure security and flexibility for different deployments.  You will NEED to complete steps 1-6 to have any component of the project to work.
 

@@ -52,13 +52,14 @@ export class CreateVis extends React.Component {
 
   getIframeURL(){
     let out; 
-    let sensors = JSON.stringify(this.state.selectedSensors).slice(1,-1) 
+    let sensors = JSON.stringify(this.state.selectedSensors).slice(1,-1)
     if(this.state.chartType === 0){
       out = this.chartUrl + "visualize.html?id=" + sensors + '&projectId=' + this.state.activeProject.id;
     }
     if(this.state.chartType === 1){
       out = this.chartUrl + "gauge.html?max=" + this.state.gaugeMax + "&min=" + this.state.gaugeMin + "&id=" + sensors
     }
+    console.log(out);
     return out;
   }
 

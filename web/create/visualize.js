@@ -1,8 +1,9 @@
-// TODO: have this populate from the deployment.json file
-let deploy_config = {"FLASK_SERVER": 'http://linuxremote1.bucknell.edu:5001'}
+// TODO: have this populate from the deploymeint.json file
+let deploy_config = {"FLASK_SERVER": 'https://eg.bucknell.edu/energyhill'}
 
 function requestProjectInfo(fields, table, condition_fields, condition_values){
       var xhr = new XMLHttpRequest();
+      console.log(deploy_config["FLASK_SERVER"]);
       xhr.open('GET', deploy_config["FLASK_SERVER"] + '/read?fields=' + fields + '&table=' + table + '&condition_fields=' + condition_fields + '&condition_values=' + condition_values);
       xhr.responseType = 'json';
       xhr.withCredentials = true;
@@ -18,20 +19,25 @@ function requestProjectInfo(fields, table, condition_fields, condition_values){
 }
 
 function requestSensorInfo(fields, table, condition_fields, condition_values) {
-      var xhr = new XMLHttpRequest();
-      xhr.open('GET', deploy_config["FLASK_SERVER"] + '/read?fields=' + fields + '&table=' + table + '&condition_fields=' + condition_fields + '&condition_values=' + condition_values);
-      xhr.responseType = 'json';
-      xhr.withCredentials = true;
-      xhr.onload = function() {
-          //console.log(xhr.response)
-          let sensor;
-          for (key in xhr.response){
-            sensor = xhr.response[key];
-            getSensorData(sensor);
-          }
-      };
-      xhr.send();
+    // TODO: not the best fix, should load each data set asynchronously
+    var sensor_array = condition_values.split(',');
+    for (i = 0; i < sensor_array.length; i++) {
+          var sensor = sensor_array[i];
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', deploy_config["FLASK_SERVER"] + '/read?fields=' + fields + '&table=' + table + '&condition_fields=' + condition_fields + '&condition_values=' + sensor);
+          xhr.responseType = 'json';
+          xhr.withCredentials = true;
+          xhr.onload = function() {
+              //console.log(xhr.response)
+              let sensor;
+              for (key in xhr.response){
+                sensor = xhr.response[key];
+                getSensorData(sensor);
+              }
+          };
+          xhr.send();
     }
+}
 
 function getSensorData(sensor){
       var xhr = new XMLHttpRequest();

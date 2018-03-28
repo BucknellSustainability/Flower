@@ -12,18 +12,25 @@ from google.oauth2 import id_token as id_token_lib
 from google.auth.transport import requests
 
 # pip install --user --upgrade flask-mysql
-from flask import Flask, request, redirect, url_for, send_from_directory
+from flask import g, Flask, Blueprint, request, redirect, url_for, send_from_directory
+# this allows us to access app in the blueprint functions
+from flask import current_app as app
 from flask_cors import CORS
 from flaskext.mysql import MySQL
 from werkzeug.utils import secure_filename
 
+# patch for gevent cooperative tasking
+from gevent.wsgi import WSGIServer
+from gevent import monkey
+monkey.patch_all()
+
 # local files
-from emailer import *
+from .emailer import *
 
 # load config (db info)
-with open("../config.json", 'r') as f:
+with open("config.json", 'r') as f:
     config = json.load(f)
-with open("../deployment.json", 'r') as f:
+with open("deployment.json", 'r') as f:
     deploy_config = json.load(f)
 
 CLIENT_ID = deploy_config['GOOGLE_CLIENT_ID']
@@ -32,25 +39,48 @@ UPLOAD_FOLDER = 'uploads/'
 # DO NOT ALLOW PHP FILES BECAUSE THEN USERS CAN EXECUTE ARBITRARY CODE
 ALLOWED_EXTENSIONS = set(['hex'])
 
-app = Flask(__name__)
-CORS(app, supports_credentials=True)
+rest_api = Blueprint('rest_api', __name__)
 
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+def makeApp():
+    new_app = Flask(__name__)
+    CORS(new_app, supports_credentials=True)
 
-# give mysql plug the db info
-app.config.update(
-    MYSQL_DATABASE_HOST = config['DB_URL'],
-    MYSQL_DATABASE_USER = config['DB_USERNAME'],
-    MYSQL_DATABASE_PASSWORD = config['DB_PASSWORD'],
-    MYSQL_DATABASE_DB = config['DB_NAME']
-)
+    new_app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# Intialize mysql flask plugin
-mysql = MySQL()
-mysql.init_app(app)
-conn = mysql.connect()
+    # give mysql plug the db info
+    new_app.config.update(
+        MYSQL_DATABASE_HOST = config['DB_URL'],
+        MYSQL_DATABASE_USER = config['DB_USERNAME'],
+        MYSQL_DATABASE_PASSWORD = config['DB_PASSWORD'],
+        MYSQL_DATABASE_DB = config['DB_NAME']
+    )
 
-@app.route('/read', methods = ['GET'])
+    new_app.register_blueprint(rest_api)
+
+    new_app.teardown_appcontext(close_db)
+    
+    return new_app
+
+def connect_db():
+    mysql = MySQL()
+    mysql.init_app(app)
+    return mysql.connect()
+
+
+def get_connection():
+    """ Opens a new database connection if there is none yet for the
+    current application context.
+    """
+    if not hasattr(g, 'mysql_db_conn'):
+        g.mysql_db_conn = connect_db()
+    return g.mysql_db_conn
+
+def close_db(error):
+    """Closes the database again at the end of the request"""
+    if hasattr(g, 'mysql_db_conn'):
+        g.mysql_db_conn.close()
+
+@rest_api.route('/read', methods = ['GET'])
 def get():
     try:
         table = request.values.get('table')
@@ -85,7 +115,7 @@ def get():
     
     return json.dumps(result, default = jsonconverter)
 
-@app.route('/insert', methods = ['POST'])
+@rest_api.route('/insert', methods = ['POST'])
 def insert():
     try:
         validate_user(request.values.get('idtoken'))
@@ -115,7 +145,7 @@ def insert():
     result = exec_query(sql_string, tuple(values))
     return json.dumps(result, default = jsonconverter)
 
-@app.route('/update', methods = ['POST'])
+@rest_api.route('/update', methods = ['POST'])
 def modify():
     try:
         validate_user(request.values.get('idtoken'))
@@ -152,14 +182,14 @@ def modify():
     result = exec_query(sql_string, tuple(values) + tuple(condition_values))
     return json.dumps(result, default = jsonconverter)
 
-@app.route('/get-sensor-last-reading', methods = ['GET'])
+@rest_api.route('/get-sensor-last-reading', methods = ['GET'])
 def get_sensor_last_reading():
     sensorid = request.values.get('sensorid')
     gauge_sql = 'SELECT value FROM data WHERE sensorId = %s ORDER BY dataId DESC LIMIT 1'
     result = exec_query(gauge_sql, (sensorid,))
     return json.dumps(result, default = jsonconverter)
 
-@app.route('/get-profile', methods = ['POST'])
+@rest_api.route('/get-profile', methods = ['POST'])
 def get_profile():
     try:
         print(request.values.get('idtoken'))
@@ -172,11 +202,11 @@ def get_profile():
     return construct_profile_json(google_id)
 
 
-@app.route('/get-all-sensors', methods = ['GET'])
+@rest_api.route('/get-all-sensors', methods = ['GET'])
 def get_all_sensors():
     return build_all_sensors_dict()
 
-@app.route('/request-access', methods = ['POST'])
+@rest_api.route('/request-access', methods = ['POST'])
 def request_access():
     idinfo = get_idinfo(request.values.get('idtoken'))
 
@@ -193,7 +223,7 @@ def request_access():
 
     return ''
 
-@app.route('/approve-user', methods = ['POST'])
+@rest_api.route('/approve-user', methods = ['POST'])
 def approve_user():
     userid = request.values.get('userid')
 
@@ -217,20 +247,20 @@ def approve_user():
 
     return ''
 
-@app.route('/log-success', methods = ['GET'])
+@rest_api.route('/log-success', methods = ['GET'])
 def log_success():
     deviceid = request.values.get('deviceid')
     handle_codeupload_response(deviceid, None)
     return '' # TODO: figure out what should return
 
-@app.route('/log-error', methods = ['GET'])
+@rest_api.route('/log-error', methods = ['GET'])
 def log_error():
     deviceid = request.values.get('deviceid')
     error_msg = request.values.get('error_msg')
     handle_codeupload_response(deviceid, error_msg)
     return '' # TODO: figure out what to return
 
-@app.route('/check-error', methods = ['GET'])
+@rest_api.route('/check-error', methods = ['GET'])
 def check_error():
     deviceid = request.values.get('deviceid')
 
@@ -256,7 +286,7 @@ def check_error():
         return ''
 
 
-@app.route('/store-code', methods = ["POST"])
+@rest_api.route('/store-code', methods = ["POST"])
 def store_code():
     # check if valid user
     try:
@@ -298,7 +328,7 @@ def store_code():
 
         return ''
 
-@app.route('/download-code', methods = ['GET'])
+@rest_api.route('/download-code', methods = ['GET'])
 def download_code():
     # no need to validate user, maybe validate RaPi
 
@@ -349,7 +379,7 @@ def handle_codeupload_response(deviceid, error_msg):
 
 def validate_table_name(table_name):
     # pull list of table names
-    cursor = conn.cursor()
+    cursor = get_connection().cursor()
     cursor.execute('SHOW TABLES')
     valid_tables = [column[0] for column in cursor.fetchall()]
 
@@ -369,7 +399,7 @@ def validate_column_name(table_name, column_names):
     validate_table_name(table_name)
 
     # pull list of columns for table
-    cursor = conn.cursor()
+    cursor = get_connection().cursor()
     cursor.execute('SELECT column_name FROM information_schema.columns WHERE table_name = %s', table_name)
     valid_columns = [column[0] for column in cursor.fetchall()]
     # allow * queries
@@ -580,7 +610,7 @@ def exec_query(formatted_sql_string, param_tuple):
     assert type(param_tuple) is tuple, 'DB Call does not have user input tuple'
     assert formatted_sql_string.count('%s') == len(param_tuple), 'DB Call has mismatching number of user inputs'
 
-    cursor = conn.cursor()
+    cursor = get_connection().cursor()
     descriptions = None
     data = None
 
@@ -596,16 +626,12 @@ def exec_query(formatted_sql_string, param_tuple):
 
         # Fetch all of the data
         data = cursor.fetchall()
-        conn.commit()
+        get_connection().commit()
     except Exception as e:
         print("Error: Couldn't fetch data: {}".format(str(e)))
 
-    # handle query not returning anything - this could mean error or insert/update
+    # handle if query didn't return anything
     if data is None or descriptions is None:
-        print("Query ({}) didn't return anything".format(formatted_sql_string))
-
-        # in case it is an insert/update, need to commit
-        conn.commit()
         return []
 
     # Get column names and data into list of dicts

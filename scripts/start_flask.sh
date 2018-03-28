@@ -1,6 +1,10 @@
+#!/bin/bash
+#source activate e2
+#source .conda/envs/e2/bin/activate e2
 module load python/3.6
-#pip install --user --upgrade google-auth flask-mysql flask-cors
-cd ../backend
-export FLASK_APP=api.py
-flask run --host=0.0.0.0 --port=5001
+cd ..
 
+until python start_flask.py; do
+    echo "'start_flask.py' crashed with exit code $?. Restarting..." >&2
+    sleep 1
+done
