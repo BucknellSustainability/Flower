@@ -16,7 +16,6 @@ from flask import g, Flask, Blueprint, request, redirect, url_for, send_from_dir
 # this allows us to access app in the blueprint functions
 from flask import current_app as app
 from flask_cors import CORS
-from flaskext.mysql import MySQL
 from werkzeug.utils import secure_filename
 
 # patch for gevent cooperative tasking
@@ -26,10 +25,8 @@ monkey.patch_all()
 
 # local files
 from .emailer import *
+from .db import *
 
-# load config (db info)
-with open("config.json", 'r') as f:
-    config = json.load(f)
 with open("deployment.json", 'r') as f:
     deploy_config = json.load(f)
 
@@ -47,38 +44,12 @@ def makeApp():
 
     new_app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-    # give mysql plug the db info
-    new_app.config.update(
-        MYSQL_DATABASE_HOST = config['DB_URL'],
-        MYSQL_DATABASE_USER = config['DB_USERNAME'],
-        MYSQL_DATABASE_PASSWORD = config['DB_PASSWORD'],
-        MYSQL_DATABASE_DB = config['DB_NAME']
-    )
-
     new_app.register_blueprint(rest_api)
 
-    new_app.teardown_appcontext(close_db)
+    new_app.teardown_appcontext(Db.disconnect)
     
     return new_app
 
-def connect_db():
-    mysql = MySQL()
-    mysql.init_app(app)
-    return mysql.connect()
-
-
-def get_connection():
-    """ Opens a new database connection if there is none yet for the
-    current application context.
-    """
-    if not hasattr(g, 'mysql_db_conn'):
-        g.mysql_db_conn = connect_db()
-    return g.mysql_db_conn
-
-def close_db(error):
-    """Closes the database again at the end of the request"""
-    if hasattr(g, 'mysql_db_conn'):
-        g.mysql_db_conn.close()
 
 @rest_api.route('/read', methods = ['GET'])
 def get():
@@ -95,7 +66,7 @@ def get():
 
     except (HttpRequestParamError, AssertionError) as e:
         print(e)
-        return ''
+        return str(e)
 
     # Build sql string with constructed fields and condition fields parts with `%s`s
     sql_string = 'SELECT {} FROM {}'.format(
@@ -109,9 +80,9 @@ def get():
         sql_string += ' WHERE {}'.format(
             build_basic_condition(condition_fields, condition_values)
         )
-        result = exec_query(sql_string, tuple(condition_values))
+        result = Db.exec_query(sql_string, tuple(condition_values))
     else:
-        result = exec_query(sql_string, ())
+        result = Db.exec_query(sql_string, ())
     
     return json.dumps(result, default = jsonconverter)
 
@@ -142,7 +113,7 @@ def insert():
         ','.join(fields),
         ','.join(['%s'] * len(values))
     )
-    result = exec_query(sql_string, tuple(values))
+    result = Db.exec_query(sql_string, tuple(values))
     return json.dumps(result, default = jsonconverter)
 
 @rest_api.route('/update', methods = ['POST'])
@@ -179,14 +150,14 @@ def modify():
     )
 
     # execute query with laundry list of values to sub in
-    result = exec_query(sql_string, tuple(values) + tuple(condition_values))
+    result = Db.exec_query(sql_string, tuple(values) + tuple(condition_values))
     return json.dumps(result, default = jsonconverter)
 
 @rest_api.route('/get-sensor-last-reading', methods = ['GET'])
 def get_sensor_last_reading():
     sensorid = request.values.get('sensorid')
     gauge_sql = 'SELECT value FROM data WHERE sensorId = %s ORDER BY dataId DESC LIMIT 1'
-    result = exec_query(gauge_sql, (sensorid,))
+    result = Db.exec_query(gauge_sql, (sensorid,))
     return json.dumps(result, default = jsonconverter)
 
 @rest_api.route('/get-profile', methods = ['POST'])
@@ -216,7 +187,7 @@ def request_access():
 
     # get user id from googleid
     userid_from_googleid_sql = 'SELECT userId FROM user WHERE googleId = %s'
-    userid = exec_query(userid_from_googleid_sql, (googleid,))[0]['userId']
+    userid = Db.exec_query(userid_from_googleid_sql, (googleid,))[0]['userId']
 
     # pass id into emailer function to send to admins
     send_approval_email(name, email, userid)
@@ -236,11 +207,11 @@ def approve_user():
 
     # change approved status of `userid` to approved/1
     approve_user_sql = 'UPDATE user SET approved = 1 WHERE userId = %s'
-    exec_query(approve_user_sql, (userid,))
+    Db.exec_query(approve_user_sql, (userid,))
 
     # get approved user email
     approved_user_email_sql = 'SELECT email FROM user WHERE userId = %s'
-    approved_user = exec_query(approved_user_email_sql, (userid,))
+    approved_user = Db.exec_query(approved_user_email_sql, (userid,))
 
     # send email to student
     send_approved_email(approved_user[0]['email'])
@@ -265,12 +236,12 @@ def check_error():
     deviceid = request.values.get('deviceid')
 
     check_status_sql = 'SELECT handled FROM codeupload WHERE deviceId = %s'
-    status = exec_query(check_status_sql, (deviceid,))
+    status = Db.exec_query(check_status_sql, (deviceid,))
 
     # if row was deleted or handled is 1, then
     if status == [] or status[0]['handled'] == True:
         error_sql = 'SELECT errorId, path FROM errors WHERE errorId = (SELECT MAX(errorId) FROM errors WHERE  deviceId = %s)'
-        error = exec_query(error_sql, (deviceid,))
+        error = Db.exec_query(error_sql, (deviceid,))
 
         # TODO: validate that this is correct way to show Null string
         if error[0]['path'] == None:
@@ -310,10 +281,10 @@ def store_code():
         insert_codeupload_alert_sql = 'INSERT INTO codeupload (deviceId) VALUES (%s)'
         # TODO: in theory this can become a race condition, but very unlikely.  Would need
         # two users to be uploading file for one device at same time...
-        exec_query(insert_codeupload_alert_sql, (deviceid,))
+        Db.exec_query(insert_codeupload_alert_sql, (deviceid,))
 
         get_uploadid_sql = 'SELECT uploadId FROM codeupload WHERE uploadId = (SELECT MAX(uploadId) FROM codeupload WHERE deviceId = %s)'
-        uploadid = exec_query(get_uploadid_sql, (deviceid,))[0]['uploadId']
+        uploadid = Db.exec_query(get_uploadid_sql, (deviceid,))[0]['uploadId']
 
         # construct path to put code file and make upload dir if doesn't already exist
         filename = get_code_filename(uploadid)
@@ -324,7 +295,7 @@ def store_code():
 
         # update uploadid row to have path
         upload_path_update_sql = 'UPDATE codeupload SET codePath = %s WHERE uploadId = %s'
-        exec_query(upload_path_update_sql, (path, uploadid))
+        Db.exec_query(upload_path_update_sql, (path, uploadid))
 
         return ''
 
@@ -350,14 +321,14 @@ def allowed_file(filename):
 def handle_codeupload_response(deviceid, error_msg):
     handling_sql = 'INSERT INTO errors (deviceId, timestamp) VALUES (%s, %s)'
     timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
-    exec_query(handling_sql, (deviceid, timestamp))
+    Db.exec_query(handling_sql, (deviceid, timestamp))
 
     # can't be race condition here because one Pi can't be trying to upload two things at same time
 
     if error_msg is not None:
         # get errorid of row just inserted
         get_errorid_sql = 'SELECT errorId FROM errors WHERE errorId = (SELECT MAX(errorId) FROM errors WHERE deviceId = %s)'
-        errorid = exec_query(get_errorid_sql, (deviceid,))[0]['errorId']
+        errorid = Db.exec_query(get_errorid_sql, (deviceid,))[0]['errorId']
 
         if not os.path.exists(ERROR_FOLDER):
             os.makedirs(ERROR_FOLDER)
@@ -371,17 +342,19 @@ def handle_codeupload_response(deviceid, error_msg):
         text_file.close()
 
         update_path_sql = 'UPDATE errors SET path = %s WHERE errorId = %s'
-        exec_query(update_path_sql, (path, errorid))
+        Db.exec_query(update_path_sql, (path, errorid))
 
     # once stored error message and created row, can finally mark as handled
     mark_handled_sql = 'UPDATE codeupload SET handled = 1 WHERE deviceId = %s'
-    exec_query(mark_handled_sql, (deviceid,))
+    Db.exec_query(mark_handled_sql, (deviceid,))
 
 def validate_table_name(table_name):
     # pull list of table names
-    cursor = get_connection().cursor()
-    cursor.execute('SHOW TABLES')
-    valid_tables = [column[0] for column in cursor.fetchall()]
+    tables_result = Db.exec_query('SHOW TABLES')
+    
+    valid_tables = []
+    for x in tables_result:
+        valid_tables += x.values()
 
     if table_name not in valid_tables:
         raise HttpRequestParamError('Query has invalid table name')
@@ -399,9 +372,13 @@ def validate_column_name(table_name, column_names):
     validate_table_name(table_name)
 
     # pull list of columns for table
-    cursor = get_connection().cursor()
-    cursor.execute('SELECT column_name FROM information_schema.columns WHERE table_name = %s', table_name)
-    valid_columns = [column[0] for column in cursor.fetchall()]
+    column_name_sql = 'SELECT column_name FROM information_schema.columns WHERE table_name = %s'
+    table_columns = Db.exec_query(column_name_sql, (table_name,))
+
+    valid_columns = []
+    for x in table_columns:
+        valid_columns += x.values()
+
     # allow * queries
     valid_columns.append('*')
 
@@ -410,7 +387,7 @@ def validate_column_name(table_name, column_names):
 
     for column_name in column_names:
         if column_name not in valid_columns:
-            raise HttpRequestParamError('Query has invalid column name')
+            raise HttpRequestParamError('Query has invalid column name: {}'.format(column_name))
 
 def build_basic_set(lhs_list):
     statements = [lhs + ' = %s' for lhs in lhs_list]
@@ -435,25 +412,25 @@ def build_basic_condition(lhs_list, rhs_list):
 def construct_profile_json(google_id):
     # fetch user info
     fetch_user_sql = 'SELECT * FROM user WHERE googleId = %s'
-    user_data = exec_query(fetch_user_sql, (google_id,))[0]
+    user_data = Db.exec_query(fetch_user_sql, (google_id,))[0]
 
     # use user info to fetch projects
     projects_id_sql = 'SELECT * FROM owners WHERE userId = %s'
-    project_ids = [owner_row['projectId'] for owner_row in exec_query(projects_id_sql, (user_data['userId'],))]
+    project_ids = [owner_row['projectId'] for owner_row in Db.exec_query(projects_id_sql, (user_data['userId'],))]
 
 
     projects_sql = 'SELECT * FROM project WHERE {}'.format(
         build_condition('projectId', project_ids)
     )
 
-    projects = exec_query(projects_sql, tuple(project_ids))
+    projects = Db.exec_query(projects_sql, tuple(project_ids))
 
     #fetch_device
     devices_sql = 'SELECT * FROM device WHERE {}'.format(
         build_condition('projectId', project_ids)
     )
 
-    devices = exec_query(devices_sql, tuple(project_ids))
+    devices = Db.exec_query(devices_sql, tuple(project_ids))
 
     device_ids = [device['deviceId'] for device in devices]
 
@@ -462,7 +439,7 @@ def construct_profile_json(google_id):
         build_condition('deviceId', device_ids)
     )
 
-    sensors = exec_query(sensors_sql, tuple(device_ids))
+    sensors = Db.exec_query(sensors_sql, tuple(device_ids))
 
     sensors_dict = {}
     devices_dict = {}
@@ -472,7 +449,14 @@ def construct_profile_json(google_id):
         # construct sensor dict
         sensor_dict = {
             'id': sensor['sensorId'],
-            'name': sensor['name']
+            'name': sensor['name'],
+            'units': sensor['units'],
+            'desc': sensor['description'],
+            'min': sensor['alertMinVal'],
+            'max': sensor['alertMaxVal'],
+            'min_msg': sensor['minMsg'],
+            'max_msg': sensor['maxMsg'],
+            'alerts_enabled': sensor['alertsEnabled']
         }
 
         device_id = sensor['deviceId'];
@@ -484,11 +468,13 @@ def construct_profile_json(google_id):
             sensors_dict[device_id].append(sensor_dict)
 
     for device in devices:
+        sensors = sensors_dict[device['deviceId']] if device['deviceId'] in sensors_dict.keys() else []
+
         # construct device dict
         device_dict = {
             'id': device['deviceId'],
             'name': device['name'],
-            'sensors': sensors_dict[device['deviceId']]
+            'sensors': sensors
         }
 
         project_id = device['projectId']
@@ -500,19 +486,26 @@ def construct_profile_json(google_id):
             devices_dict[project_id].append(device_dict)
 
     for project in projects:
+        devices =  devices_dict[project['projectId']] if project['projectId'] in devices_dict.keys() else []
+
         # construct project dict
         project_dict = {
             'id': project['projectId'],
             'name': project['name'],
-            #'email': project['email'],
-            #'alerts': project['alerts'],
-            'devices': devices_dict[project['projectId']]
+            'desc': project['description'],
+            'is_private': project['isPrivate'],
+            'url': project['url'],
+            'siteId': project['siteId'], 
+            'devices': devices
         }
 
         project_list.append(project_dict)
 
     profile_dict = {
+        'id': user_data['userId'],
         'name': user_data['name'],
+        'email': user_data['email'],
+        'is_admin': user_data['isAdmin'],
         'projects': project_list
     }
 
@@ -523,17 +516,17 @@ def construct_profile_json(google_id):
 def build_all_sensors_dict():
     # fetch all projects
     projects_sql = 'SELECT * FROM project;'
-    projects = exec_query(projects_sql, ())
+    projects = Db.exec_query(projects_sql, ())
 
     # fetch all devices
     devices_sql = 'SELECT * FROM device;'
-    devices = exec_query(devices_sql, ())
+    devices = Db.exec_query(devices_sql, ())
 
     device_ids = [device['deviceId'] for device in devices]
 
     # fetch all sensors
     sensors_sql = 'SELECT * FROM sensor'
-    sensors = exec_query(sensors_sql, ())
+    sensors = Db.exec_query(sensors_sql, ())
 
     sensors_dict = {}
     devices_dict = {}
@@ -566,13 +559,15 @@ def build_all_sensors_dict():
                 devices_dict[project_id] += sensors_dict[device_id]
 
     for project in projects:
+        sensors = devices_dict[project['projectId']] if project['projectId'] in devices_dict.keys() else [] 
+
         # construct project dict
         project_dict = {
             'id': project['projectId'],
             'name': project['name'],
             #'email': project['email'],
             #'alerts': project['alerts'],
-            'sensors': devices_dict[project['projectId']]
+            'sensors': sensors
         }
 
         project_list.append(project_dict)
@@ -598,50 +593,6 @@ def build_condition(column_name, list_of_vals):
             ','.join(['%s'] * len(list_of_vals))
         )
 
-
-'''
-Generic way to execute queries and return results as a dictionary.
-
-param formatted_sql_string: string with `%s` where userinput will be placed
-param param_tuple: tuple with same number of elements as `%s` in formatted_sql_string
-'''
-def exec_query(formatted_sql_string, param_tuple):
-    assert isinstance(formatted_sql_string, str), 'DB Call does not have sql string'
-    assert type(param_tuple) is tuple, 'DB Call does not have user input tuple'
-    assert formatted_sql_string.count('%s') == len(param_tuple), 'DB Call has mismatching number of user inputs'
-
-    cursor = get_connection().cursor()
-    descriptions = None
-    data = None
-
-    try:
-        print('About to execute SQL Query', formatted_sql_string)
-        # Execute the SQL command
-        cursor.execute(formatted_sql_string, param_tuple)
-
-        print('Executed SQL Query: ', cursor._last_executed)
-
-        # Fetch all the rows in a list of lists.
-        descriptions = cursor.description
-
-        # Fetch all of the data
-        data = cursor.fetchall()
-        get_connection().commit()
-    except Exception as e:
-        print("Error: Couldn't fetch data: {}".format(str(e)))
-
-    # handle if query didn't return anything
-    if data is None or descriptions is None:
-        return []
-
-    # Get column names and data into list of dicts
-    column_names = [column_info[0] for column_info in descriptions]
-    formatted_data = []
-    for row in data:
-        formatted_data.append(dict(zip(column_names, row)))
-
-    return formatted_data
-
 def get_idinfo(id_token):
     idinfo = id_token_lib.verify_oauth2_token(id_token, requests.Request(), CLIENT_ID)
 
@@ -660,15 +611,15 @@ def validate_user(id_token):
     print(googleid)
 
     user_exists_sql = 'SELECT * FROM user WHERE googleId = %s'
-    result = exec_query(user_exists_sql, (googleid,))
+    result = Db.exec_query(user_exists_sql, (googleid,))
 
     if result == []:
         # user doesn't exist in system yet, add to db and redirect
         insert_user_sql = 'INSERT INTO user (email, name, googleId) VALUES (%s, %s, %s)'
-        exec_query(insert_user_sql, (email, name, googleid))
+        Db.exec_query(insert_user_sql, (email, name, googleid))
 
         raise UserDeniedException('User was not found in DB')
-    elif ord(result[0]['approved']) == False:
+    elif result[0]['approved'] == False:
         # user is not approved but in system, just redirect
         raise UserDeniedException('User was found in DB, but not approved')
 
@@ -678,8 +629,8 @@ def validate_user(id_token):
 def validate_admin(id_token):
     googleid = validate_user(id_token)
     is_admin_sql = 'SELECT isAdmin FROM user WHERE googleId = %s'
-    is_admin = exec_query(is_admin_sql, (googleid,))
-    if ord(is_admin[0]['isAdmin']) == False:
+    is_admin = Db.exec_query(is_admin_sql, (googleid,))
+    if is_admin[0]['isAdmin'] == False:
         raise UserDeniedException('Currently logged in user trying to approve user is not admin')
 
     return googleid
@@ -702,7 +653,7 @@ def send_approval_email(name, email, userid):
 
     # get list of admin emails
     get_admins_sql = 'SELECT email FROM user WHERE isAdmin = 1'
-    admins = exec_query(get_admins_sql, ())
+    admins = Db.exec_query(get_admins_sql, ())
     admin_emails = [admin['email'] for admin in admins]
 
     sendEmail(
