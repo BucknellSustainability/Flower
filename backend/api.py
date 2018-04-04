@@ -253,10 +253,10 @@ def log_success():
     handle_codeupload_response(deviceid, None)
     return '' # TODO: figure out what should return
 
-@rest_api.route('/log-error', methods = ['GET'])
+@rest_api.route('/log-error', methods = ['POST'])
 def log_error():
     deviceid = request.values.get('deviceid')
-    error_msg = request.values.get('error_msg')
+    error_msg = request.get_data()
     handle_codeupload_response(deviceid, error_msg)
     return '' # TODO: figure out what to return
 
