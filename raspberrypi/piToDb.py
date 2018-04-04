@@ -16,11 +16,22 @@ import math
 
 # master_queue is a queue of SensorReading objects.
 def database_main(master_queue):
+	caches_last_cleared = datetime.datetime.now()
+	clear_caches()
+	cache_clear_interval = datetime.timedelta(hours=1)
 	while True:
 		try:
 			database_loop(master_queue)
+			if datetime.datetime.now() - caches_last_cleared > cache_clear_interval:
+				clear_caches()
+			
 		except Exception as e:
 			print(e)
+
+def clear_caches():
+	cached_sensor_ids = {}
+	cached_device_ids = {}
+	
 
 def get_all_readings(master_queue):
 	readings = []
@@ -201,6 +212,9 @@ def get_sensor_dbid(connection, arduino_id, sensor_name):
 		else:
 			raise Exception("Found multiple rows with (arduinoId, sensorName): (%s, %s)" % (str(arduino_id), sensor_name))
 
+def clear_cache():
+	cached_sensor_ids = {}
+	cached_device_ids = {}
 
 def connectToDB():
 	try:

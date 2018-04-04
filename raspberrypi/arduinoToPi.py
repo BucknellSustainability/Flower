@@ -29,7 +29,8 @@ def arduino_main(master_queue):
 	# Array of ArduinoWorkers
 	workers = []
 
-	
+	# Used for the no-workers message.
+	last_no_worker_warning = datetime.datetime.now()
 
 	while True:
 		try:
@@ -76,6 +77,12 @@ def arduino_main(master_queue):
 				workers.append(worker)
 				thread.start()
 				print("Worker started: %s", worker.getId())
+			
+			# Check if there are no connected devices.
+			if len(workers) == 0 and datetime.datetime.now() - last_no_worker_warning > datetime.timedelta(seconds=5):
+				print("Warning: no devices detected.")
+				last_no_worker_warning = datetime.datetime.now()
+			
 		except (KeyboardInterrupt, SystemExit):
 			print("KeyboardInterrupt or SystemExit; cleaning up...");
 			mainThreadAlive = False
