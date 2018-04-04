@@ -8,36 +8,52 @@
     <meta name="google-signin-client_id" content="438120227370-65o4j0kmk9mbij1bp3dqvnts9dh4kfrf.apps.googleusercontent.com">
 
     <meta charset="utf-8">
+
+    <link href="https://fonts.googleapis.com/css?family=Lato|Lora" rel="stylesheet">
+    <link href="../home/style.css" rel="stylesheet"/>
   </head>
 
   <style>
   </style>
 
   <body>
-      <div class="g-signin2" data-onsuccess="onSignIn"></div>
+      <header class="site-header">
+        <span class="title1">Sustainability at Bucknell</span>
+        <p class="title2">Learn about being green at Bucknell</p>
+      </header>
+
+      <div style="height: 80%;">
+        <p class="approvalText">We need to verify that you are an administrator! Please login with the button below!</p>
+        <p class="approvalText">[Where the button will go]</p>
+      </div>
+      </div>
+
+      <div class="site-footer">
+        <p>Developed by Digital Greens</p>
+      </div>
+      <!--<div class="g-signin2" data-onsuccess="onSignIn"></div>
       <script src="https://apis.google.com/js/platform.js" async defer></script>
       <script type="text/javascript" src="../common/queryParams.js" ></script>
-      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script> 
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
       <script type="text/javascript" src="../common/load-deployment.js" ></script>
       <script>
       function onSignIn(googleUser) {
           var id_token = googleUser.getAuthResponse().id_token;
-          
+
           var form_data = new FormData();
           form_data.append('idtoken', id_token);
           form_data.append('userid', getParameterByName('userid'));
 
           var xhr = new XMLHttpRequest();
-          xhr.open('POST', deploy_config["FLASK_SERVER"] + '/approve-user');
+          xhr.open('POST', 'https://www.eg.bucknell.edu/energyhill//approve-user');
           xhr.withCredentials = true;
           xhr.onload = function() {
               console.log('Signed in as: ' + xhr.responseText);
           };
           xhr.send(form_data);
         }
-      </script>
+      </script>-->
   </body>
 
 
 </html>
-

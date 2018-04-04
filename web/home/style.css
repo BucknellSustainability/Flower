@@ -83,4 +83,10 @@ body {
 	font-family: Lato;
 }
 
-
+.approvalText {
+  font-size: 32px;
+  text-align: center;
+  margin-top: 15px;
+  color: green;
+  font-family: Lato;
+}
