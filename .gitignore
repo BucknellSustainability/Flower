@@ -7,4 +7,5 @@ errors/*
 alerts.log
 node_modules/*
 chart.json
+chart.png
 package-lock.json

@@ -1,11 +1,9 @@
 #!/usr/bin/python
 
 # pip install --client --upgrade mysqlclient
-import os
-import subprocess
 
 # local python file
-from emailer import sendEmail
+from emailer import sendEmail, exportChart
 from db import *
 
 AGGREGATION_SQL = '''INSERT INTO datahourly(sensorId, averageValue, sampleRate, dateTime)
@@ -34,8 +32,6 @@ def main():
         mark_handled(alert['alertId'])
 
 def send_alert_email(sensor_id, alert_id):
-    # prepareChartExport()
-    
     # get all the information for a sensor
     sensor_info_sql = 'SELECT * FROM sensor WHERE sensorId = {}'.format(sensor_id)
     sensor_info = Db.exec_query(sensor_info_sql)[0]
@@ -50,7 +46,7 @@ def send_alert_email(sensor_id, alert_id):
         jsonData = getDataJSON(sensor_info, sensor_agg_data)
 
         # create the chart image
-        #chart = exportChart(jsonData)
+        chart = exportChart(jsonData)
 
         owner_emails = get_owners_emails(sensor_id)
 
@@ -71,8 +67,8 @@ Energy Hill Robot""".format(
             'above' if alert_val >= sensor_info['alertMaxVal'] else 'below',
             'upper' if alert_val >= sensor_info['alertMaxVal'] else 'lower'
         )
-        #sendEmail('energyhill@bucknell.edu', owner_emails, subject, body, [chart])
-        sendEmail('energyhill@bucknell.edu', owner_emails, subject, body, [])
+        sendEmail('energyhill@bucknell.edu', owner_emails, subject, body, [chart])
+        #sendEmail('energyhill@bucknell.edu', owner_emails, subject, body, [])
 
 def get_owners_emails(sensor_id):
     # get device id for sensor
@@ -182,53 +178,6 @@ def getDataJSON(info, data):
     }}""".format(sensorName, ','.join(dates), startDate, endDate, units, ','.join(values), sensorName)  # join values
 
     return dataChartJSON
-
-
-
-
-"""
-Installs highcharts-export-server if not already installed.
-Returns 0 if successful, returns 1 if export server is not installed at the
-expected path and could not be installed.
-"""
-eServerPath = "./node_modules/.bin/highcharts-export-server"
-eServerName = "highcharts-export-server"
-
-
-def prepareChartExport():
-    if (not os.path.isfile(eServerPath)):
-        try:
-            if (0 != os.system("module load node && export ACCEPT_HIGHCHARTS_LICENSE=TRUE && npm install " + eServerName)):
-                raise ImportError("Could not install chart export server")
-        except ImportError:
-            return 1
-    return 0
-
-
-"""
-Generates a PNG image from a JSON Object
-Assumes highcharts-export-server is present in the working directory
-param chartJSON: A JSON string representing the chart being exported.
-returns: A PNG MIMEImage object
-"""
-
-
-def exportChart(chartJSON):  # TODO: Handle errors
-    # Write chartJSON into chart.json
-    fp = open('chart.json', 'w')
-    fp.write(chartJSON)
-    fp.close()
-
-    # Run export server to create chart.png file
-    eServerCommand = ". $HOME/.bashrc && " + eServerPath + " -infile chart.json -outfile chart.png"
-    subprocess.check_output(eServerCommand, shell=True)
-
-    # Return chart.png image
-    fp = open('chart.png', 'rb')  # Open in write binary mode
-    chartImage = MIMEImage(fp.read())
-    fp.close()
-    return chartImage
-
 
 if __name__ == "__main__":
     main()
