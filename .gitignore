@@ -4,3 +4,7 @@ deployment.json
 backend/api.pyc
 uploads/*
 errors/*
+alerts.log
+node_modules/*
+chart.json
+package-lock.json
