@@ -232,20 +232,23 @@ def approve_user():
     except UserDeniedException as e:
         print(e)
         # return empty response to signify user not given permission
-        return ''
+        return '', 403
+    
+    # get approved user email
+    approved_user_email_sql = 'SELECT email FROM user WHERE userId = %s'
+    approved_user = exec_query(approved_user_email_sql, (userid,))
+
+    if approved_user is []:
+        return '', 400
 
     # change approved status of `userid` to approved/1
     approve_user_sql = 'UPDATE user SET approved = 1 WHERE userId = %s'
     exec_query(approve_user_sql, (userid,))
 
-    # get approved user email
-    approved_user_email_sql = 'SELECT email FROM user WHERE userId = %s'
-    approved_user = exec_query(approved_user_email_sql, (userid,))
-
     # send email to student
     send_approved_email(approved_user[0]['email'])
 
-    return ''
+    return '', 200
 
 @rest_api.route('/log-success', methods = ['GET'])
 def log_success():
