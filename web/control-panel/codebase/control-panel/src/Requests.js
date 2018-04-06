@@ -1,5 +1,5 @@
 var flaskURL = 'https://www.eg.bucknell.edu/energyhill/';
-var chartURL = '../create/'
+var chartURL = 'https://www.eg.bucknell.edu/~energyhill/Flower/web/create/'
 var id_token = ''
 
 class Requests {
@@ -25,6 +25,7 @@ class Requests {
 
     const scope = this;
     xhr.onload = function() {
+      console.log(xhr.response)
       if (xhr.response == null) {
         scope.setState({researcher: null, signInState: 2, profileEmail: googleUser.getBasicProfile().getEmail()})
       } else {
@@ -47,6 +48,7 @@ class Requests {
 
       const scope = this;
       xhr.onload = function() {
+        console.log(xhr.response)
         scope.setState({allProjects: xhr.response.projects, activeProject: xhr.response.projects[0]});
       };
       xhr.send();
@@ -67,7 +69,7 @@ class Requests {
       const scope = this;
       xhr.onload = function() {
         console.log(xhr.response)
-        scope.setState({unclaimedDevices: xhr.response, show: true});
+        scope.setState({unclaimedDevices: xhr.response});
       };
       xhr.send();
   }
@@ -82,15 +84,13 @@ class Requests {
 
     const scope = this;
     xhr.onload = function() {
-        scope.setState({alertData: xhr.response, show:true});
+        scope.setState({alertData: xhr.response, show: true});
     };
     xhr.send();
   }
 
   handleAlerts(sensorId) {
     var form_data = new FormData();
-
-    let pairs = 'handled=2';
 
     form_data.append('idtoken', id_token);
     form_data.append('table', 'alerts');
@@ -125,7 +125,7 @@ class Requests {
     xhr.withCredentials = true;
 
     xhr.onload = function() {
-        //window.location.reload();
+        window.location.reload();
     };
     xhr.send(form_data);
   }
@@ -147,6 +147,26 @@ class Requests {
         //window.location.reload();
     };
     xhr.send(form_data);
+  }
+
+
+  createProject(projectName){
+    var form_data = new FormData();
+    form_data.append('idtoken', id_token);
+    form_data.append('table', 'project')
+    form_data.append('fields', 'name')
+    form_data.append('values', projectName)
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', flaskURL + 'insert');
+    xhr.withCredentials = true;
+
+    xhr.onload = function() {
+        //console.log(xhr.response)
+        //window.location.reload();
+    };
+    xhr.send(form_data);
+
   }
 }
 export default (new Requests);

@@ -2,13 +2,15 @@ import React, { Component } from 'react';
 import Requests from '../../Requests.js'
 import '../../fonts.css';
 import {ClaimDeviceForm} from './ClaimDeviceForm.js';
-import {Button, ButtonGroup, Modal, Row, Col, Form, FormGroup, FormControl ,ControlLabel, FormLabel, HelpBlock} from 'react-bootstrap';
+import {Button, Row, Col} from 'antd'
+import {Modal, Form, FormGroup, FormControl ,ControlLabel, FormLabel, HelpBlock} from 'react-bootstrap';
 
 export class ClaimDevice extends React.Component {
 
   constructor(props, context) {
     super(props, context);
     this.handleHide = this.handleHide.bind(this);
+    this.showModal = this.showModal.bind(this)
     this.getUnclaimedDevices = Requests.getUnclaimedDevices.bind(this);
 
     this.state = {
@@ -21,50 +23,35 @@ export class ClaimDevice extends React.Component {
     this.setState({ show: false });
   }
 
+  showModal(){
+    this.setState({show: true})
+  }
 
-  render() {
-    return (
-      <div className="modal-container">
-        <button className="ui-btn raise code-btn center-text concert"
-          onClick={() => {this.getUnclaimedDevices()}}
-          style={{marginLeft:15 , marginRight:10, marginTop:3}}
-        >
-          Claim Device
-          <span className="glyphicon glyphicon-plus" aria-hidden="true" style={{marginLeft:5}}></span>
-        </button>
-
-        <Modal
-          show={this.state.show}
-          bsSize="large"
-          onHide={this.handleHide}
-          container={this}
-          aria-labelledby="contained-modal-title">
-
-          <Modal.Header closeButton>
-            <Modal.Title id="contained-modal-title" className="concert bold"> <h2 className="concert bold" id="claim-modal-title"> Claim New Devices </h2>
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-            <Row>
-              {this.state.unclaimedDevices.map((device, i) =>
-                <Col key={i} xl={6} lg={6} md={6} sm={12} xs={12}>
+  renderUnclaimed(){
+    if(this.state.unclaimedDevices.length > 0){
+      return (
+        this.state.unclaimedDevices.map((device, i) =>
+                <Col key={i} span={11}>
                   <div className="card text-center card-inverse unclaimed-device">
                       <ClaimDeviceForm device={device} activeProject={this.props.activeProject} token={this.props.token}> </ClaimDeviceForm>
                   </div>
                 </Col>
-              )}
+        )
+      )
+    }
+  }
+
+  componentWillMount(){
+      this.getUnclaimedDevices();
+  }
+
+
+
+  render() {
+    return (
+            <Row type="flex" justify="space-around" align="top" style={{padding:"2%"}}>
+              {this.renderUnclaimed()}
             </Row>
-
-
-          </Modal.Body>
-          <Modal.Footer>
-            <ButtonGroup>
-              <Button bsStyle="danger" onClick={this.handleHide}>Cancel</Button>
-              <Button bsStyle="success" onClick={this.handleHide}>Create</Button>
-            </ButtonGroup>
-          </Modal.Footer>
-        </Modal>
-      </div>
     );
   }
 }

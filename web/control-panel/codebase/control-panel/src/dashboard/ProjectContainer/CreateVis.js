@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import '../../fonts.css'
-import './CreateVis.css'
+import '../../App.css'
 import Requests from '../../Requests.js'
-import {Button, ButtonGroup, Modal, Row, Col, SplitButton, MenuItem, Badge, Well, ButtonToolbar, ToggleButton, ToggleButtonGroup, Form, FormGroup, FormControl, ControlLabel} from 'react-bootstrap'
+import {Button, Menu} from 'antd'
+import {Modal, Row, Col, SplitButton, MenuItem, Badge, Well, ButtonToolbar, ToggleButton, ToggleButtonGroup, Form, FormGroup, FormControl, ControlLabel} from 'react-bootstrap'
 
 export class CreateVis extends React.Component {
 
@@ -11,8 +12,6 @@ export class CreateVis extends React.Component {
 
     this.chartUrl = Requests.getChartURL();
 
-    this.handleHide = this.handleHide.bind(this);
-    this.showModal = this.showModal.bind(this);
     this.sensorToggleClick = this.sensorToggleClick.bind(this);
     this.handleChartTypeChange = this.handleChartTypeChange.bind(this);
 
@@ -120,12 +119,6 @@ export class CreateVis extends React.Component {
       this.getAllProjects();
   }
 
-  showModal(){
-      let proj = this.getActiveProject(this.state.allProjects);
-      let sensors = this.getInitialSensors(proj);
-      this.setState({show: true, activeProject: proj, selectedSensors: sensors, chartType: 0});
-  }
-
   getInitialSensors(activeProject){
       let i; let ids = [];
       for (i in activeProject.sensors){
@@ -146,29 +139,7 @@ export class CreateVis extends React.Component {
 
   render() {
     return (
-      <div className="modal-container">
-        <button className="ui-btn raise code-btn center-text concert"
-          onClick={this.showModal}
-          style={{marginTop:3}}
-        >
-          Generate Graph
-          <span className="glyphicon glyphicon-random" aria-hidden="true" style={{marginLeft:5}}></span>
-        </button>
-
-        <Modal 
-          show={this.state.show}
-          bsSize="large"
-          onHide={this.handleHide}
-          container={this}
-          aria-labelledby="contained-modal-title" 
-          >
-
-          <Modal.Header closeButton>
-            <Modal.Title id="contained-modal-title"> Generate Visualization Graph
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
-
+      <div>
             <Row>
               <Col lg={4} md={4} sm={4}>
 
@@ -221,14 +192,6 @@ export class CreateVis extends React.Component {
                 <h6 className="black"> iframe link: [ iframe width="800" height="450" src={this.getIframeURL()} ] </h6>
               </Col>
             </Row>
-          </Modal.Body>
-          <Modal.Footer>
-            <ButtonGroup>
-              <Button bsStyle="danger" onClick={this.handleHide}>Cancel</Button>
-              <Button bsStyle="success" onClick={this.handleHide}>Copy Link</Button>
-            </ButtonGroup>
-          </Modal.Footer>
-        </Modal>
       </div>
     );
   }

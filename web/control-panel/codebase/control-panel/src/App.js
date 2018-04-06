@@ -5,6 +5,10 @@ import Requests from './Requests.js'
 import {Dashboard} from './dashboard/Dashboard.js'
 import {DashboardHeader} from './dashboard/DashboardHeader.js'
 
+import { Layout, Menu, Icon, Divider, Card } from 'antd';
+const {Meta} = Card;
+
+
 class App extends Component {
   constructor() {
     super();
@@ -13,10 +17,10 @@ class App extends Component {
     this.state = {
       signInState: 0,
       researcher: undefined,
-      profileEmail: ''
+      profileEmail: '',
+      activeProject: 0,
+      activeDevice: 0
     }
-
-
   }
 
   componentDidMount() {
@@ -41,7 +45,6 @@ class App extends Component {
   }
 
   render() {
-    const dashboard = <Dashboard researcher={this.state.researcher}  token={this.state.idtoken} />
     const dashboardHeader = <DashboardHeader email={this.state.profileEmail} gapi={window.gapi} signOut={this.signOut}/>
 
     if (this.state.signInState == 0) {
@@ -59,24 +62,14 @@ class App extends Component {
       );
     } else if (this.state.signInState == 1) {
       return (
-        <div className="App">
-
-          <header className="App-header">
-            {dashboardHeader}
-          </header>
-
-          {dashboard}
-
-        </div>
+          <Dashboard researcher={this.state.researcher}/>
       );
     } else {
       return (
         <div className="App">
-
           <header className="App-header">
             {dashboardHeader}
           </header>
-
           <h1 className="App-title">Permission Denied! Please contact the Administrator</h1>
 
         </div>

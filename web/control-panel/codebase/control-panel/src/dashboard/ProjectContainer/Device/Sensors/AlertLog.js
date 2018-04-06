@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import Requests from '../../../../Requests.js'
 import './AlertLog.css'
 import '../../../../fonts.css';
-import {ButtonGroup, Button, Modal} from 'react-bootstrap'
+import {Modal} from 'react-bootstrap'
+import {Button} from 'antd'
 
 export class AlertLog extends React.Component {
 
@@ -42,7 +43,7 @@ export class AlertLog extends React.Component {
   render() {
     return (
       <div className="modal-container">
-        <button bsSize="small" className="ui-btn raise concert" onClick={() => {this.getAlerts()}}>Alert Log</button>
+        <Button icon="warning" onClick={this.getAlerts}>Alert Log</Button>
 
         <Modal
           bsSize="large"
@@ -84,10 +85,8 @@ export class AlertLog extends React.Component {
 
           </Modal.Body>
           <Modal.Footer>
-            <ButtonGroup>
-              <Button bsStyle="success" onClick={this.handleAlert}>Mark Alerts Handled</Button>
-              <Button bsStyle="danger" onClick={this.handleHide}>Exit</Button>
-            </ButtonGroup>
+              <Button type="primary" onClick={this.handleAlert}>Mark Alerts Handled</Button>
+
           </Modal.Footer>
         </Modal>
       </div>

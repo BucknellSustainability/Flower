@@ -3,9 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "homepage": ".",
+  "theme": "./theme.js",
   "dependencies": {
+    "antd": "^3.4.0",
     "axios": "^0.17.1",
     "mdbootstrap": "^4.4.4",
+    "octicons": "^7.2.0",
+    "open-iconic": "^1.1.1",
     "package.json": "^2.0.1",
     "react": "^16.2.0",
     "react-bootstrap": "^0.32.1",

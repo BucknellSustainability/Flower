@@ -3,36 +3,100 @@ import './DeviceContainer.css';
 import '../../../fonts.css';
 import {UploadCode} from './UploadCode.js';
 import {SensorContainers} from './Sensors/SensorContainers.js';
-import {Panel, Row, Col} from 'react-bootstrap'
+import { Card,  Menu, Icon, Button, Row, Col, Modal, Layout} from 'antd';
+const confirm = Modal.confirm;
+const { Header, Footer, Sider, Content } = Layout;
 
 
 export class DeviceContainer extends React.Component {
   constructor(props, context) {
     super(props, context);
+    this.handleSelect = this.handleSelect.bind(this);
+  }
+
+  handleSelect(e) {
+    this.props.handler(e.key);
+  }
+
+  showDeleteConfirm(key, device) {
+    let scope = this;
+    confirm({
+      title: 'Are you sure delete ' + device.name,
+      content: <ol> 
+            <li> Device is permantatly disconnected from the system. </li>
+            <li> All sensors that belong to the device will stop collecting data</li>
+            <li> You will still be able to visualize the sensors under the 'unclaimed' project </li>
+          </ol>
+      ,
+      okText: 'Yes',
+      okType: 'danger',
+      cancelText: 'No',
+      onOk() {
+        scope.props.deleteDevice();
+        console.log('OK');
+      },
+      onCancel() {
+        console.log('Cancel');
+      },
+    });
+}
+
+  renderDevices(){
+    if(this.props.devices.length > 0){
+      return (
+      this.props.devices.map((device, i) =>
+
+          <Menu.Item key={i} onClick={this.handleSelect} theme="light">
+            <Row type="flex" justify="center" align="top">
+              <Col span={18}>
+                {device.name}
+              </Col>
+              <Col span={3}>
+                <UploadCode/>
+               </Col>
+                <Col span={3}>
+                <Button size="small" shape="circle" icon="delete" onClick={this.showDeleteConfirm.bind(this, i, device)}/>
+               </Col>
+            </Row>
+          </Menu.Item>
+      ))
+    }
   }
 
   render() {
-    return (
 
-    <Panel className="device-container">
-      <Panel.Heading className="device-container-header">
-          <Panel.Title>
-            <Row>
-              <Col lg={6} md={6} sm={6} lgOffset={3} mdOffset={3} smOffset={3}>
-                  <h3 className="device-container-title concert bold"> {this.props.device.name} </h3>
-              </Col>
-              <Col lg={3} md={3} sm={3}>
-                  <UploadCode/>
-              </Col>
-            </Row>
-          </Panel.Title>
-      </Panel.Heading>
-      <Panel.Body className="device-container-body">
+    if(this.props.device !== undefined){
+      return (
 
-          <SensorContainers sensors={this.props.device.sensors}/>
 
-        </Panel.Body>
-        </Panel>
-    );
+          <Layout>
+      <Sider id="deviceSider" theme="light" width="300" style={{ marginLeft: "2%", marginBottom: "2%", borderRadius: "5%", backgroundColor:"transparent"}}>
+                 <Menu 
+                  style={{borderRadius: "5%"}}
+                  defaultSelectedKeys={['0']}
+                  mode="inline"
+                  onClick={this.handleSelect}
+                >
+                  {this.renderDevices()}
+                </Menu>                
+
+      </Sider>
+      <Layout theme="light">
+        <Content>
+            <SensorContainers sensors={this.props.device.sensors}/>
+        </Content>
+      </Layout>
+    </Layout>
+
+
+
+      )}
+    else{
+      return (
+        <Card title={<span>Control Panel: No Devices<Icon type="frown-o" style={{marginLeft: 8}}/></span>}>
+          Claim a device by pressing the "Claim Device" button above.
+        </Card>  
+      );
+    }
   }
 }

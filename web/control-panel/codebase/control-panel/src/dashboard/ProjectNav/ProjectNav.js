@@ -1,61 +1,81 @@
 import React, {Component} from 'react';
-import './ProjectNav.css';
 import plus from '../../images/plus.svg';
 import '../../fonts.css';
 import {AddProject} from './AddProject.js';
-import {Button, Nav, NavItem, Well, Row, Col, Badge} from 'react-bootstrap/lib/';
-
+import { Card,  Menu, Icon, Button, Row, Col, Modal} from 'antd';
+const confirm = Modal.confirm;
 
 export class ProjectNav extends Component{
   constructor(props){
     super(props);
     this.handleSelect = this.handleSelect.bind(this);
-    this.state = {activeKey : 0}
+    this.showDeleteConfirm = this.showDeleteConfirm.bind(this);
   }
 
   componentDidMount(){
   }
 
-  handleSelect(selectedKey) {
-    this.setState({activeKey: selectedKey});
-    this.props.handler(selectedKey);
+  handleSelect(e) {
+    this.props.handler(e.key);
+  }
+
+  showDeleteConfirm(key, project) {
+    let scope = this;
+    confirm({
+      title: 'Are you sure delete ' + project.name,
+      content: "This action will unlink you from this Project.\n To rejoin the project select 'join' in the Add Projects field",
+      okText: 'Yes',
+      okType: 'danger',
+      cancelText: 'No',
+      onOk() {
+        scope.props.deleteProj(key);
+        console.log('OK');
+      },
+      onCancel() {
+        console.log('Cancel');
+      },
+    });
+}
+
+  renderProjects(){
+      if(this.props.user.projects.length > 0){
+        return (
+          this.props.user.projects.map((project, i) =>
+          <Menu.Item key={i} onClick={this.handleSelect}>
+            <Row>
+              <Col span={18}>
+                {project.name}
+              </Col>
+              <Col span={6}>
+              <Button type="button" key={i} size="small" shape="circle" icon="delete" onClick={this.showDeleteConfirm.bind(this, i, project)}/>
+              </Col>
+            </Row>
+          </Menu.Item>
+        )
+      )
+    }
   }
 
   render() {
     return (
-          <div className="ProjectNav"> 
-          <Row>
-          <Col lg={8} md={8} sm={8}>
-            <h3 className="linda project-nav-header" style={{marginLeft:25}}> My Projects</h3>
-          </Col>
-          <Col lg={4} md={4} sm={4}>
-            <AddProject/>
-          </Col>
-          </Row>
-          <Well className="project-nav-well" bsSize="small">
-          <Nav bsStyle="pills project-nav" stacked activeKey={this.state.activeKey} onSelect={this.handleSelect}>
-              {this.props.user.projects.map((project, i) =>
-                <NavItem className="raise grow concert bold border border-black" eventKey={i} style={{marginLeft: 15, marginRight:15}}>
-                  <div className="card p-3 text-center">
-                    <Row>
-                      <Col lg={10} md={10} sm={10} lgOffset={1} mdOffset={1} smOffset={1}>
-                        <div className="card-header">
-                          <Badge style={{marginRight:5}}> {project.id} </Badge> {project.name}
-                        </div>
-                        <div className="card-block">
-                        </div>
-                        <div className="card-footer text-muted">
-                          2 days ago
-                        </div>
-                      </Col>
-                    </Row>
-                  </div>
-                </NavItem>
-              )}
 
-        </Nav>
-        </Well>
-        </div>
+        <Menu
+          style={{ width: "100%"}}
+          defaultSelectedKeys={['0']}
+          mode="inline"
+          theme="dark"
+          onClick={this.handleSelect}
+        >
+        <Menu.SubMenu key="myProjects" title={<span><Icon type="solution" /><span>My Projects</span></span>}>
+              {this.renderProjects()}
+        </Menu.SubMenu>
+          <Menu.Item key="admin" onClick={this.handleSelect}>
+            <span><Icon type="code"/><span>Admin Control Panel</span></span>
+          </Menu.Item>
+
+
+        </Menu>
+
     );
   }
 }

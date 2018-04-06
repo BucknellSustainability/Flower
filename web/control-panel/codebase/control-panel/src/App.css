@@ -1,6 +1,32 @@
+@import '~antd/dist/antd.css';
+
+
+html {
+  height: 100% !important;
+}
+body {
+  height: 100% !important;
+}
+
+#root{
+  height: 100% !important;
+}
+
+.ant-layout{
+  height: 100% !important;
+}
+
+.ant-layout-sider{
+  top: -8 !important;
+}
+
+#deviceSlider{
+  background-color: rgba(0, 0, 0, 0.65) !important;
+}
+
 .App {
   text-align: center;
-  background: none;
+  background-color: none;
 }
 
 .signIn {
@@ -8,24 +34,24 @@
   margin: 0 auto;
 }
 
+i.anticon.anticon-delete{
+  margin-right: 0 !important;
+}
+
 .App-logo {
   animation: App-logo-spin infinite 15s linear;
-  height: 60px;
+  height: 40px;
   color: #287241;
 }
 
 .App-header {
+  background-color: #1890ff;
 }
 
 .App-title {
-  margin-top: 10px;
-  font-size: 3em;
-  color: #ffffff;
-}
-
-.navbar-text {
-    margin-top: 15px;
-    margin-bottom: 5px;
+  margin-top: 5px;
+  font-size: 2em;
+  color: white;
 }
 
 .App-Nav{
@@ -35,23 +61,8 @@
   margin-bottom: 0px;
 }
 
-.App-sub-text {
-  font-size: 17px;
-  margin-top: 50px;
-  color: white !important;
-}
-
 .App-intro {
   font-size: large;
-}
-
-.nav flex-column {
-  width:20%;
-}
-
-.row{
-  margin-left: 0px !important;
-  margin-right: 0px !important;
 }
 
 @media (min-width: 0px){
@@ -63,4 +74,84 @@
 @keyframes App-logo-spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+.ant-form-item{
+  margin: 0 !important;
+}
+
+.sensor-check.btn.btn-default.active{
+  border: 6px double #4bb543;
+}
+
+.badge-large{
+  height: 25px;
+  width: 30px;
+  font-size: 100%;
+}
+
+.raise:hover{
+  box-shadow: 0 .5em 0.5em -0.4em;
+  transform: translateY(-0.25em) translateZ(-.5em);
+  border-width: 2px;
+}
+
+.raise {  
+  transition: 0.3s  ease-in-out;
+}
+
+.grow { transition: all .2s ease-in-out; }
+.grow:hover { transform: scale(1.1); }
+.grow:active { transform: scale(1.1); }
+
+.ui-btn{
+  color: white;
+  border-color: white;
+  background: none;
+  padding: 5px;
+  padding-left: 12px;
+  padding-right: 12px;
+  border-radius: 7%;
+}
+
+button:focus {
+  box-shadow: none;
+}
+
+.sensor-check.btn.btn-default.active{
+  border: 6px double green !important;
+}
+
+.badge-large{
+  height: 25px;
+  width: 30px;
+  font-size: 100%;
+}
+
+.raise:hover{
+  box-shadow: 0 .5em 0.5em -0.4em;
+  transform: translateY(-0.25em) translateZ(-.5em);
+  border-width: 2px;
+}
+
+.raise {  
+  transition: 0.3s  ease-in-out;
+}
+
+.grow { transition: all .2s ease-in-out; }
+.grow:hover { transform: scale(1.1); }
+.grow:active { transform: scale(1.1); }
+
+.ui-btn{
+  color: white;
+  border-color: white;
+  background: none;
+  padding: 5px;
+  padding-left: 12px;
+  padding-right: 12px;
+  border-radius: 7%;
+}
+
+button:focus {
+  box-shadow: none;
 }
