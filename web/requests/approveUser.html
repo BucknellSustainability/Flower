@@ -8,30 +8,66 @@
     <meta name="google-signin-client_id" content="438120227370-65o4j0kmk9mbij1bp3dqvnts9dh4kfrf.apps.googleusercontent.com">
 
     <meta charset="utf-8">
+
+    <link href="https://fonts.googleapis.com/css?family=Lato|Lora" rel="stylesheet">
+    <link href="../home/style.css" rel="stylesheet"/>
   </head>
 
   <style>
   </style>
 
   <body>
-      <div class="g-signin2" data-onsuccess="onSignIn"></div>
+      <header class="site-header">
+        <span class="title1">Sustainability at Bucknell</span>
+        <p class="title2">Learn about being green at Bucknell</p>
+      </header>
+
+      <div style="height: 80%;">
+        <p id="message" class="approvalText">We need to verify that you are an administrator! Please login with the button below!</p>
+        <div class="g-signin2" data-onsuccess="onSignIn"></div>
+      </div>
+      </div>
+
+      <div class="site-footer">
+        <p>Developed by Digital Greens</p>
+      </div>
+      
       <script src="https://apis.google.com/js/platform.js" async defer></script>
       <script type="text/javascript" src="../common/queryParams.js" ></script>
-      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script> 
+      <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
       <script type="text/javascript" src="../common/load-deployment.js" ></script>
       <script>
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', 'https://www.eg.bucknell.edu/energyhill/read?fields=name&table=user&condition_fields=userId&condition_values=' + getParameterByName('userid'));
+      xhr.withCredentials = true;
+      xhr.onload = function() {
+        var name = JSON.parse(xhr.responseText)[0]['name'];
+        $('#message').text('Please log in to approve ' + name);
+      };
+      xhr.send();
+
       function onSignIn(googleUser) {
           var id_token = googleUser.getAuthResponse().id_token;
-          
+
           var form_data = new FormData();
           form_data.append('idtoken', id_token);
           form_data.append('userid', getParameterByName('userid'));
 
           var xhr = new XMLHttpRequest();
-          xhr.open('POST', deploy_config["FLASK_SERVER"] + '/approve-user');
+          xhr.open('POST', 'https://www.eg.bucknell.edu/energyhill/approve-user');
           xhr.withCredentials = true;
           xhr.onload = function() {
-              console.log('Signed in as: ' + xhr.responseText);
+                if (xhr.status == 200) {
+                    $('#message').text('Approval successful!');
+                } else if (xhr.status === 403) {
+                    $('#message').text('Approval unsuccessful, you are not an admin!');
+                } else if(xhr.status === 400) {
+                    $('#message').text('Approval unsuccessful, the user you are trying to approve doesn\'t exist');
+                } else {
+                    $('#message').text('Approval unsuccessful =(');
+                }
+                
+                $('.g-signin2').visible = false;
           };
           xhr.send(form_data);
         }
@@ -40,4 +76,3 @@
 
 
 </html>
-

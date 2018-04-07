@@ -12,6 +12,7 @@ const {Meta} = Card;
 class App extends Component {
   constructor() {
     super();
+
     this.loadProfile = Requests.loadProfile.bind(this);
 
     this.state = {
@@ -19,7 +20,8 @@ class App extends Component {
       researcher: undefined,
       profileEmail: '',
       activeProject: 0,
-      activeDevice: 0
+      activeDevice: 0,
+      token: undefined
     }
   }
 
@@ -28,20 +30,26 @@ class App extends Component {
   }
 
   renderButton() {
-      window.gapi.signin2.render('my-signin2', {
-        'scope': 'profile email',
-        'width': 240,
-        'height': 50,
-        'longtitle': true,
-        'theme': 'dark',
-        'onsuccess': this.loadProfile,
-        'onfailure': console.log('failed')
-      });
+
+    window.gapi.signin2.render('my-signin2', {
+      'scope': 'profile email',
+      'width': 240,
+      'height': 50,
+      'longtitle': true,
+      'theme': 'dark',
+      'onsuccess': this.loadProfile,
+      'onfailure': console.log('failed')
+    });
   }
 
   signOut = () => {
     this.setState({researcher: undefined, signInState: 0, profileEmail: ''})
     window.location.reload();
+  }
+
+  requestAccess = () => {
+    Requests.requestAcess(this.state.token);
+    window.gapi.auth2.getAuthInstance().signOut().then(this.signOut);
   }
 
   render() {
@@ -70,7 +78,10 @@ class App extends Component {
           <header className="App-header">
             {dashboardHeader}
           </header>
-          <h1 className="App-title">Permission Denied! Please contact the Administrator</h1>
+
+          <h1 className="App-title">Permission Denied!</h1>
+          <p className="App-sub-text">The button below will send an email to the administrator who can grant you access.</p>
+          <button id="requestAccessButton" type="button" className="btn btn-default navbar-btn" onClick={this.requestAccess}>Sign Out & Request Access</button>
 
         </div>
       )

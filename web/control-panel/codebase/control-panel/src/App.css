@@ -61,8 +61,9 @@ i.anticon.anticon-delete{
   margin-bottom: 0px;
 }
 
-.App-intro {
-  font-size: large;
+.App-sub-text {
+  font-size: 17px;
+  color: white !important;
 }
 
 @media (min-width: 0px){

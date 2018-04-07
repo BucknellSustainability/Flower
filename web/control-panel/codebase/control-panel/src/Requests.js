@@ -27,11 +27,22 @@ class Requests {
     xhr.onload = function() {
       console.log(xhr.response)
       if (xhr.response == null) {
-        scope.setState({researcher: null, signInState: 2, profileEmail: googleUser.getBasicProfile().getEmail()})
+        scope.setState({researcher: null, signInState: 2, profileEmail: googleUser.getBasicProfile().getEmail(), token: id_token})
       } else {
-        scope.setState({researcher: xhr.response, signInState: 1, profileEmail: googleUser.getBasicProfile().getEmail()})
+        scope.setState({researcher: xhr.response, signInState: 1, profileEmail: googleUser.getBasicProfile().getEmail(), token: id_token})
       }
     };
+    xhr.send(form_data);
+  }
+
+  requestAcess(id_token, signOut) {
+    var form_data = new FormData();
+    form_data.append('idtoken', id_token);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', 'https://www.eg.bucknell.edu/energyhill/request-access');
+    xhr.withCredentials = true;
+    xhr.onload = undefined;
     xhr.send(form_data);
   }
 
