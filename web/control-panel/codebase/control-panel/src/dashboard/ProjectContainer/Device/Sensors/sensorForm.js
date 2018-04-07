@@ -1,6 +1,22 @@
 import React, { Component } from 'react';
 import Requests from '../../../../Requests.js'
-import {Form, FormGroup, FormControl, HelpBlock, ControlLabel, Row, Col, Button} from 'react-bootstrap'
+import {Card, Divider, Row, Col, Form, Input, Tooltip, Icon, Select, Radio} from 'antd'
+const { TextArea } = Input
+const FormItem = Form.Item;
+const Option = Select.Option;
+const RadioButton = Radio.Button;
+const RadioGroup = Radio.Group;
+
+const formItemLayout = {
+      labelCol: {
+        xs: { span: 24 },
+        sm: { span: 10 },
+      },
+      wrapperCol: {
+        xs: { span: 24 },
+        sm: { span: 14 },
+      },
+};
 
 export class SensorForm extends React.Component {
   constructor(props, context) {
@@ -22,99 +38,59 @@ export class SensorForm extends React.Component {
     //update any changes to sensor info
   }
 
-  handleChangeName = (e) => {
-    this.setState({
-      name: e.target.value
-    });
-  }
-
-  handleChangeUnits = (e) => {
-    this.setState({
-      units: e.target.value
-    });
-  }
-
-  handleChangeHigh = (e) => {
-    this.setState({
-      limHigh: e.target.value
-    });
-  }
-
-  handleChangeLow = (e) => {
-    this.setState({
-      limLow: e.target.value
-    });
-  }
-
-  noValidation() { //used for input fields where there is no way to screw up, but you still want to let the user know they are doing a good job
-    return "success";
-  }
-
-  getValidationStateNameUnits(field) {
-    if (field.length > this.state.maxLength) {
-      return "error";
-    } else {
-      return "success";
-    }
-  }
-
   render() {
+    const currSensor = this.props.sensor;
     return (
-      <Form>
-        <Row className="sensorRow">
-          <Col md={6}>
-            <FormGroup
-              controlId="basicSensorInfo"
-              validationState={this.getValidationStateNameUnits(this.state.name)}>
-                <ControlLabel>Sensor Name</ControlLabel>{' '}
-                <FormControl
-                  type="text"
-                  value={this.state.name}
-                  onChange={this.handleChangeName}/>
-                <FormControl.Feedback />
-                <HelpBlock>{this.state.maxLength} character limit</HelpBlock>
-            </FormGroup>{' '}
-            <FormGroup
-              controlId="formInlineUnits"
-              validationState={this.getValidationStateNameUnits(this.state.units)}>
-                <ControlLabel>Units</ControlLabel>{' '}
-                <FormControl
-                  type="text"
-                  value={this.state.units}
-                  onChange={this.handleChangeUnits}/>
-                <FormControl.Feedback />
-                <HelpBlock>{this.state.maxLength} character limit</HelpBlock>
-            </FormGroup>
-          </Col>
-          <Col md={6}>
-            <FormGroup
-              controlId="sensorRanges"
-              validationState={this.noValidation()}>
-                <ControlLabel>Upper Limit</ControlLabel>{' '}
-                <FormControl
-                  type="number"
-                  value={this.state.limHigh}
-                  onChange={this.handleChangeHigh}/>
-                <FormControl.Feedback />
-            </FormGroup>{' '}
-            <FormGroup
-              controlId="formInlineUnits"
-              validationState={this.noValidation()}>
-                <ControlLabel>Lower Limit</ControlLabel>{' '}
-                <FormControl
-                  type="number"
-                  value={this.state.limLow}
-                  onChange={this.handleChangeLow}/>
-                <FormControl.Feedback />
-            </FormGroup>
-          </Col>
-        </Row>
-        <br/>
-        <button 
-          type="button"
-          className="raise center-text concert"
-          onClick={() => {this.updateSensor()}}
-          style={{marginLeft:15 , marginRight:10, marginTop:3}}> Submit </button>
-      </Form>
+            <Row type="flex" justify="space-around" align="top">
+                <Col span={24} style={{marginBottom:0}}>
+                  <FormItem {...formItemLayout} label={(<span>Sensor Name&nbsp;
+                                <Tooltip title="">
+                                  <Icon type="question-circle-o" />
+                                </Tooltip>
+                              </span>)}>
+                      <Input placeholder={currSensor.name} />
+                  </FormItem>
+
+                  <FormItem {...formItemLayout} label={(<span>Description&nbsp;
+                                <Tooltip title="Give a little more information about your sensor">
+                                  <Icon type="question-circle-o" />
+                                </Tooltip>
+                              </span>)}>
+                      <Input placeholder={currSensor.desc} />
+                  </FormItem>
+
+                  <FormItem {...formItemLayout} label={(<span>Alerts Enabled&nbsp;
+                                <Tooltip title="If public your project will appear on the public landing page.">
+                                  <Icon type="question-circle-o" />
+                                </Tooltip>
+                              </span>)}>
+                              <Select defaultValue={currSensor.alerts_enabled}>
+                                <Option value={1}>True</Option>
+                                <Option value={0}>False</Option>
+                              </Select>
+                  </FormItem>
+
+                  <FormItem {...formItemLayout} label={(<span>Public Page Url&nbsp;
+                                <Tooltip title="Specify website url with your projects information. (Usually will be a wordpress page)">
+                                  <Icon type="question-circle-o" />
+                                </Tooltip>
+                              </span>)}>
+                      <Input placeholder="" />
+                  </FormItem>
+
+                  <FormItem {...formItemLayout} label={(<span>Site Selection&nbsp;
+                                <Tooltip title="Select a site with your project.">
+                                  <Icon type="question-circle-o" />
+                                </Tooltip>
+                              </span>)}>
+                    <Select style={{width:200, float:"left"}} defaultValue="greenhouse">
+                      <Option value="greenhouse">Greenhouse</Option>
+                      <Option value="array">Solar Arrays</Option>
+                      <Option value="tower">Water Tower</Option>
+                    </Select>
+                  </FormItem>
+
+                </Col> 
+            </Row>
     );}
   }

@@ -5,6 +5,10 @@ import Requests from './Requests.js'
 import {Dashboard} from './dashboard/Dashboard.js'
 import {DashboardHeader} from './dashboard/DashboardHeader.js'
 
+import { Layout, Menu, Icon, Divider, Card } from 'antd';
+const {Meta} = Card;
+
+
 class App extends Component {
   constructor() {
     super();
@@ -15,10 +19,10 @@ class App extends Component {
       signInState: 0,
       researcher: undefined,
       profileEmail: '',
+      activeProject: 0,
+      activeDevice: 0,
       token: undefined
     }
-
-
   }
 
   componentDidMount() {
@@ -49,7 +53,6 @@ class App extends Component {
   }
 
   render() {
-    const dashboard = <Dashboard researcher={this.state.researcher}  token={this.state.idtoken} />
     const dashboardHeader = <DashboardHeader email={this.state.profileEmail} gapi={window.gapi} signOut={this.signOut}/>
 
     if (this.state.signInState == 0) {
@@ -67,20 +70,11 @@ class App extends Component {
       );
     } else if (this.state.signInState == 1) {
       return (
-        <div className="App">
-
-          <header className="App-header">
-            {dashboardHeader}
-          </header>
-
-          {dashboard}
-
-        </div>
+          <Dashboard researcher={this.state.researcher}/>
       );
     } else {
       return (
         <div className="App">
-
           <header className="App-header">
             {dashboardHeader}
           </header>
@@ -88,7 +82,6 @@ class App extends Component {
           <h1 className="App-title">Permission Denied!</h1>
           <p className="App-sub-text">The button below will send an email to the administrator who can grant you access.</p>
           <button id="requestAccessButton" type="button" className="btn btn-default navbar-btn" onClick={this.requestAccess}>Sign Out & Request Access</button>
-
 
         </div>
       )

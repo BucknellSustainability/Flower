@@ -4,7 +4,7 @@ import '../fonts.css'
 import {Navbar} from 'react-bootstrap/lib/'
 import {Button} from 'antd'
 
-export class DashboardHeader extends Component {
+export class DashboardFooter extends Component {
   constructor() {
     super();
     this.signOut = this.signOut.bind(this);

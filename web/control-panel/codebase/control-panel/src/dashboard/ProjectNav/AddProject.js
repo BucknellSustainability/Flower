@@ -1,88 +1,111 @@
 import React, { Component } from 'react';
-import '../../fonts.css'
-import {Button, ButtonGroup, Modal, Row, Col, SplitButton, MenuItem, Badge, Well, ButtonToolbar, ToggleButton, ToggleButtonGroup, Form, FormGroup, FormControl, ControlLabel} from 'react-bootstrap'
+import '../../fonts.css';
+import { Modal, Button, message, Icon, Row, Col, Form, Input, Divider, Select} from 'antd';
+import Requests from '../../Requests.js'
+const FormItem = Form.Item;
+const Option = Select.Option;
+
 
 export class AddProject extends React.Component {
-
-  constructor(props, context) {
-    super(props, context);
-
-    this.showModal = this.showModal.bind(this)
-    this.handleHide = this.handleHide.bind(this)
+  
+  constructor(props){
+    super(props)
 
     this.state = {
-      show:false
-    };
+      loading: false,
+      visible: false,
+    }
+
+    this.createProject = Requests.createProject.bind(this);
+
+    this.showModal = this.showModal.bind(this);
+    this.handleOk = this.handleOk.bind(this);
+    this.handleCancel = this.handleCancel.bind(this);
   }
 
-  handleHide() {
-    this.setState({ show: false});
+
+  showModal() {
+    this.setState({
+      visible: true,
+      projectName: ""
+    });
   }
- 
 
+  handleOk() {
+    this.setState({ loading: true });
+    setTimeout(() => {
+      this.setState({ loading: false, visible: false });
+    }, 3000);
+  }
+  handleCancel () {
+    this.setState({ visible: false });
+  }
 
-  showModal(){
-      this.setState({show: true});
+  handleNameChange(e){
+    this.setState({projectName: e.target.value})
+  }
+
+  handleCreateProject(){
+    this.createProject(this.state.projectName);
   }
 
 
 
   render() {
+    const { visible, loading } = this.state;
+
+    const formLayout = "horizontal";
+    const formItemLayout = formLayout === 'horizontal' ? {
+      labelCol: { span: 0 },
+      wrapperCol: { span: 24 },
+    } : null;
+    const buttonItemLayout = formLayout === 'horizontal' ? {
+      wrapperCol: { span: 14, offset: 4 },
+    } : null;
+
     return (
-      <div className="modal-container">
-        <button className="ui-btn raise code-btn center-text concert"
-          onClick={this.showModal}
-          style={{marginBottom:10}}
+      <div>
+        <Button type="primary" shape="circle" icon="plus-circle-o" onClick={this.showModal}/>
+        <Modal
+          visible={visible}
+          title="Add Project"
+          onCancel={this.handleCancel}
+          style={{width: "100%"}}
+          footer={null}
         >
-          <span className="glyphicon glyphicon-plus" aria-hidden="true"></span>
-        </button>
 
-        <Modal 
-          show={this.state.show}
-          bsSize="large"
-          onHide={this.handleHide}
-          container={this}
-          aria-labelledby="contained-modal-title" 
-          >
+        <Row type="flex" justify="space-around" align="top">
+          <Col span={11} align="center">
+              <Form layout={formLayout}>
+                <FormItem
+                  label="Choose Project Name"
+                  {...formItemLayout}
+                >
+                  <Input placeholder="Enter Name" onChange={this.handleNameChange.bind(this)}/>
+                  <Button type="primary" icon="plus" style={{marginTop:20}} onClick={this.handleCreateProject.bind(this)}>
+                    Create Project
+                  </Button>
+                </FormItem>
+              </Form>
+          </Col>
 
-          <Modal.Header closeButton>
-            <Modal.Title id="contained-modal-title"> Add Project
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
+          <Col span={11} align="center">
+              <Form layout={formLayout}>
+                <FormItem
+                  label="Join an Existing Project"
+                  {...formItemLayout}
+                >
+                  <Select defaultValue="greenhouse" style={{ width: 200 }}>
+                    <Option value="greenhouse">Living Greenhouse</Option>
+                    <Option value="test">Test Project</Option>
+                  </Select>
+                  <Button type="primary" icon="link" style={{marginTop:20}}>Join Project</Button>
+                </FormItem>
+              </Form>
+          </Col>
 
-            <Row>
-              <Col lg={5} md={5} sm={5} lgOffset={1} mdOffset={1} smOffset={1}>
-                <div className="card box-shadow create-proj-card">
-                  <div className="card-header">
-                    <h4 className="my-0 font-weight-normal">Create Project</h4>
-                  </div>
-                  <div className="card-body">
-                    <button type="button" className="btn btn-lg btn-block btn-primary">Get started</button>
-                  </div>
-                </div>
+        </Row>
 
-                </Col>
-                <Col lg={5} md={5} sm={5}>
-                  <div className="card border border-black box-shadow">
-                    <div className="card-header">
-                      <h4 className="font-weight-normal">Join Existing Project</h4>
-                    </div>
-                    <div className="card-body create-proj-card">
-                      <button type="button" className="btn btn-lg btn-block btn-primary">Request Access</button>
-                    </div>
-                  </div>
-              </Col>
-            </Row>
-
-
-          </Modal.Body>
-          <Modal.Footer>
-            <ButtonGroup>
-              <Button bsStyle="danger" onClick={this.handleHide}>Cancel</Button>
-              <Button bsStyle="success" onClick={this.handleHide}>Copy Link</Button>
-            </ButtonGroup>
-          </Modal.Footer>
         </Modal>
       </div>
     );

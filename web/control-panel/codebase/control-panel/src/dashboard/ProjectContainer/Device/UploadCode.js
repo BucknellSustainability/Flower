@@ -1,71 +1,85 @@
 import React, { Component } from 'react';
-import './UploadCode.css';
 import '../../../fonts.css';
 import {UploadAlert} from './UploadAlert.js'
-import {Button, ButtonGroup, Modal, FormGroup, FormControl, ControlLabel, HelpBlock} from 'react-bootstrap'
+import { Modal, Button, Upload, message, Icon} from 'antd';
 
-
-function FieldGroup({ id, label, help, ...props }) {
-  return (
-    <FormGroup controlId={id}>
-      <FormControl {...props} />
-      {help && <HelpBlock id="uploadHelp">{help}</HelpBlock>}
-    </FormGroup>
-  );
-}
 
 export class UploadCode extends React.Component {
+  
+  constructor(props){
+    super(props)
 
-  constructor(props, context) {
-    super(props, context);
-
-    this.handleHide = this.handleHide.bind(this);
     this.state = {
-      show: false
-    };
+      loading: false,
+      visible: false,
+    }
+
+    this.showModal = this.showModal.bind(this);
+    this.handleOk = this.handleOk.bind(this);
+    this.handleCancel = this.handleCancel.bind(this);
+    this.options = {
+      name: 'file',
+      action: 'https://www.eg.bucknell.edu/energyhill/',
+      headers: {
+      authorization: 'MY TEXT'
+      },
+      onChange(info){
+          if (info.file.status !== 'uploading') {
+            console.log(info.file, info.fileList);
+          }
+          if (info.file.status === 'done') {
+            message.success(`${info.file.name} file uploaded successfully`);
+          } else if (info.file.status === 'error') {
+            message.error(`${info.file.name} file upload failed.`);
+          }
+      }
+    }
   }
 
-  handleHide() {
-    this.setState({ show: false});
+
+
+  showModal() {
+    this.setState({
+      visible: true,
+    });
   }
+
+  handleOk() {
+    this.setState({ loading: true });
+    setTimeout(() => {
+      this.setState({ loading: false, visible: false });
+    }, 3000);
+  }
+  handleCancel () {
+    this.setState({ visible: false });
+  }
+
+
 
   render() {
+    const { visible, loading } = this.state;
     return (
-      <div className="modal-container">
-        <button className="ui-btn raise code-btn center-text concert"
-          onClick={() => this.setState({ show: true })}
-        >
-          Upload Code
-        </button>
-
+      <div>
+        <Button size="small" shape="circle" onClick={this.showModal}> <Icon type="cloud-upload-o" style={{marginRight:"50%"}}/></Button>
         <Modal
-          show={this.state.show}
-          onHide={this.handleHide}
-          container={this}
-          aria-labelledby="contained-modal-title"
+          visible={visible}
+          title="Upload Code"
+          onOk={this.handleOk}
+          onCancel={this.handleCancel}
+          size="large"
+          footer={[
+            <Button key="back" onClick={this.handleCancel}>Cancel</Button>,
+            <Button key="submit" type="primary" loading={loading} onClick={this.handleOk}>
+              Submit
+            </Button>,
+          ]}
         >
-          <Modal.Header closeButton>
-            <Modal.Title id="contained-modal-title"> Upload Code Modal
-            </Modal.Title>
-          </Modal.Header>
-          <Modal.Body>
+        <Upload {...this.options}>
+          <Button>
+            <Icon type="upload" /> Click to Upload
+          </Button>
+        </Upload>
 
-            <form>
-              <FieldGroup
-                id="formControlsFile"
-                type="file"
-                label="Upload Arduino Code"
-                help="Please Submit a File to Upload." 
-              />
-            </form>
-
-          </Modal.Body>
-          <Modal.Footer>
-            <ButtonGroup>
-              <Button bsStyle="danger" onClick={this.handleHide}>Clear Device Code</Button>
-              <Button bsStyle="success" onClick={this.handleHide}>Submit Code</Button>
-            </ButtonGroup>
-          </Modal.Footer>
         </Modal>
       </div>
     );
