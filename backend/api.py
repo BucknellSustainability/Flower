@@ -156,7 +156,7 @@ def modify():
 @rest_api.route('/get-sensor-last-reading', methods = ['GET'])
 def get_sensor_last_reading():
     sensorid = request.values.get('sensorid')
-    gauge_sql = 'SELECT value FROM data WHERE sensorId = %s ORDER BY dataId DESC LIMIT 1'
+    gauge_sql = 'SELECT value FROM databuffer WHERE sensorId = %s ORDER BY dataId DESC LIMIT 1'
     result = Db.exec_query(gauge_sql, (sensorid,))
     return json.dumps(result, default = jsonconverter)
 
@@ -456,7 +456,7 @@ def construct_profile_json(google_id):
         # construct sensor dict
         sensor_dict = {
             'id': sensor['sensorId'],
-            'name': sensor['name'],
+            'displayName': sensor['displayName'],
             'units': sensor['units'],
             'desc': sensor['description'],
             'min': sensor['alertMinVal'],
@@ -543,7 +543,7 @@ def build_all_sensors_dict():
         # construct sensor dict
         sensor_dict = {
             'id': sensor['sensorId'],
-            'name': sensor['name'],
+            'displayName': sensor['displayName'],
             'description': sensor['description']
         }
 
