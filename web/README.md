@@ -32,18 +32,8 @@ serve. After cloning the repo into your `~\public_html` directory and use
 `chmod o=r <file>` where `<file>` is the file you want to be accessable by the general public __or__ cd into `/scripts` and run `./setup.sh`
 to make all the files in the `/web` directory accessible over http.
 
-# Compiling React Code
-First you need to do a module load of the node module by running
+# Building React Code
+This has been compiled into a clean and easy to use script. To perform this action, cd into the `scripts` directory and run:
 ```
-module load node
-```
-
-Then you cd to the directory with the package.json file which in our case is `web/control-panel/codebase/control-panel`.  They you want to install all the packages:
-```
-npm install react react-scripts react-bootstrap react-dom
-```
-
-Then you need to compile the react code by running
-```
-npm start
+./build.sh
 ```

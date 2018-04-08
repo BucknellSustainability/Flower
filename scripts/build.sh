@@ -8,6 +8,8 @@ module load node
 
 cd ../web/control-panel/codebase/control-panel  #open development folder
 
+npm install react react-scripts react-dom antd
+
 npm run build              #build the application
 
 cp -R build/* ../../       #copy files from build folder into production folder

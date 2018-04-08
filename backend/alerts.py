@@ -6,22 +6,36 @@
 from emailer import sendEmail, exportChart
 from db import *
 
+LAST_10_MINS_CONDITION = '''databuffer.dateTime >= FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(NOW())/600)*600) - INTERVAL 10 MINUTE AND databuffer.dateTime < FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(NOW())/600)*600)'''
+
 AGGREGATION_SQL = '''INSERT INTO datahourly(sensorId, averageValue, sampleRate, dateTime)
 			(select 
 			        sensorId, 
 				AVG(value) as value,  
 				COUNT(VALUE) as samplePerHour, 
 				FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(NOW())/600)*600) as currTime
-                            FROM data
-			    WHERE data.dateTime > FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(NOW())/600)*600) - INTERVAL 10 MINUTE
-			    GROUP BY sensorId)'''
+                            FROM databuffer
+			    WHERE {}
+			    GROUP BY sensorId)'''.format(LAST_10_MINS_CONDITION)
+
+COPY_SQL = '''INSERT INTO data(sensorId, value, dateTime) (
+                    SELECT
+                        sensorId, value, dateTime
+                    FROM databuffer
+                    WHERE {}
+                )'''.format(LAST_10_MINS_CONDITION)
+
+DELETE_SQL = '''DELETE FROM databuffer WHERE {}'''.format(LAST_10_MINS_CONDITION)
+
 
 UNHANDLED = 0
 HANDLED = 1
 
 def main():
     # do initial aggregation
-    aggregate()
+    aggregate_buffer()
+    copy_buffer()
+    delete_buffer()
     
     # get all of the unhandled alerts from the aggregation
     unhandled_alerts = get_unhandled_alerts()
@@ -119,12 +133,28 @@ def mark_handled(alert_id):
     )
     Db.exec_query(handle_alert_sql)
     
-def aggregate():
+def aggregate_buffer():
     try:
         # do aggregation first
         Db.exec_query(AGGREGATION_SQL)
     except Exception as e:
-        print('Unable to aggreate data')
+        print('Unable to aggreate buffer data')
+        print(e)
+
+def copy_buffer():
+    try:
+        # then copy
+        Db.exec_query(COPY_SQL)
+    except Exception as e:
+        print('Unable to copy buffer data')
+        print(e)
+
+def delete_buffer():
+    try:
+        # finally delete
+        Db.exec_query(DELETE_SQL)
+    except Exception as e:
+        print('Unable to delete buffer data')
         print(e)
 
 def get_unhandled_alerts():
