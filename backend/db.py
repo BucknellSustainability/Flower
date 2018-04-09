@@ -1,6 +1,9 @@
 import json
 import MySQLdb
 
+from logger import *
+init_logger(logging.INFO)
+
 # load config (db info)
 with open("config.json", 'r') as f:
     config = json.load(f)
@@ -53,11 +56,10 @@ class Db:
         data = None
 
         try:
-            print('About to execute SQL Query', formatted_sql_string)
             # Execute the SQL command
             cursor.execute(formatted_sql_string, param_tuple)
 
-            print('Executed SQL Query: ', cursor._last_executed)
+            logger.debug('Executed SQL Query: ', cursor._last_executed)
 
             # Fetch all the rows in a list of lists.
             descriptions = cursor.description
@@ -66,7 +68,7 @@ class Db:
             data = cursor.fetchall()
             Db.commit()
         except Exception as e:
-            print("Error: Couldn't fetch data: {}".format(str(e)))
+            logger.error('Couldn\'t execute query - {}'.format(cursor._last_executed), exc_info=True)
 
         # handle if query didn't return anything
         if data is None or descriptions is None:
