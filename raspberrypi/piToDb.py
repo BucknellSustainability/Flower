@@ -8,23 +8,58 @@ import pymysql
 # That should fix it.
 
 import json
-from arduinoToPi import SensorReading
+from arduinoToPi import SensorReading, workers
+import arduinoToPi
+from piToArduino import send_file_to_arduino
 import queue
 import time
 import datetime
 import math
+import sys
+from threading import Thread
+
+# Ensure that we're running python3.
+if sys.version_info[0] < 3:
+	raise Exception("Must run the pi server using python 3. Check that you used the 'python3' command.")
+
+# This is the time between checks for new code to download.
+code_download_interval = datetime.timedelta(seconds=10)
+
+# This is the maximum time a code download can take. After this, the downloading
+# thread will be "killed" and the download will retry.
+#
+# * I say "killed" because python doesn't allow you to kill a thread. Every effort has been made
+# to keep the downloading thread responsive to "requests" to kill it.
+code_download_timeout = datetime.timedelta(minutes=5)
+
+# This is the time between checks in the device and sensor tables.
+cache_clear_interval = datetime.timedelta(hours=1)
+
+caches_last_cleared = None
+code_download_last_checked = None
+
+# State variables for the downloading thread.
+download_thread = None
+download_thread_force_terminate = False
+download_thread_start_time = None
 
 # master_queue is a queue of SensorReading objects.
 def database_main(master_queue):
+	assert(isinstance(master_queue, queue.Queue))
+
+	# Set up periodic cache clearing.
+	global caches_last_cleared
 	caches_last_cleared = datetime.datetime.now()
 	clear_caches()
-	cache_clear_interval = datetime.timedelta(hours=1)
+
+	# Set up periodic code-download checks.
+	global code_download_last_checked
+	code_download_last_checked = datetime.datetime.now()
+
 	while True:
 		try:
 			database_loop(master_queue)
-			if datetime.datetime.now() - caches_last_cleared > cache_clear_interval:
-				clear_caches()
-			
+
 		except Exception as e:
 			print(e)
 
@@ -34,6 +69,8 @@ def clear_caches():
 	
 
 def get_all_readings(master_queue):
+	assert(isinstance(master_queue, queue.Queue))
+
 	readings = []
 	try:
 		while True:
@@ -48,6 +85,7 @@ def get_all_readings(master_queue):
 #
 # Returns each sensor's value in (sensor_id, time, value) tuples.
 def process_reading(connection, reading):
+	assert(isinstance(reading, SensorReading))
 	
 	# Get the arduino's DB ID.
 	device_id = get_arduino_dbid(connection, reading.getId())
@@ -68,8 +106,11 @@ def process_reading(connection, reading):
 	return sensor_tuples
 
 def do_sensor_data_insert(cursor, sensor_id, data_time, value):
-	command_template = "INSERT INTO energyhill.data (sensorId, dateTime, value) VALUES (%s, FROM_UNIXTIME(%s), %s)"
+	# Note: We insert into databuffer, and then aggregation scripts on the server
+	# add it into the energyhill.data table.
+	command_template = "INSERT INTO energyhill.databuffer (sensorId, dateTime, value) VALUES (%s, FROM_UNIXTIME(%s), %s)"
 	
+	# TODO: If isinstance(value, string), store it as a debug string in the database.
 	assert(isinstance(sensor_id, int))
 	assert(isinstance(data_time, datetime.datetime))
 	assert(isinstance(value, float) or isinstance(value, int))
@@ -81,12 +122,20 @@ def do_sensor_data_insert(cursor, sensor_id, data_time, value):
 	do_sql(cursor, command)
 
 def do_sql(cursor, command):
+	assert(isinstance(command, str))
 	print(command)
 	cursor.execute(command)
 
 # TODO: If there is an error at any point after get_all_readings(), 
 # the data is lost!
 def database_loop(master_queue):
+	assert(isinstance(master_queue, queue.Queue))
+
+	global caches_last_cleared
+	global cache_clear_interval
+	global code_download_last_checked
+	global code_download_interval
+
 	connection = None
 	try:
 		# Connect to the database.
@@ -109,11 +158,23 @@ def database_loop(master_queue):
 					do_sensor_data_insert(cursor, sensor, time, value)
 
 				connection.commit()
+			
+			# Check if it's time to invalidate the cache.
+			if datetime.datetime.now() - caches_last_cleared > cache_clear_interval:
+				caches_last_cleared = datetime.datetime.now()
+				clear_caches()
+
+			# Check if it's time to check for code downloads.
+			if datetime.datetime.now() - code_download_last_checked > code_download_interval:
+				code_download_last_checked = datetime.datetime.now()
+				check_for_code_download(connection)
 	finally:
 		# Do cleanup if something goes wrong.
 		connection.close()
 
 def do_select_arduino(connection, cursor, id_string):
+	assert(isinstance(id_string, str))
+
 	# Defensive escape, shouldn't ever be an issue.
 	id_string_escaped = connection.escape(id_string)
 	
@@ -126,6 +187,8 @@ def do_select_arduino(connection, cursor, id_string):
 	return rows
 
 def do_insert_arduino(connection, cursor, id_string):
+	assert(isinstance(id_string, str))
+
 	# Defensive escape, shouldn't ever be an issue.
 	id_string_escaped = connection.escape(id_string)
 	
@@ -137,6 +200,8 @@ def do_insert_arduino(connection, cursor, id_string):
 # TODO: Document this
 cached_arduino_ids = {}
 def get_arduino_dbid(connection, id_string):
+	assert(isinstance(id_string, str))
+
 	if id_string in cached_arduino_ids:
 		return cached_arduino_ids[id_string]
 
@@ -161,6 +226,9 @@ def get_arduino_dbid(connection, id_string):
 			raise Exception("Found multiple rows with hardwareId %s" % id_string)
 
 def do_select_sensor(connection, cursor, arduino_id, sensor_name):
+	assert(isinstance(arduino_id, str) or isinstance(arduino_id, int))
+	assert(isinstance(sensor_name, str))
+
 	# Escape the user-provided sensor name.
 	sensor_name_escaped = connection.escape(sensor_name)
 
@@ -176,6 +244,9 @@ def do_select_sensor(connection, cursor, arduino_id, sensor_name):
 	return rows
 
 def do_insert_sensor(connection, cursor, arduino_id, sensor_name):
+	assert(isinstance(arduino_id, str) or isinstance(arduino_id, int))
+	assert(isinstance(sensor_name, str))
+
 	# Escape the user-provided sensor name.
 	sensor_name_escaped = connection.escape(sensor_name)
 
@@ -188,6 +259,9 @@ def do_insert_sensor(connection, cursor, arduino_id, sensor_name):
 
 cached_sensor_ids = {}
 def get_sensor_dbid(connection, arduino_id, sensor_name):
+	assert(isinstance(sensor_name, str))
+	assert(isinstance(arduino_id, str) or isinstance(arduino_id, int)) 
+	
 	key_pair = (arduino_id, sensor_name)
 	if key_pair in cached_sensor_ids:
 		return cached_sensor_ids[key_pair]
@@ -227,6 +301,141 @@ def connectToDB():
 	connection = pymysql.connect(host=config['DB_URL'], user=config['DB_USERNAME'], password=config['DB_PASSWORD'], db=config['DB_NAME'])
 	return connection
 
+def check_for_code_download(connection):
+	print("Starting code download check...")
+
+	global workers
+	global download_thread
+	global code_download_timeout
+	global download_thread_start_time
+	global download_thread_force_terminate
+
+	# Check if there is already a download thread.
+	if download_thread:
+		# Check if it is alive.
+		if not download_thread.is_alive():
+			# Join it.
+			print("Joining download thread...")
+			download_thread.join()
+		# Check if it has taken too long.
+		elif datetime.datetime.now() - download_thread_start_time > code_download_timeout:
+			# Have we already tried to kill the thread?
+			if download_thread_force_terminate:
+				# Give up.
+				print("Download thread unresponsive. Ignoring...")
+				download_thread = None
+			else:
+				# Try to kill the thread.
+				print("Download thread took too long. Attempting to terminate...")
+				download_thread_force_terminate = True
+				return
+		else:
+			# Let it finish.
+			print("Waiting for existing download thread to finish.")
+			return
+	
+
+	# Look through the array of worker threads, and record all the id strings.
+	# We don't care about race conditions here, because this is just a rough approximation;
+	# if we miss one, we'll see it next time around. We'll get them all 99% of the time.
+	#
+	# I avoid using an iterator here, because the size of the array (and its order) may change
+	# during iteration. Instead, we keep checking indecies until we get an out-of-bounds exception.
+	print("Collecting hardware ids...")
+	hardware_ids = []
+	try:
+		for i in range(0, len(workers) * 2):
+			worker = workers[i]
+			hardware_ids.append(worker.getId())
+	except LookupError:
+		pass
+	except:
+	 	raise Exception("Error while collecting hardware ids...?")
+
+	# Do we even need to check?
+	if len(hardware_ids) == 0:
+		print("Doesn't seem like there are connected devices.")
+		return
+	
+	# Get the matching device Id's.
+	print("Fetching device ids...")
+	device_ids = []
+	for hardware_id in hardware_ids:
+		device_id = get_arduino_dbid(connection, hardware_id)
+		device_ids.append(device_id)
+
+	# Look for any downloads for these devices in the codeupload table.
+	command = "SELECT * FROM energyhill.codeupload WHERE deviceId IN ("
+	for i in range(0, len(device_ids) - 1):
+		device = device_ids[i]
+		command += str(device) + ", "
+	command += str(device_ids[-1]) + ")"
+	
+	print("Fetching the codeupload table...")
+	row = None
+	with connection.cursor(pymysql.cursors.DictCursor) as cursor:
+		do_sql(cursor, command)
+		connection.commit()
+
+		rows = cursor.fetchall()
+		if rows and len(rows) >= 1:
+			# Grab the first row.
+	   		row = rows[0]
+		else:
+			# Nothing to download.
+			print("No entries in the codeupload table.")
+			return
+	
+	# Get the device id.
+	device_id = row["deviceId"]
+
+	# Figure out the corresponding hardware id.
+	index = device_ids.index(device_id)
+	hardware_id = hardware_ids[index]
+
+	# Spawn a new thread to do the downloading.
+	download_thread = Thread(target=code_download_main, args=(device_id, hardware_id))
+	download_thread_start_time = datetime.datetime.now()
+	download_thread.start()
 
 
+def code_download_main(device_id, hardware_id):
+	assert(isinstance(device_id, int))
+	assert(isinstance(hardware_id, str))
 
+	global download_thread_force_terminate
+
+	# Start the process of reserving the arduino.
+	arduinoToPi.reserved_arduino = (hardware_id, None)
+
+	# Start downloading the code file.
+	print("Starting download for device id: " + str(device_id) + " (" + hardware_id + ")")
+	# TODO: Downloading that works...
+	path_to_hex = "BareMinimum.cpp.hex"
+	print("Download for device id " + str(device_id) + " complete. Reserving port...")
+
+	# Spin-loop until the arduino is reserved.
+	while not download_thread_force_terminate:
+		print("Reservation state: " + str(arduinoToPi.reserved_arduino))
+		(_, usb_port) = arduinoToPi.reserved_arduino
+		if usb_port:
+			break
+		time.sleep(1)
+	
+	if download_thread_force_terminate:
+		arduinoToPi.reservedArduino = None
+		return
+
+	print("Port reserved for device id " + str(device_id) + ".")
+
+	# Send the file to the arduino.
+	(_, usb_port) = arduinoToPi.reserved_arduino
+	try:
+		send_file_to_arduino(path_to_hex, usb_port.getPath())
+	except e:
+		# TODO: Send error info.
+		raise Exception("Error while sending file to arduino")
+	finally:
+		# TODO: Mark the code upload entry complete in the database.
+		# TODO: Delete the file that was downloaded
+		arduinoToPi.reserved_arduino = None

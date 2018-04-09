@@ -7,6 +7,7 @@ import serial
 # sudo apt-get install python3-pip
 # sudo pip3 install pyserial
 
+import signal
 import datetime
 import fcntl
 import re
@@ -16,25 +17,58 @@ import os
 import json
 from threading import Thread
 from queue import Queue
+import sys
+import array
 
 # global keep-alive
 mainThreadAlive = False
 
+# The database_main uses this to reserve an arduino's I/O.
+# If it's None, then there is no reservation.
+# 
+# If it's (name, None), then the arduino with id_string() == name should be reserved, but
+# the worker thread may not have finished.
+# 
+# If it's (name, usb_port), then the arduino with id_string() == name is now reserved, and
+# usb_port is the associated port.
+reserved_arduino = None
+
+# Array of ArduinoWorkers. This is global because it's used by the database_main thread to
+# figure out what arduinos are currently plugged in.
+workers = []
+
+# Ensure that we're running python3.
+if sys.version_info[0] < 3:
+	raise Exception("Must run the pi server using python3. Check that you used the 'python3' command.")
+
+# Use a signal handler to catch Ctrl+C instead of a KeyboardInterrupt exception.
+def ctrl_c_handler(signal, frame):
+	print("FORCE Shutting down...")
+	os._exit(0)
+
+signal.signal(signal.SIGINT, ctrl_c_handler)
+
 # One copy of this thread is spawned to look for new USB devices.
 # master_queue is a thread-safe queue of SensorReading objects.
 def arduino_main(master_queue):
+	assert(isinstance(master_queue, Queue))
+
 	global mainThreadAlive
 	#reset_all_usb_ports()
 
 	# Array of ArduinoWorkers
-	workers = []
+	global workers
+
+	global reserved_arduino
 
 	# Used for the no-workers message.
 	last_no_worker_warning = datetime.datetime.now()
+	no_worker_warning_interval = datetime.timedelta(seconds=5)
 
 	while True:
 		try:
 			mainThreadAlive = True
+
 			# Check that all the arduino threads are ok.
 			dead_workers = []
 			for worker in workers:
@@ -55,12 +89,21 @@ def arduino_main(master_queue):
 						if port.getId() == worker.getId():
 							conflict = True
 							break
+					# If this port is reserved, skip it.
+					# Note: If there is no worker thread, and the Port field of the reserved_arduino
+					# tuple is None, then we still need to spawn a thread, so that it can give its
+					# port to the code_download_main thread.
+					if reserved_arduino and port.getId() == reserved_arduino[0] and reserved_arduino[1]:
+						conflict = True
+
 					if not conflict:
 						# No conflicts
 						open_ports.append(port)
 				
 
 			# Check if any of the open ports are arduinos.
+			# TODO: Currently, this assumes all tty's returned by get_all_usb_ports() are
+			# arduinos.
 			arduino_ports = open_ports
 			#arduino_ports = []
 			#for port in open_ports:
@@ -79,7 +122,7 @@ def arduino_main(master_queue):
 				print("Worker started: %s", worker.getId())
 			
 			# Check if there are no connected devices.
-			if len(workers) == 0 and datetime.datetime.now() - last_no_worker_warning > datetime.timedelta(seconds=5):
+			if len(workers) == 0 and datetime.datetime.now() - last_no_worker_warning > no_worker_warning_interval:
 				print("Warning: no devices detected.")
 				last_no_worker_warning = datetime.datetime.now()
 			
@@ -98,9 +141,24 @@ def arduino_main(master_queue):
 
 # This thread is spawned for each connected arduino.
 def arduino_thread(master_queue, port):
+	assert(isinstance(master_queue, Queue))
+	assert(isinstance(port, UsbPort))
+
 	global mainThreadAlive
+	global reserved_arduino
 	try:
 		while (mainThreadAlive):
+			# Check if someone is trying to reserve this port.
+			if reserved_arduino:
+				print("Thread: ReservedArduino[0] = " + str(reserved_arduino[0]) + ", id=" + port.getId())
+				if reserved_arduino[0] == port.getId():
+					# Give our port object to the code_download_main thread.
+					reserved_arduino = (reserved_arduino[0], port)
+
+					# Exit.
+					print("Thread %s: Reserving." % port.getId())
+					return
+
 			# Get sensor data from the arduino.
 			json = read_packet(port)
 
@@ -112,6 +170,7 @@ def arduino_thread(master_queue, port):
 			queue_entry = SensorReading(time, json, port.getId())
 			master_queue.put(queue_entry)
 		print("Thread %s: mainThreadAlive is %s; closing" % (port.getId(), str(mainThreadAlive)))
+		return
 	except:
 		# TODO: Error handling.
 		# Currently, if there's an error, the thread ends.
@@ -121,6 +180,8 @@ def arduino_thread(master_queue, port):
 
 # Read one packet from the arduino, parse it, and return it.
 def read_packet(arduino):
+	assert(isinstance(arduino, UsbPort))
+
 	text = read_json(arduino)
 	packet = parse_packet(text)
 	return packet
@@ -128,6 +189,10 @@ def read_packet(arduino):
 # This method will get as many lines as necessary to find a full JSON object, and return
 # it as a string.
 def read_json(arduino):
+	assert(isinstance(arduino, UsbPort))
+
+	# Note that the time out is set to 5 seconds. This is to ensure that we don't block forever
+	# trying to read from an arduino that doesn't output anything.
 	with serial.Serial(arduino.getPath(), 115200, timeout=5) as conn:
 		packet = ""
 		line = ""
@@ -161,6 +226,8 @@ def read_json(arduino):
 
 # TODO: Error checking
 def parse_packet(packet_text):
+	assert(isinstance(packet_text, str))
+
 	return json.loads(packet_text)
 
 def read_line(arduino):
@@ -168,20 +235,27 @@ def read_line(arduino):
 	# Get the next line of input from the arduino. It's in the form of a
 	# binary string, with /r/n characters at the end. This is a blocking
 	# read.
-	data = arduino.readline()
+	#
+	# If the volume of serial I/O for a particular port is large, sometimes readline will return
+	# just "/n" or "". I don't know why.
+	data = b""
+	while data == b"" or data == b"\n" or data == b"\r":
+		data = arduino.readline()
+	olddata = data
 	
-	# Convert the string from binary to utf-8.
+	# Convert the string from binary to utf-8, if necessary.
 	data = data.decode("ascii")
 
 	# Remove the last newline. (\r\n or just \n)
 	if data[-1] == "\n":
 		data = data[0:-1]
-	
+
 	if data[-1] == "\r":
 		data = data[0:-1]
-
+	
 	return data
 
+"""	# Currently, this doesn't work.
 
 # Reset all USB ports; if an arduino is connected during the pi's bootup,
 # we won't be able to talk to it for some reason.
@@ -208,7 +282,7 @@ def reset_usb_port(portObj):
 		except OSError as err:
 			message = "Error while attempting to reset USB port \"%s\" with ID \"%s\"" % (portObj.getPath(), portObj.getId())
 			raise Exception(message)
-
+"""
 
 
 
@@ -224,7 +298,14 @@ def get_all_usb_ports():
 	# We will assume that they are all arduinos.
 	#tty_list = os.listdir("/sys/bus/usb-serial/devices")
 	# TODO: This is a hack.
-	tty_list = ["/dev/ttyUSB0", "/dev/ttyUSB1", "/dev/ttyUSB2", "/dev/ttyUSB3"]
+	# These are non-mega ones:
+	tty_list = []
+	for i in range(0, 10):
+		tty_list.append("/dev/ttyUSB" + str(i))
+
+	# And these are mega ones:
+	for i in range(0, 10):
+		tty_list.append("/dev/ttyACM" + str(i))
 
 	ports = []
 	for name in tty_list:
@@ -258,6 +339,8 @@ def get_all_usb_ports():
 # TODO: Document this.
 # See https://sites.google.com/site/itmyshare/system-admin-tips-and-tools/udevadm---useage-examples
 def get_serial_id(port):
+	assert(isinstance(port, UsbPort))
+
 	name = port.getPath().split('/')[2]
 	usb_props = subprocess.check_output(["udevadm", "info", "--query=property", "--name=%s" % name]).decode()
 	id_regex = re.compile("ID_SERIAL=(?P<id_str>.*)", re.I)
@@ -274,6 +357,8 @@ def get_serial_id(port):
 # Note that ID strings are unique, and stay constant between unplugging, reboot, etc.
 class UsbPort:
 	def __init__(self, path):
+		assert(isinstance(path, str))
+
 		self.path = path
 		if path == "":
 			self.is_device = False
@@ -323,6 +408,9 @@ class UsbPort:
 class ArduinoWorker:
 	# Note: this cannot be given the port object, because that is being used by the thread_obj thread.
 	def __init__(self, id_string, thread_obj):
+		assert(isinstance(id_string, str))
+		assert(isinstance(thread_obj, Thread))
+
 		self.id_string = id_string
 		self.thread_obj = thread_obj
 
@@ -334,6 +422,9 @@ class ArduinoWorker:
 
 class SensorReading:
 	def __init__(self, time, data, id_string):
+		assert(isinstance(time, datetime.datetime))
+		assert(isinstance(id_string, str))
+
 		self.time = time
 		self.data = data
 		self.id_string = id_string
