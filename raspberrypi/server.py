@@ -1,8 +1,11 @@
 
+
 from arduinoToPi import *
 from piToDb import *
 
 def main():
+	print("Starting pi server...")
+	
 	master_queue = Queue()
 	
 	# Note: we need a comma after the queue to indicate that we want a tuple,

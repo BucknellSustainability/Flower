@@ -1,0 +1,29 @@
+
+The magic incantation to send a file $FILE to a $BOARD using port $PORT is:
+
+avrdude -c wiring -p $BOARD -P $PORT -b 115200 -D -Uflash:w:$FILE:i
+
+Currently, we only support ATMega 2560's, which have $BOARD=m2560. You can also
+use $BOARD=atmega2560; they're identical.
+
+$PORT is the path to the tty entry in /dev/. For most arduinos, that is /dev/ttyUSB*;
+for Megas, it's /dev/ttyACM*, where * is a number 0 or greater, chosen semi-arbitrarily
+by the Linux kernel.
+
+Note that $FILE must be an absolute path!
+
+The baud rate (`-b 115200`) is optional (regardless of what baud the currently loaded script
+is using); it defaults to 9600. I recommend using 115200, because that will make the file
+transfer as fast as possible.
+
+If everything goes well, the exit code will be 0.
+
+To verify the board is the correct kind, the command is the same, except without the -D
+and -U arguments:
+
+avrdude -c wiring -p $BOARD -P $PORT
+
+
+IMPORTANT NOTE: For some STUPID reason, avrdude sends 100% of its output to stderr, NOT
+stdout.
+
