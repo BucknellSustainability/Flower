@@ -168,8 +168,7 @@ def get_profile():
         google_id = validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
-        # return empty response to signify user not given permission
-        return ''
+        return str(e), 403
 
     return construct_profile_json(google_id)
 
@@ -203,7 +202,6 @@ def approve_user():
         validate_admin(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
-        # return empty response to signify user not given permission
         return '', 403
     
     # get approved user email
@@ -272,7 +270,7 @@ def store_code():
         validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
-        return ''
+        return str(e), 403
 
     deviceid = request.values.get('deviceid')
 
@@ -326,7 +324,6 @@ def set_admin_status():
         validate_admin(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
-        # return empty response to signify user not given permission
         return str(e), 403
     
     update_admin_status_sql = 'UPDATE user SET isAdmin = %s WHERE userId IN ({})'.format(
