@@ -22,17 +22,17 @@ function requestSensorInfo(fields, table, condition_fields, condition_values) {
     // TODO: not the best fix, should load each data set asynchronously
     var sensor_array = condition_values.split(',');
     for (i = 0; i < sensor_array.length; i++) {
-          var sensor = sensor_array[i];
-          var xhr = new XMLHttpRequest();
+          let sensor = sensor_array[i];
+          let xhr = new XMLHttpRequest();
           xhr.open('GET', deploy_config["FLASK_SERVER"] + '/read?fields=' + fields + '&table=' + table + '&condition_fields=' + condition_fields + '&condition_values=' + sensor);
           xhr.responseType = 'json';
           xhr.withCredentials = true;
           xhr.onload = function() {
               //console.log(xhr.response)
-              let sensor;
+              let sensor_info;
               for (key in xhr.response){
-                sensor = xhr.response[key];
-                getSensorData(sensor);
+                sensor_info = xhr.response[key];
+                getSensorData(sensor_info);
               }
           };
           xhr.send();

@@ -137,3 +137,12 @@ Generally, hardcoding the URL shouldn't be in code, but instead you should use t
     - `sensorid`: the id of the sensor that you want the most recent reading from
 - returns: json with one key - `value` which corresponds to the data of the most recent reading
 
+
+## Change the admin status of user
+- `{endpoint}`: `set-admin-status`
+- allowed http requests: `POST`
+- parameters:
+    - `idtoken`: the token that Google Auth gives to the client, needs to be admin user 
+    - `userids`: the userids of the users to have their isAdmin status set to adminstatus
+    - `adminstatus`: the status that is to be set for the users. Must be strictly either `0` or `1`
+- returns: empty string on success, 503 status if user is denied access

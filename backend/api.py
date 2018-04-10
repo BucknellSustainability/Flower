@@ -52,7 +52,7 @@ def makeApp():
 
 
 @rest_api.route('/read', methods = ['GET'])
-def get():
+def read():
     try:
         table = request.values.get('table')
         validate_table_name(table)
@@ -66,7 +66,7 @@ def get():
 
     except (HttpRequestParamError, AssertionError) as e:
         print(e)
-        return str(e)
+        return str(e), 403
 
     # Build sql string with constructed fields and condition fields parts with `%s`s
     sql_string = 'SELECT {} FROM {}'.format(
@@ -93,7 +93,7 @@ def insert():
     except UserDeniedException as e:
         print(e)
         # return empty response to signify user not given permission
-        return ''
+        return str(e), 403
 
 
     try:
@@ -103,10 +103,11 @@ def insert():
         fields = split_and_validate_column_name_csv(table, request.values.get('fields'))
         values = split_csv(request.values.get('values'))
         assert len(fields) == len(values), 'Fields and Values parameters are not equal length'
+        assert table != 'user' and 'isAdmin' not in fields, 'Users are not allowed to insert a row with isAdmin in the user table, must be default of 0'
 
     except (HttpRequestParamError, AssertionError) as e:
         print(e)
-        return ''
+        return str(e), 400
 
     sql_string = 'INSERT INTO {} ({}) VALUES ({});'.format(
         table,
@@ -117,22 +118,22 @@ def insert():
     return json.dumps(result, default = jsonconverter)
 
 @rest_api.route('/update', methods = ['POST'])
-def modify():
+def update():
     try:
         validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
         # return empty response to signify user not given permission
-        return ''
+        return str(e), 403
 
     try:
-        print("WE ARE HERE")
         table = request.values.get('table')
         validate_table_name(table)
 
         fields = split_and_validate_column_name_csv(table, request.values.get('fields'))
         values = split_csv(request.values.get('values'))
         assert len(fields) == len(values), 'Fields and Values parameters are not equal length'
+        assert table != 'user' and 'isAdmin' not in fields, 'Users are not allowed to update isAdmin in the user table'
 
         condition_fields = split_and_validate_column_name_csv(table, request.values.get('condition_fields'))
         condition_values = split_csv(request.values.get('condition_values'))
@@ -140,7 +141,7 @@ def modify():
 
     except (HttpRequestParamError, AssertionError) as e:
         print(e)
-        return ''
+        return str(e), 400
 
     # Build sql string with constructed fields and condition fields parts with `%s`s
     sql_string = 'UPDATE {} SET {} WHERE {};'.format(
@@ -314,6 +315,26 @@ def download_code():
 
     upload_dir_path = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
     return send_from_directory(directory=upload_dir_path, filename=get_code_filename(uploadid))
+
+@rest_api.route('/set-admin-status', methods=['POST'])
+def set_admin_status():
+    user_ids = split_csv(request.values.get('userids'))
+    admin_status = request.values.get('adminstatus')
+    assert admin_status in ('0', '1'), 'Admin status is not a valid value (0 or 1)'
+    
+    try:
+        validate_admin(request.values.get('idtoken'))
+    except UserDeniedException as e:
+        print(e)
+        # return empty response to signify user not given permission
+        return str(e), 403
+    
+    update_admin_status_sql = 'UPDATE user SET isAdmin = %s WHERE userId IN ({})'.format(
+        ','.join(['%s']*len(user_ids))
+    )
+    Db.exec_query(update_admin_status_sql, tuple([admin_status] + user_ids))
+
+    return ''
 
 def get_code_filename(uploadid):
     return str(uploadid) + '.hex'
