@@ -20,7 +20,7 @@ export class SensorContainers extends React.Component {
       <Panel header={<Row type="flex" justify="space-around" align="top">
                       <Col span={10} style={{paddingTop:3}}>
                         <Icon type="share-alt" style={{marginRight: 10}}/>
-                        {sensor_i.name} 
+                        {sensor_i.displayName} 
                       </Col>
                       <Col span={4}/>
                       <Col span={10}>

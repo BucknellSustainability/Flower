@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import {ProjectContainer} from './ProjectContainer/ProjectContainer.js';
 import {ProjectNav} from './ProjectNav/ProjectNav.js';
+import {AdminPanel} from './AdminPanel/AdminPanel.js'
 import {Row, Col, Layout} from 'antd'
 import logo from '../images/logo.svg';
 const { Header, Content, Footer, Sider } = Layout;
@@ -19,7 +20,8 @@ export class Dashboard extends React.Component {
     this.state = {
       activeProject: 0,
       activeDevice: 0,
-      user: this.props.researcher
+      user: this.props.researcher,
+      mode: 0
       }
     }
 
@@ -37,11 +39,13 @@ export class Dashboard extends React.Component {
     this.setState({user: myUser, activeDevice: newActive});
   }
 
-  projectNavHandler(active) {
-    this.setState({
-      activeProject: active,
-      activeDevice: 0
-    })
+  projectNavHandler(active, mode) {
+    if(mode === 0){
+      this.setState({ activeProject: active, activeDevice: 0, mode: 0})
+    }
+    else {
+      this.setState({mode:1})
+    }
   }
 
   deviceNavHandler(active){
@@ -50,18 +54,27 @@ export class Dashboard extends React.Component {
     })
   }
 
+  getModeContent(){
+    if(this.state.mode === 0){
+      return (
+        <ProjectContainer user={this.state.user} 
+             handler={this.deviceNavHandler} 
+             activeProject={this.state.activeProject} 
+             activeDevice={this.state.activeDevice}
+             deleteDevice={this.deleteDevice}/>
+        )
+    }
+    else{
+      return(
+        <AdminPanel/>
+      )
+    }
+  }
+
   render() {
   	const projectNav = <ProjectNav user={this.state.user} handler={this.projectNavHandler} deleteProj={this.deleteProject}/>;
-    const projectContainer = <ProjectContainer user={this.state.user} 
-                                               handler={this.deviceNavHandler} 
-                                               activeProject={this.state.activeProject} 
-                                               activeDevice={this.state.activeDevice}
-                                               deleteDevice={this.deleteDevice}/>
-
 
     return (
-
-
     <Layout>
       <Header>       
         <Row type="flex" justify="space-around" align="center">        
@@ -88,7 +101,7 @@ export class Dashboard extends React.Component {
         </Sider>
         <Content> 
             <div style={{ padding: "2%", background: '#fff', minHeight: 360 }}>
-                {projectContainer} 
+                {this.getModeContent()} 
             </div>
         </Content>
       </Layout>

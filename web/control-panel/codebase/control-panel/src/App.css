@@ -139,6 +139,14 @@ button:focus {
   transition: 0.3s  ease-in-out;
 }
 
+div.centre {
+  width: 200px;
+  display: block;
+  background-color: #eee;
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .grow { transition: all .2s ease-in-out; }
 .grow:hover { transform: scale(1.1); }
 .grow:active { transform: scale(1.1); }

@@ -59,8 +59,8 @@ class Requests {
 
       const scope = this;
       xhr.onload = function() {
-        console.log(xhr.response)
-        scope.setState({allProjects: xhr.response.projects, activeProject: xhr.response.projects[0]});
+        let activeProj = scope.getActiveProject(xhr.response.projects);
+        scope.setState({allProjects: xhr.response.projects, activeProject: activeProj});
       };
       xhr.send();
   }
