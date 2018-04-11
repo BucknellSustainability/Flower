@@ -2,8 +2,7 @@ import React, { Component } from 'react';
 import Requests from '../../Requests.js'
 import '../../fonts.css';
 import {ClaimDeviceForm} from './ClaimDeviceForm.js';
-import {Button, Row, Col} from 'antd'
-import {Modal, Form, FormGroup, FormControl ,ControlLabel, FormLabel, HelpBlock} from 'react-bootstrap';
+import {Button, Row, Col, Card} from 'antd'
 
 export class ClaimDevice extends React.Component {
 
@@ -30,15 +29,17 @@ export class ClaimDevice extends React.Component {
   renderUnclaimed(){
     if(this.state.unclaimedDevices.length > 0){
       return (
-        this.state.unclaimedDevices.map((device, i) =>
-                <Col key={i} span={11}>
-                  <div className="card text-center card-inverse unclaimed-device">
+        <Row gutter={24}>
+        {this.state.unclaimedDevices.map((device, i) =>
+                <Col key={i} span={12}>
+                    <Card title={"Device: " + device.hardwareId}  bordered={false} style={{marginTop: 20}}>
                       <ClaimDeviceForm device={device} activeProject={this.props.activeProject} token={this.props.token}> </ClaimDeviceForm>
-                  </div>
+                    </Card>
                 </Col>
         )
-      )
-    }
+      }
+      </Row>
+    )}
   }
 
   componentWillMount(){
@@ -49,9 +50,9 @@ export class ClaimDevice extends React.Component {
 
   render() {
     return (
-            <Row type="flex" justify="space-around" align="top" style={{padding:"2%"}}>
-              {this.renderUnclaimed()}
-            </Row>
+        <div style={{padding:"4%", paddingTop:"2%", paddingBottom:"2%"}}>
+        {this.renderUnclaimed()}
+        </div>
     );
   }
 }

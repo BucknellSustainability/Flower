@@ -16,7 +16,13 @@ export class ProjectNav extends Component{
   }
 
   handleSelect(e) {
-    this.props.handler(e.key);
+    if(e.key === "admin"){
+      this.props.handler(e.key, 1);      
+    } 
+    else{
+      this.props.handler(e.key, 0);   
+    }
+
   }
 
   showDeleteConfirm(key, project) {
@@ -69,9 +75,9 @@ export class ProjectNav extends Component{
         <Menu.SubMenu key="myProjects" title={<span><Icon type="solution" /><span>My Projects</span></span>}>
               {this.renderProjects()}
         </Menu.SubMenu>
-          <Menu.Item key="admin" onClick={this.handleSelect}>
-            <span><Icon type="code"/><span>Admin Control Panel</span></span>
-          </Menu.Item>
+        <Menu.Item key="admin" onClick={this.handleSelect}>
+          <span><Icon type="code"/><span>Admin Control Panel</span></span>
+        </Menu.Item>
 
 
         </Menu>

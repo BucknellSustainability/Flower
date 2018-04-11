@@ -48,7 +48,7 @@ export class SensorForm extends React.Component {
                                   <Icon type="question-circle-o" />
                                 </Tooltip>
                               </span>)}>
-                      <Input placeholder={currSensor.name} />
+                      <Input placeholder={currSensor.displayName} />
                   </FormItem>
 
                   <FormItem {...formItemLayout} label={(<span>Description&nbsp;
@@ -64,7 +64,7 @@ export class SensorForm extends React.Component {
                                   <Icon type="question-circle-o" />
                                 </Tooltip>
                               </span>)}>
-                              <Select defaultValue={currSensor.alerts_enabled}>
+                              <Select value={currSensor.alerts_enabled}>
                                 <Option value={1}>True</Option>
                                 <Option value={0}>False</Option>
                               </Select>

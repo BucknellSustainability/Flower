@@ -29,18 +29,13 @@ export class ClaimDeviceForm extends React.Component {
   render() {
     return (
     	<div>
-        <div className="card-header">
-          <h4 className="concert bold card cardTitle"> Device: {this.props.device.hardwareId} </h4> 
-          <h5 className="cardSubtitle"> Discovered: {this.props.device.discovered} </h5>
-        </div>
-        <div className="card-block">
-
 			      <form>
+             Discovered: {this.props.device.discovered}
 			        <FormGroup
 			          controlId="formBasicText"
 			          validationState={this.getNameValidationState()}
 			        >
-			          <h5 className="text-left concert">Name Your Device</h5>
+			          <h5 className="text-left concert" style={{marginTop:10}}>Name Your Device</h5>
 			          <FormControl
 			          	className="concert"
 			            type="text"
@@ -58,7 +53,6 @@ export class ClaimDeviceForm extends React.Component {
                 </Button>
 			        </FormGroup>
 			      </form>
-        </div>
        </div>
 
     );

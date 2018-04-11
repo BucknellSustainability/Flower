@@ -2,8 +2,19 @@ import React, { Component } from 'react';
 import '../../fonts.css'
 import '../../App.css'
 import Requests from '../../Requests.js'
-import {Button, Menu} from 'antd'
-import {Modal, Row, Col, SplitButton, MenuItem, Badge, Well, ButtonToolbar, ToggleButton, ToggleButtonGroup, Form, FormGroup, FormControl, ControlLabel} from 'react-bootstrap'
+import {Button, Menu, Row, Col, Select, Radio} from 'antd'
+import {Form, FormGroup, FormControl, ControlLabel} from 'react-bootstrap'
+
+const Option = Select.Option;
+const RadioButton = Radio.Button;
+const RadioGroup = Radio.Group;
+
+const radioStyle = {
+      display: 'block',
+      height: '35px',
+      marginBottom: "10px"
+    };
+
 
 export class CreateVis extends React.Component {
 
@@ -11,10 +22,7 @@ export class CreateVis extends React.Component {
     super(props, context);
 
     this.chartUrl = Requests.getChartURL();
-
-    this.sensorToggleClick = this.sensorToggleClick.bind(this);
     this.handleChartTypeChange = this.handleChartTypeChange.bind(this);
-
     this.getAllProjects = Requests.getAllProjects.bind(this);
 
     this.newMin = this.newMin.bind(this);
@@ -32,55 +40,63 @@ export class CreateVis extends React.Component {
     };
   }
 
+  componentWillMount(){
+      this.getAllProjects();
+  }
+
+
   getToggleType(){
-    if(this.state.chartType === 1) return 'radio'
-    else return 'checkbox'
+    if(this.state.chartType === 1) return (this.getRadioButtons())
+    else return (this.getCheckButtons())
   }
 
-  newMin(e){
-    this.setState({gaugeMin: e.target.value});
+  getRadioButtons(){
+    return (
+          <RadioGroup onChange={this.sensorRadioChange.bind(this)} style={{width: "70%"}}>
+             {this.state.activeProject.sensors.map((sensor, i) =>
+                    <RadioButton
+                      value={sensor.id} 
+                      style={radioStyle}> 
+                          {sensor.displayName}
+                    </RadioButton>
+              )}
+          </RadioGroup>
+      )
   }
 
-  newMax(e){
-    this.setState({gaugeMax: e.target.value});
+  sensorRadioChange(e){
+    this.setState({selectedSensors: [e.target.value]});
   }
 
-  handleHide() {
-    this.setState({ show: false});
+  getCheckButtons(){
+    return (
+      <div>
+      {this.state.activeProject.sensors.map((sensor, i) =>
+        <RadioGroup value={(this.findElement(sensor.id) !== -1) ? 1:0} style={{width: "70%"}}>
+                  <RadioButton
+                    value={1}
+                    id={sensor.id}
+                    onClick={this.sensorCheckChange.bind(this)}
+                    style={radioStyle}> 
+                        {sensor.displayName}
+                  </RadioButton>
+        </RadioGroup>
+      )}
+      </div>
+    )
   }
 
-  getIframeURL(){
-    let out; 
-    let sensors = JSON.stringify(this.state.selectedSensors).slice(1,-1)
-    if(this.state.chartType === 0){
-      out = this.chartUrl + "visualize.html?id=" + sensors + '&projectId=' + this.state.activeProject.id;
+  sensorCheckChange(e){
+    let id = parseInt(e.target.id);
+    let found = this.findElement(id);
+    let sensors = this.state.selectedSensors;
+    if(found !== -1){ //if selected
+      sensors.splice(found, 1);
+      this.setState({selectedSensors: sensors});
     }
-    if(this.state.chartType === 1){
-      out = this.chartUrl + "gauge.html?max=" + this.state.gaugeMax + "&min=" + this.state.gaugeMin + "&id=" + sensors
-    }
-    console.log(out);
-    return out;
-  }
-
-  getParamInputs(){
-    //if gauge chart
-    if(this.state.chartType === 1){
-      return   (<Form style={{ marginBottom: 20}} inline>
-                  <FormGroup controlId="formInlineName">
-                    <ControlLabel>Name</ControlLabel>{' '}
-                    <FormControl type="number" 
-                                 max={this.state.gaugeMax - 1}
-                                 placeholder="Enter Min Val"
-                                 onChange={this.newMin} />
-                  </FormGroup>{' '}
-                  <FormGroup controlId="formInlineEmail">
-                    <ControlLabel>Email</ControlLabel>{' '}
-                    <FormControl type="number" 
-                                 min={this.state.gaugeMin + 1}
-                                 placeholder="Enter Max Val" 
-                                 onChange={this.newMax}/>
-                  </FormGroup>{' '}
-                </Form>);
+    else{
+      sensors.push(id)
+      this.setState({selectedSensors: sensors})
     }
   }
 
@@ -94,37 +110,50 @@ export class CreateVis extends React.Component {
       return -1;
   }
 
-  sensorToggleClick(selectedId){
-    let sensors = this.state.selectedSensors;
-    let found = this.findElement(selectedId)
-    console.log(found)
-    if(found !== -1){
-      sensors.splice(found, 1)
-      this.setState({selectedSensors: sensors});
+  newMin(e){
+    this.setState({gaugeMin: e.target.value});
+  }
+
+  newMax(e){
+    this.setState({gaugeMax: e.target.value});
+  }
+
+  getIframeURL(){
+    let out; 
+    let sensors = JSON.stringify(this.state.selectedSensors).slice(1,-1)
+    if(this.state.chartType === 0){
+      out = this.chartUrl + "visualize.html?id=" + sensors + '&projectId=' + this.state.activeProject.id;
     }
-    else{
-      if(this.getToggleType() === "radio"){
-        sensors = []
-      }
-      sensors.push(selectedId);
-      this.setState({selectedSensors: sensors});
+    if(this.state.chartType === 1){
+      out = this.chartUrl + "gauge.html?max=" + this.state.gaugeMax + "&min=" + this.state.gaugeMin + "&id=" + sensors
+    }
+    return out;
+  }
+
+  getParamInputs(){
+    //if gauge chart
+    if(this.state.chartType === 1){
+      return   (<Form style={{ marginBottom: 20}} inline>
+                  <FormGroup controlId="formInlineName">
+                    <ControlLabel>Min: </ControlLabel>{' '}
+                    <FormControl type="number" 
+                                 max={this.state.gaugeMax - 1}
+                                 placeholder="Enter Min Val"
+                                 onChange={this.newMin} />
+                  </FormGroup>{' '}
+                  <FormGroup controlId="formInlineEmail">
+                    <ControlLabel>Max: </ControlLabel>{' '}
+                    <FormControl type="number" 
+                                 min={this.state.gaugeMin + 1}
+                                 placeholder="Enter Max Val" 
+                                 onChange={this.newMax}/>
+                  </FormGroup>{' '}
+                </Form>);
     }
   }
 
   handleChartTypeChange(e) {
-    this.setState({ chartType: e , selectedSensors: []});
-  }
-
-  componentWillMount(){
-      this.getAllProjects();
-  }
-
-  getInitialSensors(activeProject){
-      let i; let ids = [];
-      for (i in activeProject.sensors){
-        ids.push(activeProject.sensors[i].id);
-      }
-      return ids;
+    this.setState({ chartType: e.target.value , selectedSensors: []});
   }
 
   getActiveProject(xhrProjects){
@@ -137,59 +166,46 @@ export class CreateVis extends React.Component {
     return;
   }
 
+  handleProjectChange(value) {
+    let projs = this.state.allProjects;
+    let active = {sensors:[], name: ""}
+    let i;
+    for (i in projs){
+      if (projs[i].id == value){
+        this.setState({activeProject: projs[i]}) 
+      }
+    }
+  }
+
   render() {
     return (
-      <div>
+      <div style={{padding:"2%", textAlign:"center"}}>
             <Row>
-              <Col lg={4} md={4} sm={4}>
+              <Col span={8}>
+                  <p className="concert bold black text-left" style={{marginLeft:25}}> 1) Select Chart Type </p>
 
-                <Well>
-                  <p className="concert bold black text-left"> 1) Select Chart Type </p>
-                  <ToggleButtonGroup 
-                    name="chartRadio"
-                    type='radio'
-                    value={this.state.chartType} 
-                    onChange={this.handleChartTypeChange}
-                    style={{marginBottom: "20px"}}>
-                    <ToggleButton name="line" bsStyle="info" value={0}>Line Graph</ToggleButton>
-                    <ToggleButton name="gauge" bsStyle="info" value={1}>Gauge Chart</ToggleButton>
-                  </ToggleButtonGroup>
+                  <RadioGroup onChange={this.handleChartTypeChange} defaultValue={this.state.chartType} style={{marginBottom:20, width:"80%"}}>
+                    <RadioButton value={0}>Line Graph</RadioButton>
+                    <RadioButton value={1}>Gauge Chart</RadioButton>
+                  </RadioGroup>
 
-                  <p className="concert bold black text-left"> 2) Select Project(s) </p>
-                  <SplitButton title={this.state.activeProject.name} pullRight id="split-button-pull-right" style={{marginBottom: "20px"}}>
+                  <p className="concert bold black text-left" style={{marginLeft:25}}> 2) Select Project(s) </p>
+
+                  <Select onChange={this.handleProjectChange.bind(this)} value={this.state.activeProject.id} style={{ width: "70%", marginBottom: 20 }} onChange={this.handleProjectChange.bind(this)}>
                     {this.state.allProjects.map((project, i) =>
-                        <MenuItem 
-                          id={project.id} 
-                          eventKey={i} 
-                          onClick={() => {this.setState({activeProject: project})}}> {project.name} <Badge>{project.id}</Badge>
-                        </MenuItem>
+                      <Option value={project.id}>{project.name}</Option>
                     )}
-                  </SplitButton>;
+                  </Select>
 
 
-                  <p className="concert bold black text-left"> 3) Select Sensors </p>
-                  <ButtonToolbar>
-                    <ToggleButtonGroup name="sensorSelect" type={this.getToggleType()} value={this.state.selectedSensors} vertical block>
-                       {this.state.activeProject.sensors.map((sensor, i) =>
-                              <ToggleButton 
-                                className="sensor-check"
-                                value={sensor.id} 
-                                onChange={() => {this.sensorToggleClick(sensor.id)}}
-                                style={{marginBottom: "5px", padding: "10px"}}> 
-                                    <p className="concert bold"><Badge>{sensor.id}</Badge> {sensor.name}</p> 
-                                    <p className="concert "> {sensor.description} </p>
-                              </ToggleButton>
-                        )}
-                      </ToggleButtonGroup>
-                    </ButtonToolbar>
-                </Well>
+                  <p className="concert bold black text-left" style={{marginLeft:25}}> 3) Select Sensors </p>
+                  {this.getToggleType()}
 
               </Col>
-              <Col lg={8} md={8} sm={8}>
+              <Col span={16}>
                 {this.getParamInputs()}
-
-                <iframe width="570" height="450" src={this.getIframeURL()}></iframe>
-                <h6 className="black"> iframe link: [ iframe width="800" height="450" src={this.getIframeURL()} ] </h6>
+                <iframe width="700" height="410" src={this.getIframeURL()}></iframe>
+                <h6 className="black"> iframe link: [ iframe width="700" height="400" src={this.getIframeURL()} ] </h6>
               </Col>
             </Row>
       </div>
