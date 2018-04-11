@@ -52,7 +52,7 @@ export class DeviceContainer extends React.Component {
                 {device.name}
               </Col>
               <Col span={3}>
-                <UploadCode/>
+                <UploadCode device={device}/>
                </Col>
                 <Col span={3}>
                 <Button size="small" shape="circle" icon="delete" onClick={this.showDeleteConfirm.bind(this, i, device)}/>
