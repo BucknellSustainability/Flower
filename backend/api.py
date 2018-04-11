@@ -52,7 +52,7 @@ def makeApp():
 
 
 @rest_api.route('/read', methods = ['GET'])
-def get():
+def read():
     try:
         table = request.values.get('table')
         validate_table_name(table)
@@ -66,7 +66,7 @@ def get():
 
     except (HttpRequestParamError, AssertionError) as e:
         print(e)
-        return str(e)
+        return str(e), 400
 
     # Build sql string with constructed fields and condition fields parts with `%s`s
     sql_string = 'SELECT {} FROM {}'.format(
@@ -84,7 +84,7 @@ def get():
     else:
         result = Db.exec_query(sql_string, ())
     
-    return json.dumps(result, default = jsonconverter)
+    return json.dumps(result, default = jsonconverter), 200
 
 @rest_api.route('/insert', methods = ['POST'])
 def insert():
@@ -92,8 +92,7 @@ def insert():
         validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
-        # return empty response to signify user not given permission
-        return ''
+        return str(e), 403
 
 
     try:
@@ -103,10 +102,11 @@ def insert():
         fields = split_and_validate_column_name_csv(table, request.values.get('fields'))
         values = split_csv(request.values.get('values'))
         assert len(fields) == len(values), 'Fields and Values parameters are not equal length'
+        assert table != 'user' and 'isAdmin' not in fields, 'Users are not allowed to insert a row with isAdmin in the user table, must be default of 0'
 
     except (HttpRequestParamError, AssertionError) as e:
         print(e)
-        return ''
+        return str(e), 400
 
     sql_string = 'INSERT INTO {} ({}) VALUES ({});'.format(
         table,
@@ -114,25 +114,24 @@ def insert():
         ','.join(['%s'] * len(values))
     )
     result = Db.exec_query(sql_string, tuple(values))
-    return json.dumps(result, default = jsonconverter)
+    return json.dumps(result, default = jsonconverter), 200
 
 @rest_api.route('/update', methods = ['POST'])
-def modify():
+def update():
     try:
         validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
-        # return empty response to signify user not given permission
-        return ''
+        return str(e), 403
 
     try:
-        print("WE ARE HERE")
         table = request.values.get('table')
         validate_table_name(table)
 
         fields = split_and_validate_column_name_csv(table, request.values.get('fields'))
         values = split_csv(request.values.get('values'))
         assert len(fields) == len(values), 'Fields and Values parameters are not equal length'
+        assert table != 'user' and 'isAdmin' not in fields, 'Users are not allowed to update isAdmin in the user table'
 
         condition_fields = split_and_validate_column_name_csv(table, request.values.get('condition_fields'))
         condition_values = split_csv(request.values.get('condition_values'))
@@ -140,7 +139,7 @@ def modify():
 
     except (HttpRequestParamError, AssertionError) as e:
         print(e)
-        return ''
+        return str(e), 400
 
     # Build sql string with constructed fields and condition fields parts with `%s`s
     sql_string = 'UPDATE {} SET {} WHERE {};'.format(
@@ -151,14 +150,14 @@ def modify():
 
     # execute query with laundry list of values to sub in
     result = Db.exec_query(sql_string, tuple(values) + tuple(condition_values))
-    return json.dumps(result, default = jsonconverter)
+    return json.dumps(result, default = jsonconverter), 200
 
 @rest_api.route('/get-sensor-last-reading', methods = ['GET'])
 def get_sensor_last_reading():
     sensorid = request.values.get('sensorid')
     gauge_sql = 'SELECT value FROM databuffer WHERE sensorId = %s ORDER BY dataId DESC LIMIT 1'
     result = Db.exec_query(gauge_sql, (sensorid,))
-    return json.dumps(result, default = jsonconverter)
+    return json.dumps(result, default = jsonconverter), 200
 
 @rest_api.route('/get-profile', methods = ['POST'])
 def get_profile():
@@ -167,15 +166,13 @@ def get_profile():
         google_id = validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
-        # return empty response to signify user not given permission
-        return ''
+        return str(e), 403
 
-    return construct_profile_json(google_id)
-
+    return construct_profile_json(google_id), 200
 
 @rest_api.route('/get-all-sensors', methods = ['GET'])
 def get_all_sensors():
-    return build_all_sensors_dict()
+    return build_all_sensors_dict(), 200
 
 @rest_api.route('/request-access', methods = ['POST'])
 def request_access():
@@ -192,18 +189,17 @@ def request_access():
     # pass id into emailer function to send to admins
     send_approval_email(name, email, userid)
 
-    return ''
+    return '', 200
 
 @rest_api.route('/approve-user', methods = ['POST'])
 def approve_user():
-    userid = request.values.get('userid')
-
     try:
         validate_admin(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
-        # return empty response to signify user not given permission
         return '', 403
+    
+    userid = request.values.get('userid')
     
     # get approved user email
     approved_user_email_sql = 'SELECT email FROM user WHERE userId = %s'
@@ -229,14 +225,14 @@ def approve_user():
 def log_success():
     deviceid = request.values.get('deviceid')
     handle_codeupload_response(deviceid, None)
-    return '' # TODO: figure out what should return
+    return '', 200
 
 @rest_api.route('/log-error', methods = ['GET'])
 def log_error():
     deviceid = request.values.get('deviceid')
     error_msg = request.values.get('error_msg')
     handle_codeupload_response(deviceid, error_msg)
-    return '' # TODO: figure out what to return
+    return '', 200
 
 @rest_api.route('/check-error', methods = ['GET'])
 def check_error():
@@ -253,15 +249,14 @@ def check_error():
         # TODO: validate that this is correct way to show Null string
         if error[0]['path'] == None:
             # success!
-            # TODO: agree on what value to return, could use http return codes to help convey
-            return 'SUCCESS'
+            return '', 200
         else:
-            # failure!
+            # error!
             errorid = error[0]['errorId']
             error_dir_path = os.path.join(app.root_path, ERROR_FOLDER)
-            return send_from_directory(directory=error_dir_path, filename=get_error_filename(errorid))
+            return send_from_directory(directory=error_dir_path, filename=get_error_filename(errorid)), 500 
     else:
-        return ''
+        return '', 503
 
 
 @rest_api.route('/store-code', methods = ["POST"])
@@ -271,7 +266,7 @@ def store_code():
         validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
         print(e)
-        return ''
+        return str(e), 403
 
     deviceid = request.values.get('deviceid')
 
@@ -304,16 +299,33 @@ def store_code():
         upload_path_update_sql = 'UPDATE codeupload SET codePath = %s WHERE uploadId = %s'
         Db.exec_query(upload_path_update_sql, (path, uploadid))
 
-        return ''
+        return '', 200
 
 @rest_api.route('/download-code', methods = ['GET'])
 def download_code():
-    # no need to validate user, maybe validate RaPi
-
     uploadid = request.values.get('uploadid')
 
     upload_dir_path = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
-    return send_from_directory(directory=upload_dir_path, filename=get_code_filename(uploadid))
+    return send_from_directory(directory=upload_dir_path, filename=get_code_filename(uploadid)), 200
+
+@rest_api.route('/set-admin-status', methods=['POST'])
+def set_admin_status():
+    user_ids = split_csv(request.values.get('userids'))
+    admin_status = request.values.get('adminstatus')
+    assert admin_status in ('0', '1'), 'Admin status is not a valid value (0 or 1)'
+    
+    try:
+        validate_admin(request.values.get('idtoken'))
+    except UserDeniedException as e:
+        print(e)
+        return str(e), 403
+    
+    update_admin_status_sql = 'UPDATE user SET isAdmin = %s WHERE userId IN ({})'.format(
+        ','.join(['%s']*len(user_ids))
+    )
+    Db.exec_query(update_admin_status_sql, tuple([admin_status] + user_ids))
+
+    return '', 200
 
 def get_code_filename(uploadid):
     return str(uploadid) + '.hex'
