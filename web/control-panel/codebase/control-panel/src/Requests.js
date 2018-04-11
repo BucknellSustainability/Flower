@@ -177,7 +177,56 @@ class Requests {
         //window.location.reload();
     };
     xhr.send(form_data);
-
   }
+
+  uploadFile(file){
+
+
+    console.log("Uploading File");
+    console.log("DEVICE: " + this.props.device.id)
+    console.log("FILE: " + file)
+
+
+    var form_data = new FormData();
+    form_data.append('idtoken', id_token);
+    form_data.append('deviceid', this.props.device.id)
+    form_data.append('file', file)
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', flaskURL + 'store-code');
+    xhr.withCredentials = true;
+
+    const scope = this;
+    xhr.onload = function() {
+      console.log("SUCCESS GOT HEX FILE")
+      console.log(xhr.response)
+      scope.checkUploadStatus()
+    };
+    xhr.send(form_data);
+  }
+
+
+  checkUploadStatus(){
+    var form_data = new FormData();
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', flaskURL + 'check-error?deviceid=' + this.props.device.id);
+    xhr.withCredentials = true;
+
+    const scope = this;
+    xhr.onload = function() {
+      console.log("CHECKING STATUS OF UPLOAD")
+      let status = xhr.status;
+      if(status === 503){
+        scope.checkUploadStatus()
+      }
+      else{
+        console.log(status)
+      }
+    };
+    xhr.send(form_data);
+  }
+
 }
+
 export default (new Requests);

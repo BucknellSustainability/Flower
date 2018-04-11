@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import '../../../fonts.css';
+import Requests from '../../../Requests.js';
 import {UploadAlert} from './UploadAlert.js'
 import { Modal, Button, Upload, message, Icon} from 'antd';
 
@@ -10,33 +11,33 @@ export class UploadCode extends React.Component {
     super(props)
 
     this.state = {
-      loading: false,
+      uploading: false,
       visible: false,
+      fileList: []
     }
 
     this.showModal = this.showModal.bind(this);
     this.handleOk = this.handleOk.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
-    this.options = {
-      name: 'file',
-      action: 'https://www.eg.bucknell.edu/energyhill/',
-      headers: {
-      authorization: 'MY TEXT'
-      },
-      onChange(info){
-          if (info.file.status !== 'uploading') {
-            console.log(info.file, info.fileList);
-          }
-          if (info.file.status === 'done') {
-            message.success(`${info.file.name} file uploaded successfully`);
-          } else if (info.file.status === 'error') {
-            message.error(`${info.file.name} file upload failed.`);
-          }
-      }
-    }
+    
+    this.uploadCode = Requests.uploadFile.bind(this);
+    this.checkUploadStatus = Requests.checkUploadStatus.bind(this);
+
+
+    this.handleUpload = this.handleUpload.bind(this);
   }
 
 
+
+  handleUpload(){
+    const codeFile = this.state.fileList[0];
+
+    this.setState({
+      uploading: true,
+    });
+
+    this.uploadCode(codeFile)
+  }  
 
   showModal() {
     this.setState({
@@ -57,26 +58,42 @@ export class UploadCode extends React.Component {
 
 
   render() {
-    const { visible, loading } = this.state;
+    const {uploading, visible, file} = this.state;
+    const props = {
+      action: 'https://www.eg.bucknell.edu/energyhill/store-code',
+      onRemove: (file) => {
+        this.setState(({ fileList: []}))
+      },
+      beforeUpload: (file) => {
+        this.setState(({ fileList }) => ({
+          fileList: [file],
+        }));
+        return false;
+      },
+      fileList: this.state.fileList,
+    };
+
+
     return (
       <div>
         <Button size="small" shape="circle" onClick={this.showModal}> <Icon type="cloud-upload-o" style={{marginRight:"50%"}}/></Button>
         <Modal
           visible={visible}
           title="Upload Code"
-          onOk={this.handleOk}
-          onCancel={this.handleCancel}
           size="large"
-          footer={[
-            <Button key="back" onClick={this.handleCancel}>Cancel</Button>,
-            <Button key="submit" type="primary" loading={loading} onClick={this.handleOk}>
-              Submit
-            </Button>,
-          ]}
+           footer={[<Button
+          className="upload-demo-start"
+          type="primary"
+          onClick={this.handleUpload}
+          disabled={this.state.fileList.length === 0}
+          loading={uploading}
         >
-        <Upload {...this.options}>
+          {uploading ? 'Uploading' : 'Start Upload' }
+        </Button>]}
+        >
+        <Upload {...props}>
           <Button>
-            <Icon type="upload" /> Click to Upload
+            <Icon type="upload" /> Select File
           </Button>
         </Upload>
 
