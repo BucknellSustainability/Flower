@@ -6,7 +6,9 @@
 from emailer import sendEmail, exportChart
 from db import *
 from logger import *
-init_logger(logging.INFO)
+Logger.init_logger('alerts')
+logger = Logger.logger
+Db.set_logger(logger)
 
 LAST_10_MINS_CONDITION = '''databuffer.dateTime >= FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(NOW())/600)*600) - INTERVAL 10 MINUTE AND databuffer.dateTime < FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(NOW())/600)*600)'''
 

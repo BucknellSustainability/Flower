@@ -1,9 +1,6 @@
 import json
 import MySQLdb
 
-from logger import *
-init_logger(logging.INFO)
-
 # load config (db info)
 with open("config.json", 'r') as f:
     config = json.load(f)
@@ -12,6 +9,10 @@ with open("config.json", 'r') as f:
 '''
 class Db:
     connection = None
+    logger = None
+
+    def set_logger(this_logger):
+        Db.logger = this_logger
 
     """ Creates connection to DB if one doesn't already exist.
     Should not be called from outside class
@@ -58,8 +59,8 @@ class Db:
         try:
             # Execute the SQL command
             cursor.execute(formatted_sql_string, param_tuple)
-
-            logger.debug('Executed SQL Query: ', cursor._last_executed)
+            
+            Db.logger.debug('Executed SQL Query: ', cursor._last_executed)
 
             # Fetch all the rows in a list of lists.
             descriptions = cursor.description
@@ -68,7 +69,7 @@ class Db:
             data = cursor.fetchall()
             Db.commit()
         except Exception as e:
-            logger.error('Couldn\'t execute query - {}'.format(cursor._last_executed), exc_info=True)
+            Db.logger.error('Couldn\'t execute query - {}'.format(cursor._last_executed), exc_info=True)
 
         # handle if query didn't return anything
         if data is None or descriptions is None:
