@@ -2,7 +2,9 @@ import React, { Component } from 'react';
 import {DeviceContainer} from './Device/DeviceContainer.js'
 import {CreateVis} from './CreateVis.js';
 import {ClaimDevice} from './ClaimDevice.js';
-import {Card, Divider, Row, Col, Form, Input, Tooltip, Icon, Select, Radio, Layout, Menu} from 'antd'
+import {AddProject} from './AddProject.js';
+import Requests from '../../Requests.js'
+import {Card, Divider, Row, Col, Form, Input, Tooltip, Icon, Select, Radio, Layout, Menu, Button} from 'antd'
 const { TextArea } = Input
 const FormItem = Form.Item;
 const Option = Select.Option;
@@ -26,15 +28,59 @@ export class ProjectContainer extends React.Component {
   constructor(props, context) {
     super(props, context);
 
+
+    let currProject = this.props.user.projects[this.props.activeProject];
+    this.updateProject = Requests.updateProject.bind(this);
+
     this.state = {
       showVis: false,
       showClaimDevice: false,
-      projectMode: "control"
+      projectMode: "control",
+      iconLoading: false,
+      name: currProject.name,
+      desc: currProject.desc,
+      scope: currProject.is_private,
+      url: currProject.url
     };
   }
 
+  componentWillUpdate(){
+    if(this.props.projectChanged === 1){
+      let currProject = this.props.user.projects[this.props.activeProject];
+      this.setState({ name: currProject.name,
+                      desc: currProject.desc,
+                      scope: currProject.is_private,
+                      url: currProject.url})
+      this.props.resetProjectChanged();
+    }
+  }
+
   componentWillMount(){
-    //going to need to load all of the sites and get names
+  }
+
+  updateName(e){
+    this.setState({name: e.target.value})
+  }
+
+  updateDesc(e){
+    this.setState({desc: e.target.value})
+  }
+
+  updateScope(e){
+    this.setState({scope: e.target.value})
+  }
+
+  updateScope(e){
+    this.setState({scope: e.target.value})
+  }
+
+  updateUrl(e){
+    this.setState({url: e.target.value})
+  }
+
+  updateProjectClick(){
+    let projectId = this.props.user.projects[this.props.activeProject].id;
+    this.updateProject(projectId);
   }
 
   handleMenuClick(e){
@@ -45,6 +91,7 @@ export class ProjectContainer extends React.Component {
     if(this.state.projectMode === "control"){
       return (
                   <div style={{marginTop:25}}>
+                    <AddProject open={this.props.open} changeMode={this.props.changeMode}/>
                     <Row type="flex" justify="space-around" align="top">
                         <Col span={11} style={{marginBottom:0}}>
                           <FormItem {...formItemLayout} label={(<span>Project Name&nbsp;
@@ -52,7 +99,7 @@ export class ProjectContainer extends React.Component {
                                           <Icon type="question-circle-o" />
                                         </Tooltip>
                                       </span>)}>
-                              <Input placeholder={currProject.name} />
+                              <Input onChange={this.updateName.bind(this)} placeholder={currProject.name} />
                           </FormItem>
 
                           <FormItem {...formItemLayout} label={(<span>Description&nbsp;
@@ -60,7 +107,7 @@ export class ProjectContainer extends React.Component {
                                           <Icon type="question-circle-o" />
                                         </Tooltip>
                                       </span>)}>
-                              <TextArea rows={4} placeholder={currProject.desc}/>
+                              <TextArea rows={4} onChange={this.updateDesc.bind(this)} placeholder={currProject.desc}/>
                           </FormItem>
                         </Col>
 
@@ -70,7 +117,7 @@ export class ProjectContainer extends React.Component {
                                           <Icon type="question-circle-o" />
                                         </Tooltip>
                                       </span>)}>
-                                    <RadioGroup defaultValue={currProject.is_private}>
+                                    <RadioGroup onChange={this.updateScope.bind(this)} defaultValue={currProject.is_private}>
                                       <RadioButton value={0}>Public</RadioButton>
                                       <RadioButton value={1}>Private</RadioButton>
                                     </RadioGroup>
@@ -81,7 +128,7 @@ export class ProjectContainer extends React.Component {
                                           <Icon type="question-circle-o" />
                                         </Tooltip>
                                       </span>)}>
-                              <Input placeholder={currProject.url} />
+                              <Input onChange={this.updateUrl.bind(this)} onplaceholder={currProject.url} />
                           </FormItem>
 
                           <FormItem {...formItemLayout} label={(<span>Site Selection&nbsp;
@@ -95,6 +142,9 @@ export class ProjectContainer extends React.Component {
                               <Option value="tower">Water Tower</Option>
                             </Select>
                           </FormItem>
+                          <Button style={{marginLeft: -60, marginTop: 30, marginBottom: 5}} icon="check-circle-o" loading={this.state.iconLoading} onClick={this.updateProjectClick.bind(this)}>
+                            Submit Info
+                          </Button>
 
                         </Col> 
                     </Row>
@@ -104,11 +154,18 @@ export class ProjectContainer extends React.Component {
         )
     } else if (this.state.projectMode ==="create") {
       return (
-         <CreateVis activeProject={currProject}/>
+          <div>
+            <AddProject open={this.props.open} changeMode={this.props.changeMode}/>
+            <CreateVis activeProject={currProject}/>
+          </div>
         )
     } else {
       return (
+        <div>
+          <AddProject open={this.props.open} changeMode={this.props.changeMode}/>
           <ClaimDevice activeProject={currProject} token={this.props.token}/>
+        </div>
+
         )
     }
   }

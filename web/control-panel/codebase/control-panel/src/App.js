@@ -14,6 +14,7 @@ class App extends Component {
     super();
 
     this.loadProfile = Requests.loadProfile.bind(this);
+    this.handleSuccess = this.handleSuccess.bind(this);
 
     this.state = {
       signInState: 0,
@@ -25,8 +26,25 @@ class App extends Component {
     }
   }
 
+  componentWillMount(){
+    let signInState = sessionStorage.getItem("signInState");
+    if (signInState === '1'){
+      let gUser = JSON.parse(sessionStorage.getItem("gUser"))
+      this.loadProfile(gUser)
+    }
+  }
+
+
   componentDidMount() {
-    this.renderButton();
+    let signInState = sessionStorage.getItem("signInState");
+    if((signInState === '0') || (signInState === null)){
+      this.renderButton();
+    }
+  }
+
+  handleSuccess(gUser){
+    sessionStorage.setItem("gUser", JSON.stringify(gUser));
+    this.loadProfile(gUser)
   }
 
   renderButton() {
@@ -37,7 +55,7 @@ class App extends Component {
       'height': 50,
       'longtitle': true,
       'theme': 'dark',
-      'onsuccess': this.loadProfile,
+      'onsuccess': this.handleSuccess,
       'onfailure': console.log('failed')
     });
   }
@@ -72,7 +90,7 @@ class App extends Component {
       return (
           <Dashboard researcher={this.state.researcher}/>
       );
-    } else {
+    } else{
       return (
         <div className="App">
           <header className="App-header">

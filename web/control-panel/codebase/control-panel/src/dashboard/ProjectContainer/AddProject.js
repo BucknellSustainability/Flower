@@ -17,6 +17,7 @@ export class AddProject extends React.Component {
     }
 
     this.createProject = Requests.createProject.bind(this);
+    this.linkProject = Requests.linkProject.bind(this);
 
     this.showModal = this.showModal.bind(this);
     this.handleOk = this.handleOk.bind(this);
@@ -32,13 +33,10 @@ export class AddProject extends React.Component {
   }
 
   handleOk() {
-    this.setState({ loading: true });
-    setTimeout(() => {
-      this.setState({ loading: false, visible: false });
-    }, 3000);
+    this.props.changeMode(0)
   }
   handleCancel () {
-    this.setState({ visible: false });
+    this.props.changeMode(0)
   }
 
   handleNameChange(e){
@@ -49,10 +47,8 @@ export class AddProject extends React.Component {
     this.createProject(this.state.projectName);
   }
 
-
-
   render() {
-    const { visible, loading } = this.state;
+    const visible = (this.props.open === 1) ? true : false;
 
     const formLayout = "horizontal";
     const formItemLayout = formLayout === 'horizontal' ? {
@@ -65,7 +61,6 @@ export class AddProject extends React.Component {
 
     return (
       <div>
-        <Button type="primary" shape="circle" icon="plus-circle-o" onClick={this.showModal}/>
         <Modal
           visible={visible}
           title="Add Project"
