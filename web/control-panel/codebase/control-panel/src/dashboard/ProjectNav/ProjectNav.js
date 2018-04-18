@@ -1,8 +1,8 @@
 import React, {Component} from 'react';
 import plus from '../../images/plus.svg';
 import '../../fonts.css';
-import {AddProject} from './AddProject.js';
 import { Card,  Menu, Icon, Button, Row, Col, Modal} from 'antd';
+import Requests from '../../Requests.js'
 const confirm = Modal.confirm;
 
 export class ProjectNav extends Component{
@@ -10,6 +10,7 @@ export class ProjectNav extends Component{
     super(props);
     this.handleSelect = this.handleSelect.bind(this);
     this.showDeleteConfirm = this.showDeleteConfirm.bind(this);
+    this.unlinkProject = Requests.unlinkProject.bind(this);
   }
 
   componentDidMount(){
@@ -17,12 +18,26 @@ export class ProjectNav extends Component{
 
   handleSelect(e) {
     if(e.key === "admin"){
-      this.props.handler(e.key, 1);      
+      this.props.handler(e.key, 2);      
     } 
+    else if (e.key === "add"){
+      this.props.handler(e.key, 1)
+    }
     else{
       this.props.handler(e.key, 0);   
     }
+  }
 
+  // Add back later
+  //scope.unlinkProject(project.id)
+  insertAdminPanel(){
+    if(this.props.user.is_admin === 1){
+      return (
+          <Menu.Item key="admin" onClick={this.handleSelect}>
+            <span><Icon type="code"/><span>Admin Control Panel</span></span>
+          </Menu.Item>
+        )
+    }
   }
 
   showDeleteConfirm(key, project) {
@@ -64,7 +79,6 @@ export class ProjectNav extends Component{
 
   render() {
     return (
-
         <Menu
           style={{ width: "100%"}}
           defaultSelectedKeys={['0']}
@@ -74,11 +88,12 @@ export class ProjectNav extends Component{
         >
         <Menu.SubMenu key="myProjects" title={<span><Icon type="solution" /><span>My Projects</span></span>}>
               {this.renderProjects()}
+              <Menu.Item key="add" onClick={this.handleSelect}>
+                <span><Icon type="plus"/><span>Add Project</span></span>
+              </Menu.Item>
         </Menu.SubMenu>
-        <Menu.Item key="admin" onClick={this.handleSelect}>
-          <span><Icon type="code"/><span>Admin Control Panel</span></span>
-        </Menu.Item>
 
+        {this.insertAdminPanel()}
 
         </Menu>
 

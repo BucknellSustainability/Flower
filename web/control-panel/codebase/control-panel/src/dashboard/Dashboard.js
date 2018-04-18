@@ -16,12 +16,14 @@ export class Dashboard extends React.Component {
     this.deviceNavHandler = this.deviceNavHandler.bind(this);
     this.deleteProject = this.deleteProject.bind(this);
     this.deleteDevice = this.deleteDevice.bind(this);
+    this.changeMode = this.changeMode.bind(this);
 
     this.state = {
       activeProject: 0,
       activeDevice: 0,
       user: this.props.researcher,
-      mode: 0
+      mode: 0,
+      projectChanged: 0
       }
     }
 
@@ -41,11 +43,15 @@ export class Dashboard extends React.Component {
 
   projectNavHandler(active, mode) {
     if(mode === 0){
-      this.setState({ activeProject: active, activeDevice: 0, mode: 0})
+      this.setState({ activeProject: active, activeDevice: 0, mode: 0, projectChanged: 1})
     }
     else {
-      this.setState({mode:1})
+      this.setState({mode: mode, projectChanged: 0})
     }
+  }
+
+  resertProjectChanged(){
+    this.setState({projectChanged: 0})
   }
 
   deviceNavHandler(active){
@@ -54,14 +60,22 @@ export class Dashboard extends React.Component {
     })
   }
 
+  changeMode(newMode){
+    this.setState({mode: newMode})
+  }
+
   getModeContent(){
-    if(this.state.mode === 0){
+    if(this.state.mode === 0 || this.state.mode === 1){
       return (
-        <ProjectContainer user={this.state.user} 
+        <ProjectContainer open={this.state.mode}
+             user={this.state.user} 
              handler={this.deviceNavHandler} 
              activeProject={this.state.activeProject} 
              activeDevice={this.state.activeDevice}
-             deleteDevice={this.deleteDevice}/>
+             deleteDevice={this.deleteDevice}
+             changeMode={this.changeMode}
+             projectChanged={this.state.projectChanged}
+             resetProjectChanged={this.resertProjectChanged.bind(this)}/>
         )
     }
     else{

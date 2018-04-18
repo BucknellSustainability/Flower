@@ -76,11 +76,13 @@ export class UploadCode extends React.Component {
 
     return (
       <div>
-        <Button size="small" shape="circle" onClick={this.showModal}> <Icon type="cloud-upload-o" style={{marginRight:"50%"}}/></Button>
+        <Button size="small" shape="circle" icon="cloud-upload-o" onClick={this.showModal} />
         <Modal
           visible={visible}
           title="Upload Code"
           size="large"
+          onOk={this.handleOk}
+          onCancel={this.handleCancel}
            footer={[<Button
           className="upload-demo-start"
           type="primary"

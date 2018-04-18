@@ -1,6 +1,7 @@
 var flaskURL = 'https://www.eg.bucknell.edu/energyhill/';
 var chartURL = 'https://www.eg.bucknell.edu/~energyhill/Flower/web/create/'
 var id_token = ''
+var user_id = -1
 
 class Requests {
 
@@ -12,7 +13,9 @@ class Requests {
 	User to pre-load user profile w/ all projects, devices, and sensors
   */
   loadProfile(googleUser) {
-    id_token = googleUser.getAuthResponse().id_token;
+    console.log(googleUser)
+    id_token = googleUser.Zi.id_token;
+
 
     var form_data = new FormData();
     form_data.append('idtoken', id_token);
@@ -27,9 +30,12 @@ class Requests {
     xhr.onload = function() {
       console.log(xhr.response)
       if (xhr.response == null) {
-        scope.setState({researcher: null, signInState: 2, profileEmail: googleUser.getBasicProfile().getEmail(), token: id_token})
+        sessionStorage.setItem("signInState", 2)
+        scope.setState({researcher: null, signInState: 2, profileEmail: googleUser.w3.U3, token: id_token})
       } else {
-        scope.setState({researcher: xhr.response, signInState: 1, profileEmail: googleUser.getBasicProfile().getEmail(), token: id_token})
+        sessionStorage.setItem("signInState", 1)
+        user_id = xhr.response.id
+        scope.setState({researcher: xhr.response, signInState: 1, profileEmail: googleUser.w3.U3, token: id_token})
       }
     };
     xhr.send(form_data);
@@ -115,11 +121,31 @@ class Requests {
     xhr.withCredentials = true;
 
     xhr.onload = function() {
-        //window.location.reload();
+        window.location.reload();
     };
     xhr.send(form_data);
-
   }
+
+
+  unlinkProject(projectId) {
+    var form_data = new FormData();
+
+    form_data.append('idtoken', id_token);
+    form_data.append('table', 'owners');
+    form_data.append('fields', 'userId');
+    form_data.append('values', null);
+    form_data.append('condition_fields', 'userId, projectId')
+    form_data.append('condition_values', user_id + ", " + projectId);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', flaskURL + 'update');
+    xhr.withCredentials = true;
+
+    xhr.onload = function() {
+    };
+    xhr.send(form_data);
+  }
+
 
   claimDevice() {
     var form_data = new FormData();
@@ -160,6 +186,30 @@ class Requests {
     xhr.send(form_data);
   }
 
+  updateProject(projectId) {
+    var form_data = new FormData();
+
+    this.setState({iconLoading: true})
+
+    form_data.append('idtoken', id_token);
+    form_data.append('table', 'project');
+    form_data.append('fields', 'name, description, isPrivate, url');
+    form_data.append('values', this.state.name + ', ' + this.state.desc + ', ' + this.state.scope + ', ' + this.state.url);
+    form_data.append('condition_fields', 'projectId')
+    form_data.append('condition_values', projectId);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', flaskURL + 'update');
+    xhr.withCredentials = true;
+
+    let scope = this;
+    xhr.onload = function() {
+      scope.setState({iconLoading: false})
+      window.location.reload();
+    };
+    xhr.send(form_data);
+  }
+
 
   createProject(projectName){
     var form_data = new FormData();
@@ -171,16 +221,44 @@ class Requests {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', flaskURL + 'insert');
     xhr.withCredentials = true;
+    xhr.responseType = 'json';
 
+    let scope = this;
     xhr.onload = function() {
-        //console.log(xhr.response)
-        //window.location.reload();
+      var xhr = new XMLHttpRequest();
+      var url = flaskURL + 'read?table=project&fields=projectId&condition_fields=name&condition_values=' + projectName;
+      xhr.open('GET', url);
+      xhr.withCredentials = true;
+      xhr.responseType = 'json';
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+      xhr.onload = function() {
+        scope.linkProject(xhr.response[xhr.response.length-1].projectId)
+      };
+      xhr.send();
     };
     xhr.send(form_data);
   }
 
-  uploadFile(file){
+  linkProject(projectId){
+    var form_data = new FormData();
+    form_data.append('idtoken', id_token);
+    form_data.append('table', 'owners')
+    form_data.append('fields', 'userId, projectId')
+    form_data.append('values', user_id + ", " + projectId);
 
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', flaskURL + 'insert');
+    xhr.withCredentials = true;
+
+    xhr.onload = function() {
+        window.location.reload();
+    };
+    xhr.send(form_data);
+  }
+
+
+  uploadFile(file){
 
     console.log("Uploading File");
     console.log("DEVICE: " + this.props.device.id)

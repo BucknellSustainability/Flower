@@ -93,9 +93,11 @@ export class DeviceContainer extends React.Component {
       )}
     else{
       return (
-        <Card title={<span>Control Panel: No Devices<Icon type="frown-o" style={{marginLeft: 8}}/></span>}>
-          Claim a device by pressing the "Claim Device" button above.
+        <div style={{margin: 30}}>
+        <Card title={<span> No Devices Attached To Project<Icon style={{marginLeft: 20}} type="frown-o"/></span>}>
+          Claim a device by selecting the "Claim New Device" tab above.
         </Card>  
+        </div>
       );
     }
   }
