@@ -205,7 +205,7 @@ export class CreateVis extends React.Component {
               <Col span={16}>
                 {this.getParamInputs()}
                 <iframe width="700" height="410" src={this.getIframeURL()}></iframe>
-                <h6 className="black"> iframe link: [ iframe width="700" height="400" src={this.getIframeURL()} ] </h6>
+                <h6 className="black"> iframe link: [iframe width=100% height=400px src={this.getIframeURL()} scrolling="no"] </h6>
               </Col>
             </Row>
       </div>
