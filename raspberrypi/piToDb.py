@@ -17,6 +17,7 @@ import datetime
 import math
 import sys
 from threading import Thread
+import subprocess
 
 # Ensure that we're running python3.
 if sys.version_info[0] < 3:
@@ -365,7 +366,7 @@ def check_for_code_download(connection):
 		device_ids.append(device_id)
 
 	# Look for any downloads for these devices in the codeupload table.
-	command = "SELECT * FROM energyhill.codeupload WHERE deviceId IN ("
+	command = "SELECT * FROM energyhill.codeupload WHERE handled = 0 AND deviceId IN ("
 	for i in range(0, len(device_ids) - 1):
 		device = device_ids[i]
 		command += str(device) + ", "
@@ -415,10 +416,10 @@ def code_download_main(device_id, hardware_id, upload_id):
 	# Start downloading the code file.
 	print("Starting download for device id: " + str(device_id) + " (" + hardware_id + ")")
 	
-	destination_file = "code_download_" + str(upload_id) + ".hex"
+	path_to_hex = "code_download_" + str(upload_id) + ".hex"
 
-	curl = subprocess.Popen(["curl", "http://eg.bucknell.edu/energyhill/code-download?uploadid=" + str(upload_id),
-			"-o", destination_file])
+	curl = subprocess.Popen(["curl", "http://eg.bucknell.edu/energyhill/download-code?uploadid=" + str(upload_id),
+			"-o", path_to_hex])
 	curl.wait()	# TODO: Wait with a timeout, and monitor download_thread_force_terminate.
 
 	print("Download for device id " + str(device_id) + " complete. Reserving port...")
@@ -450,6 +451,7 @@ def code_download_main(device_id, hardware_id, upload_id):
 		arduinoToPi.reserved_arduino = None
 	
 	# Tell the DB that we're done.
-	curl = subprocess.Popen(["curl", "http://eg.bucknell.edu/energyhill/log-success?uploadid=" + str(upload_id)])
+	curl = subprocess.Popen(["curl", "http://eg.bucknell.edu/energyhill/log-success?uploadid=" + str(upload_id)
+		+ "&deviceid=" + str(device_id)])
 	curl.wait() # TODO: Wait with a timeout, and monitor download_thread_force_terminate.
 	print("Code upload complete.")
