@@ -26,6 +26,10 @@ monkey.patch_all()
 # local files
 from .emailer import *
 from .db import *
+from .logger import *
+Logger.init_logger('api')
+logger = Logger.logger
+Db.set_logger(logger)
 
 with open("deployment.json", 'r') as f:
     deploy_config = json.load(f)
@@ -50,6 +54,16 @@ def makeApp():
     
     return new_app
 
+@rest_api.before_request
+def before_request():
+    logger.info('Header for request: ' + str(request.headers))
+    logger.info('Args for request: ' + str(request.values.to_dict()))
+    logger.info('Route for request: ' + str(request.url_rule))
+
+@rest_api.after_request
+def after_request(response):
+    logger.info('Result for request: ' + str(response.get_data()))
+    return response    
 
 @rest_api.route('/read', methods = ['GET'])
 def read():
@@ -65,7 +79,7 @@ def read():
         assert (condition_fields == ['null'] and condition_values == ['null']) or (len(condition_fields) == len(condition_values)), 'Condition Fields and Values parameters are not equal length'
 
     except (HttpRequestParamError, AssertionError) as e:
-        print(e)
+        logger.exception('Invalid read endpoint parameters', exc_info=True)
         return str(e), 400
 
     # Build sql string with constructed fields and condition fields parts with `%s`s
@@ -91,7 +105,7 @@ def insert():
     try:
         validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
-        print(e)
+        logger.exception('User was denied access from using endpoint', exc_info=True)
         return str(e), 403
 
 
@@ -105,7 +119,7 @@ def insert():
         assert table != 'user' and 'isAdmin' not in fields, 'Users are not allowed to insert a row with isAdmin in the user table, must be default of 0'
 
     except (HttpRequestParamError, AssertionError) as e:
-        print(e)
+        logger.exception('Invalid insert endpoint parameters', exc_info=True)
         return str(e), 400
 
     sql_string = 'INSERT INTO {} ({}) VALUES ({});'.format(
@@ -121,7 +135,7 @@ def update():
     try:
         validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
-        print(e)
+        logger.exception('User was denied access from using endpoint', exc_info=True)
         return str(e), 403
 
     try:
@@ -138,7 +152,7 @@ def update():
         assert len(condition_fields) == len(condition_values), 'Condition Fields and Values parameters are not equal length'
 
     except (HttpRequestParamError, AssertionError) as e:
-        print(e)
+        logger.exception('Invalid update endpoint parameters', exc_info=True)
         return str(e), 400
 
     # Build sql string with constructed fields and condition fields parts with `%s`s
@@ -162,10 +176,9 @@ def get_sensor_last_reading():
 @rest_api.route('/get-profile', methods = ['POST'])
 def get_profile():
     try:
-        print(request.values.get('idtoken'))
         google_id = validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
-        print(e)
+        logger.exception('User was denied access from using endpoint', exc_info=True)
         return str(e), 403
 
     return construct_profile_json(google_id), 200
@@ -196,7 +209,7 @@ def approve_user():
     try:
         validate_admin(request.values.get('idtoken'))
     except UserDeniedException as e:
-        print(e)
+        logger.exception('User was denied access from using endpoint', exc_info=True)
         return '', 403
     
     userid = request.values.get('userid')
@@ -265,7 +278,7 @@ def store_code():
     try:
         validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
-        print(e)
+        logger.exception('Invalid read endpoint parameters', exc_info=True)
         return str(e), 403
 
     deviceid = request.values.get('deviceid')
@@ -317,7 +330,7 @@ def set_admin_status():
     try:
         validate_admin(request.values.get('idtoken'))
     except UserDeniedException as e:
-        print(e)
+        logger.exception('Invalid read endpoint parameters', exc_info=True)
         return str(e), 403
     
     update_admin_status_sql = 'UPDATE user SET isAdmin = %s WHERE userId IN ({})'.format(
@@ -626,8 +639,6 @@ def validate_user(id_token):
     googleid = idinfo['sub']
     email = idinfo['email']
     name = idinfo['name']
-
-    print(googleid)
 
     user_exists_sql = 'SELECT * FROM user WHERE googleId = %s'
     result = Db.exec_query(user_exists_sql, (googleid,))

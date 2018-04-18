@@ -5,6 +5,10 @@
 # local python file
 from emailer import sendEmail, exportChart
 from db import *
+from logger import *
+Logger.init_logger('alerts')
+logger = Logger.logger
+Db.set_logger(logger)
 
 LAST_10_MINS_CONDITION = '''databuffer.dateTime >= FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(NOW())/600)*600) - INTERVAL 10 MINUTE AND databuffer.dateTime < FROM_UNIXTIME(FLOOR(UNIX_TIMESTAMP(NOW())/600)*600)'''
 
@@ -32,7 +36,6 @@ UNHANDLED = 0
 HANDLED = 1
 
 def main():
-    # do initial aggregation
     aggregate_buffer()
     copy_buffer()
     delete_buffer()
@@ -82,7 +85,7 @@ Energy Hill Robot""".format(
             'upper' if alert_val >= sensor_info['alertMaxVal'] else 'lower'
         )
         sendEmail('energyhill@bucknell.edu', owner_emails, subject, body, [chart])
-        #sendEmail('energyhill@bucknell.edu', owner_emails, subject, body, [])
+        logger.info('Sent alert email to owners')
 
 def get_owners_emails(sensor_id):
     # get device id for sensor
@@ -134,36 +137,38 @@ def mark_handled(alert_id):
     Db.exec_query(handle_alert_sql)
     
 def aggregate_buffer():
+    logger.info('Aggregating buffer data')
     try:
         # do aggregation first
         Db.exec_query(AGGREGATION_SQL)
     except Exception as e:
-        print('Unable to aggreate buffer data')
-        print(e)
+        logger.exception('Failed to aggregate buffer data', exc_info=True)
+    logger.info('Done aggregating buffer data')
 
 def copy_buffer():
+    logger.info('Copying buffer data')
     try:
         # then copy
         Db.exec_query(COPY_SQL)
     except Exception as e:
-        print('Unable to copy buffer data')
-        print(e)
+        logger.exception('Failed to copy buffer data', exc_info=True)
+    logger.info('Done copying buffer data')
 
 def delete_buffer():
+    logger.info('Deleting buffer data')
     try:
         # finally delete
         Db.exec_query(DELETE_SQL)
     except Exception as e:
-        print('Unable to delete buffer data')
-        print(e)
+        logger.exception('Failed to delete buffer data', exc_info=True)
+    logger.info('Done deleting buffer data')
 
 def get_unhandled_alerts():
     try:
         get_unhandled_sql = "SELECT * FROM alerts WHERE handled = {}".format(UNHANDLED)
         return Db.exec_query(get_unhandled_sql)
     except Exception as e:
-        print('Unable to get unhandled alerts')
-        print(e)
+        logger.exception('Failed to get unhandled alerts', exc_info=True)
 
 
 """
