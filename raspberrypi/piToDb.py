@@ -393,15 +393,19 @@ def check_for_code_download(connection):
 	index = device_ids.index(device_id)
 	hardware_id = hardware_ids[index]
 
+	# Get the upload id.
+	upload_id = row["uploadId"]
+
 	# Spawn a new thread to do the downloading.
-	download_thread = Thread(target=code_download_main, args=(device_id, hardware_id))
+	download_thread = Thread(target=code_download_main, args=(device_id, hardware_id, upload_id))
 	download_thread_start_time = datetime.datetime.now()
 	download_thread.start()
 
 
-def code_download_main(device_id, hardware_id):
+def code_download_main(device_id, hardware_id, upload_id):
 	assert(isinstance(device_id, int))
 	assert(isinstance(hardware_id, str))
+	assert(isinstance(upload_id, int))
 
 	global download_thread_force_terminate
 
@@ -410,8 +414,13 @@ def code_download_main(device_id, hardware_id):
 
 	# Start downloading the code file.
 	print("Starting download for device id: " + str(device_id) + " (" + hardware_id + ")")
-	# TODO: Downloading that works...
-	path_to_hex = "BareMinimum.cpp.hex"
+	
+	destination_file = "code_download_" + str(upload_id) + ".hex"
+
+	curl = subprocess.Popen(["curl", "http://eg.bucknell.edu/energyhill/code-download?uploadid=" + str(upload_id),
+			"-o", destination_file])
+	curl.wait()	# TODO: Wait with a timeout, and monitor download_thread_force_terminate.
+
 	print("Download for device id " + str(device_id) + " complete. Reserving port...")
 
 	# Spin-loop until the arduino is reserved.
@@ -439,3 +448,8 @@ def code_download_main(device_id, hardware_id):
 		# TODO: Mark the code upload entry complete in the database.
 		# TODO: Delete the file that was downloaded
 		arduinoToPi.reserved_arduino = None
+	
+	# Tell the DB that we're done.
+	curl = subprocess.Popen(["curl", "http://eg.bucknell.edu/energyhill/log-success?uploadid=" + str(upload_id)])
+	curl.wait() # TODO: Wait with a timeout, and monitor download_thread_force_terminate.
+	print("Code upload complete.")
