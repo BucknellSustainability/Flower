@@ -56,7 +56,9 @@ def makeApp():
 
 @rest_api.before_request
 def before_request():
+    logger.info('Header for request: ' + str(request.headers))
     logger.info('Args for request: ' + str(request.values.to_dict()))
+    logger.info('Route for request: ' + str(request.url_rule))
 
 @rest_api.after_request
 def after_request(response):
