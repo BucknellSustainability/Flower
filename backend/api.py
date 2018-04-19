@@ -62,7 +62,10 @@ def before_request():
 
 @rest_api.after_request
 def after_request(response):
-    logger.info('Result for request: ' + str(response.get_data()))
+    try:
+        logger.info('Result for request: ' + str(response.get_data()))
+    except Exception as e:
+        logger.exception('Couldn\'t log response', exc_info=True)
     return response    
 
 @rest_api.route('/read', methods = ['GET'])
@@ -233,12 +236,14 @@ def approve_user():
 @rest_api.route('/log-success', methods = ['GET'])
 def log_success():
     deviceid = request.values.get('deviceid')
+    uploadid = request.values.get('uploadid')
     handle_codeupload_response(deviceid, None)
     return '', 200
 
 @rest_api.route('/log-error', methods = ['GET'])
 def log_error():
     deviceid = request.values.get('deviceid')
+    uploadid = request.values.get('uploadid')
     error_msg = request.values.get('error_msg')
     handle_codeupload_response(deviceid, error_msg)
     return '', 200
@@ -299,7 +304,8 @@ def store_code():
 
         # construct path to put code file and make upload dir if doesn't already exist
         filename = get_code_filename(uploadid)
-        path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        upload_dir_path = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
+        path = os.path.join(upload_dir_path, filename)
         if not os.path.exists(app.config['UPLOAD_FOLDER']):
             os.makedirs(app.config['UPLOAD_FOLDER'])
         file.save(path)
@@ -313,9 +319,9 @@ def store_code():
 @rest_api.route('/download-code', methods = ['GET'])
 def download_code():
     uploadid = request.values.get('uploadid')
-
     upload_dir_path = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
-    return send_from_directory(directory=upload_dir_path, filename=get_code_filename(uploadid)), 200
+    response = send_from_directory(directory=upload_dir_path, filename=get_code_filename(uploadid))
+    return response
 
 @rest_api.route('/set-admin-status', methods=['POST'])
 def set_admin_status():
