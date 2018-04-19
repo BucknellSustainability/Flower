@@ -23,7 +23,7 @@
       </header>
 
       <div style="height: 80%;">
-        <p id="message" class="approvalText">We need to verify that you are an administrator! Please login with the button below!</p>
+        <p id="message" className="approvalText" className={{color:"black"}}>We need to verify that you are an administrator! Please login with the button below!</p>
         <div class="g-signin2" data-onsuccess="onSignIn"></div>
       </div>
       </div>
@@ -57,6 +57,7 @@
           xhr.open('POST', 'https://www.eg.bucknell.edu/energyhill/approve-user');
           xhr.withCredentials = true;
           xhr.onload = function() {
+                console.log(xhr.status)
                 if (xhr.status == 200) {
                     $('#message').text('Approval successful!');
                 } else if (xhr.status === 403) {

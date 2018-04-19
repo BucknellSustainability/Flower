@@ -66,7 +66,7 @@ export class ProjectContainer extends React.Component {
     this.setState({desc: e.target.value})
   }
 
-  updateScope(e){
+  updateScope( e){
     this.setState({scope: e.target.value})
   }
 
@@ -90,8 +90,8 @@ export class ProjectContainer extends React.Component {
   getContent(currProject){
     if(this.state.projectMode === "control"){
       return (
+
                   <div style={{marginTop:25}}>
-                    <AddProject open={this.props.open} changeMode={this.props.changeMode}/>
                     <Row type="flex" justify="space-around" align="top">
                         <Col span={11} style={{marginBottom:0}}>
                           <FormItem {...formItemLayout} label={(<span>Project Name&nbsp;
@@ -155,14 +155,12 @@ export class ProjectContainer extends React.Component {
     } else if (this.state.projectMode ==="create") {
       return (
           <div>
-            <AddProject open={this.props.open} changeMode={this.props.changeMode}/>
             <CreateVis activeProject={currProject}/>
           </div>
         )
     } else {
       return (
         <div>
-          <AddProject open={this.props.open} changeMode={this.props.changeMode}/>
           <ClaimDevice activeProject={currProject} token={this.props.token}/>
         </div>
 
@@ -197,17 +195,20 @@ export class ProjectContainer extends React.Component {
                           </Row>
               </Header>
               <Content>
+                <AddProject open={this.props.open} changeMode={this.props.changeMode}/>
                 {this.getContent(currProject)}
               </Content>
             </Layout>
 
-
       );
     } else{
       return (
+        <div>
+            <AddProject open={this.props.open} changeMode={this.props.changeMode}/>
             <Card title={<span><Icon type="frown-o"/> No Projects </span>}>
               Create or Join a Project to see Information
             </Card>
+        </div>
 
       )
 

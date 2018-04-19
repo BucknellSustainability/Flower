@@ -30,9 +30,7 @@ export class Dashboard extends React.Component {
   deleteProject(i){
     let myUser = this.state.user;
     myUser.projects.splice(i, 1);
-    let newActive = 0;
-    alert(newActive)
-    this.setState({user: myUser, activeProject: newActive});
+    this.setState({user: myUser, activeProject: 0});
   }
 
   deleteDevice(){
