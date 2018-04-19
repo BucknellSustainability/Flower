@@ -4,7 +4,7 @@
 
 class Packet{
 public:
-  const long DEFAULT_BAUD_RATE = 9600;
+  const long DEFAULT_BAUD_RATE = 115200;
   /**
    * Constructor
    */

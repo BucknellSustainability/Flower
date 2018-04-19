@@ -6,9 +6,6 @@ Packet::Packet(void){
   _project_name = "NULL";
 }
 
-// String json_message = ("NULL");
-// const int DEFAULT_BAUD_RATE = 9600;
-
 int Packet::initialize(String project_name){
     _baud_rate = Packet::DEFAULT_BAUD_RATE;
     _project_name = project_name;
