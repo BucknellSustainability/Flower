@@ -349,10 +349,35 @@ def get_map_points():
     sites = Db.exec_query(sites_sql)
 
     # get all projects that have sites
+    projects_sql = 'SELECT * FROM project'
+    projects = Db.exec_query(projects_sql)
 
-    # construct html for each site
+    project_site_dict = {}
+    for project in projects:
+        siteid = project['siteId']
+        if siteid in project_site_dict.keys():
+            project_site_dict[siteid].append(project)
+        else:
+            project_site_dict[siteid] = [project]
 
-    # return
+    map_points = []
+    for site in sites:
+        point = {'latitude': site['latitude'], 'longitude': site['longitude']}
+        
+        content = '<h1>{0}</h1><p>{1}</p><a href={2}>{2}</a><br />'.format(site['name'], site['description'], site['link'])
+        if site['siteId'] in project_site_dict.keys():
+            project_links = '<div><ul>'
+            for project in project_site_dict[site['siteId']]:
+                if not project['isPrivate']:
+                    project_links += '<li><a href={}>{}</a> - {}</li>'.format(project['url'], project['name'], project['description'])
+            project_links += '</ul></div>'
+
+            content += project_links
+        point['content'] = content
+
+        map_points.append(point)
+
+    return json.dumps(map_points, default = jsonconverter), 200
 
 def get_code_filename(uploadid):
     return str(uploadid) + '.hex'
@@ -591,7 +616,7 @@ def build_all_sensors_dict():
         # construct sensor dict
         sensor_dict = {
             'id': sensor['sensorId'],
-            'displayName': sensor['displayName'],
+            'displayName': sensor['displayName'] if sensor['displayName'] is not None else sensor['name'],
             'description': sensor['description']
         }
 
