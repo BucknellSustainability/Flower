@@ -24,7 +24,6 @@ export class AddProject extends React.Component {
     this.handleCancel = this.handleCancel.bind(this);
   }
 
-
   showModal() {
     this.setState({
       visible: true,
