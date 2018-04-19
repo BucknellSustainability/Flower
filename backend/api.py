@@ -216,7 +216,7 @@ def approve_user():
     
     # get approved user email
     approved_user_email_sql = 'SELECT email FROM user WHERE userId = %s'
-    approved_user = exec_query(approved_user_email_sql, (userid,))
+    approved_user = Db.exec_query(approved_user_email_sql, (userid,))
 
     if approved_user is []:
         return '', 400
@@ -224,10 +224,6 @@ def approve_user():
     # change approved status of `userid` to approved/1
     approve_user_sql = 'UPDATE user SET approved = 1 WHERE userId = %s'
     Db.exec_query(approve_user_sql, (userid,))
-
-    # get approved user email
-    approved_user_email_sql = 'SELECT email FROM user WHERE userId = %s'
-    approved_user = Db.exec_query(approved_user_email_sql, (userid,))
 
     # send email to student
     send_approved_email(approved_user[0]['email'])
@@ -450,6 +446,9 @@ def construct_profile_json(google_id):
     projects_id_sql = 'SELECT * FROM owners WHERE userId = %s'
     project_ids = [owner_row['projectId'] for owner_row in Db.exec_query(projects_id_sql, (user_data['userId'],))]
 
+    # user isn't an owner of any projects
+    if project_ids is []:
+        return build_profile_string(user_data, [])
 
     projects_sql = 'SELECT * FROM project WHERE {}'.format(
         build_condition('projectId', project_ids)
@@ -465,6 +464,8 @@ def construct_profile_json(google_id):
     devices = Db.exec_query(devices_sql, tuple(project_ids))
 
     device_ids = [device['deviceId'] for device in devices]
+
+    # TODO: handle if device_ids is []
 
     # use devices info to fetch sensors
     sensors_sql = 'SELECT * FROM sensor WHERE {}'.format(
@@ -533,6 +534,10 @@ def construct_profile_json(google_id):
 
         project_list.append(project_dict)
 
+    return build_profile_string(user_data, project_list)
+
+
+def build_profile_string(user_data, project_list):
     profile_dict = {
         'id': user_data['userId'],
         'name': user_data['name'],
@@ -614,16 +619,10 @@ def build_all_sensors_dict():
 This function is safe to string format into WHERE clause
 '''
 def build_condition(column_name, list_of_vals):
-    if len(list_of_vals) == 1:
-        return '{} = {}'.format(
-            column_name,
-            list_of_vals[0]
-        )
-    else:
-        return '{} IN ({})'.format(
-            column_name,
-            ','.join(['%s'] * len(list_of_vals))
-        )
+    return '{} IN ({})'.format(
+        column_name,
+        ','.join(['%s'] * len(list_of_vals))
+    )
 
 def get_idinfo(id_token):
     idinfo = id_token_lib.verify_oauth2_token(id_token, requests.Request(), CLIENT_ID)
