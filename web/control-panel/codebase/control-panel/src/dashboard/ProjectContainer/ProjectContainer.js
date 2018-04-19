@@ -37,14 +37,14 @@ export class ProjectContainer extends React.Component {
       showClaimDevice: false,
       projectMode: "control",
       iconLoading: false,
-      name: currProject.name,
-      desc: currProject.desc,
-      scope: currProject.is_private,
-      url: currProject.url
-    };
+      name: "",
+      desc: "",
+      scope: 0,
+      url: ""
+    }
   }
 
-  componentWillUpdate(){
+  componentDidUpdate(){
     if(this.props.projectChanged === 1){
       let currProject = this.props.user.projects[this.props.activeProject];
       this.setState({ name: currProject.name,

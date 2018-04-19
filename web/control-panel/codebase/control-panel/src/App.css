@@ -55,7 +55,7 @@ i.anticon.anticon-cloud-upload-o{
 .App-title {
   margin-top: 5px;
   font-size: 2em;
-  color: white;
+  color: black;
 }
 
 .App-Nav{
@@ -67,7 +67,7 @@ i.anticon.anticon-cloud-upload-o{
 
 .App-sub-text {
   font-size: 17px;
-  color: white !important;
+  color: black !important;
 }
 
 @media (min-width: 0px){
