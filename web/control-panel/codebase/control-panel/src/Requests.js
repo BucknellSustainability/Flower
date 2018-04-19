@@ -298,8 +298,13 @@ class Requests {
       if(status === 503){
         scope.checkUploadStatus()
       }
+      else if(200){
+        this.setState({uploading: false})
+        scope.uploadSuccess();
+      }
       else{
-        console.log(status)
+        this.setState({uploading: false})
+        scope.uploadError();
       }
     };
     xhr.send(form_data);
