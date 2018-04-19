@@ -23,20 +23,20 @@ function initMap() {
 
 
     var siteList = [];
-    $.when(readDB("site","*", null, null)).then(
-        function successHandler(json){
-          //get data from ajax request
-          $.each(JSON.parse(json), function(key,value) {
-            siteList.push(value); //value = json object for site
-          });
 
-          //populate map when data is ready
-          fillMap(map, siteList);
+    var xhr = new XMLHttpRequest();
+    var url = flaskURL + 'get-map-points'
+    xhr.open('GET', url);
+    xhr.withCredentials = true;
+    xhr.responseType = 'json';
+    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
-        },  
-        function errorHandler(){
-          console.log("Error reading from db");}
-          );
+    const scope = this;
+    xhr.onload = function() {
+        siteList = xhr.response;
+        fillMap(map, siteList)
+    };
+    xhr.send();
 }
 
 function fillMap(map, siteList){
@@ -50,12 +50,7 @@ function fillMap(map, siteList){
         var currSite = siteList[site]
 
         var location = {lat: parseFloat(currSite.latitude), lng: parseFloat(currSite.longitude)};
-        contents[site] = '<div id="content">'+
-          '<div id="siteNotice">'+'</div>'+'<h1 id="firstHeading" class="firstHeading">'+ currSite.name + '</h1>'+
-          '<div id="bodyContent">' + '<p>' + currSite.description +'</p>' +
-          '<p>Site: <a href=' + currSite.link+  '>Current ' + currSite.name + ' Projects</a></p>'+
-          '</div>'+
-          '</div>';
+        contents[site] = currSite.content
 
         markers[site] = new google.maps.Marker({
           position: location,
