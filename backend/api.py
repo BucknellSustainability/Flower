@@ -342,6 +342,18 @@ def set_admin_status():
 
     return '', 200
 
+@rest_api.route('/get-map-points', methods = ['GET'])
+def get_map_points():
+    # get all sites with information
+    sites_sql = 'SELECT * FROM site'
+    sites = Db.exec_query(sites_sql)
+
+    # get all projects that have sites
+
+    # construct html for each site
+
+    # return
+
 def get_code_filename(uploadid):
     return str(uploadid) + '.hex'
 
@@ -488,7 +500,7 @@ def construct_profile_json(google_id):
         # construct sensor dict
         sensor_dict = {
             'id': sensor['sensorId'],
-            'displayName': sensor['displayName'],
+            'displayName': sensor['displayName'] if sensor['displayName'] is not None else sensor['name'],
             'units': sensor['units'],
             'desc': sensor['description'],
             'min': sensor['alertMinVal'],
