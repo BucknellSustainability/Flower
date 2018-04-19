@@ -19,7 +19,9 @@ export class UploadCode extends React.Component {
     this.showModal = this.showModal.bind(this);
     this.handleOk = this.handleOk.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
-    
+    this.uploadSuccess = this.uploadSuccess.bind(this);
+    this.uploadError = this.uploadError.bind(this);
+
     this.uploadCode = Requests.uploadFile.bind(this);
     this.checkUploadStatus = Requests.checkUploadStatus.bind(this);
 
@@ -55,7 +57,13 @@ export class UploadCode extends React.Component {
     this.setState({ visible: false });
   }
 
+  uploadSuccess() {
+    message.info('Code Upload Success!');
+  };
 
+  uploadError(){
+    message.info('Code Upload FAILURE!');
+  }
 
   render() {
     const {uploading, visible, file} = this.state;
