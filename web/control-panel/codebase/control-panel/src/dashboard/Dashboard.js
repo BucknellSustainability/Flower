@@ -23,7 +23,6 @@ export class Dashboard extends React.Component {
       activeDevice: 0,
       user: this.props.researcher,
       mode: 0,
-      projectChanged: 0
       }
     }
 
@@ -42,15 +41,11 @@ export class Dashboard extends React.Component {
 
   projectNavHandler(active, mode) {
     if(mode === 0){
-      this.setState({ activeProject: active, activeDevice: 0, mode: 0, projectChanged: 1})
+      this.setState({ activeProject: active, activeDevice: 0, mode: 0})
     }
     else {
-      this.setState({mode: mode, projectChanged: 0})
+      this.setState({mode: mode})
     }
-  }
-
-  resertProjectChanged(){
-    this.setState({projectChanged: 0})
   }
 
   deviceNavHandler(active){
@@ -72,9 +67,7 @@ export class Dashboard extends React.Component {
              activeProject={this.state.activeProject} 
              activeDevice={this.state.activeDevice}
              deleteDevice={this.deleteDevice}
-             changeMode={this.changeMode}
-             projectChanged={this.state.projectChanged}
-             resetProjectChanged={this.resertProjectChanged.bind(this)}/>
+             changeMode={this.changeMode}/>
         )
     }
     else{
