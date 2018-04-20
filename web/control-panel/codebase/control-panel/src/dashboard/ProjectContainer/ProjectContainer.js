@@ -44,14 +44,13 @@ export class ProjectContainer extends React.Component {
     }
   }
 
-  componentDidUpdate(){
-    if(this.props.projectChanged === 1){
+  componentDidUpdate(prevProps, prevState){
+    if(prevProps.activeProject !== this.props.activeProject){
       let currProject = this.props.user.projects[this.props.activeProject];
       this.setState({ name: currProject.name,
                       desc: currProject.desc,
                       scope: currProject.is_private,
                       url: currProject.url})
-      this.props.resetProjectChanged();
     }
   }
 

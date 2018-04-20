@@ -299,11 +299,11 @@ class Requests {
         scope.checkUploadStatus()
       }
       else if(200){
-        this.setState({uploading: false})
+        scope.setState({uploading: false})
         scope.uploadSuccess();
       }
       else{
-        this.setState({uploading: false})
+        scope.setState({uploading: false})
         scope.uploadError();
       }
     };
