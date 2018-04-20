@@ -88,7 +88,7 @@ export class Dashboard extends React.Component {
           <a href="#home"><img src={logo} className="App-logo" alt="logo" /></a>
           </Col>
           <Col span={8}>
-          <h2 style={{margin:"auto", marginTop:15}} className="white bold ubuntu">Energy Hill Dashboard</h2>
+          <h2 style={{margin:"auto", marginTop:15}} className="white bold ubuntu">Energy Hill Control Panel</h2>
           </Col>
           <Col span={14}>
           </Col>
