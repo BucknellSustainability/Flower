@@ -41,7 +41,7 @@ export class DashboardHeader extends Component {
             </Navbar.Header>
             <Navbar.Collapse>
               <Navbar.Text>
-                    <h2 style={{marginBottom:0}} className="white bold ubuntu">Energy Hill Dashboard</h2>
+                    <h2 style={{marginBottom:0}} className="white bold ubuntu">Energy Hill Control Panel</h2>
               </Navbar.Text>
               <Navbar.Text className="App-sub-text ubuntu" style={{color:"white"}} pullRight>{signedInAs}
                   {" " + this.props.email + " "}
