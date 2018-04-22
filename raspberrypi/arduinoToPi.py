@@ -138,6 +138,12 @@ def arduino_main(master_queue):
 		except Exception as e:
 			print(e)
 
+def get_open_ports():
+	open_ports = []
+	for port in get_all_usb_ports():
+		if port.hasDevice():
+			open_ports.append(port)
+	return open_ports
 
 # This thread is spawned for each connected arduino.
 def arduino_thread(master_queue, port):
@@ -179,6 +185,7 @@ def arduino_thread(master_queue, port):
 
 
 # Read one packet from the arduino, parse it, and return it.
+# TODO: Document why we need hardware_id! (see: read_line())
 def read_packet(arduino):
 	assert(isinstance(arduino, UsbPort))
 
@@ -191,16 +198,18 @@ def read_packet(arduino):
 def read_json(arduino):
 	assert(isinstance(arduino, UsbPort))
 
+	hardware_id = arduino.getId()
+
 	# Note that the time out is set to 5 seconds. This is to ensure that we don't block forever
 	# trying to read from an arduino that doesn't output anything.
-	with serial.Serial(arduino.getPath(), 115200, timeout=5) as conn:
+	with serial.Serial(arduino.getPath(), 115200, timeout=1) as conn:
 		packet = ""
 		line = ""
 
 		# Read lines until the start of a packet is found.
 		# TODO: If this infinite loops, the thread never checks to see if it should quit.
 		while ('{' not in line):
-			line = read_line(conn)
+			line = read_line(conn, hardware_id)
 		
 		# Chop off any text before the packet starts.
 		startIndex = line.find('{')
@@ -215,7 +224,7 @@ def read_json(arduino):
 		# TODO: If this infinite loops, the thread never checks to see if it should quit.
 		while ('}' not in line):
 			packet += " " + line
-			line = read_line(conn)
+			line = read_line(conn, hardware_id)
 		
 		# Chop off any text after the packet ends.
 		endIndex = line.find('}') + 1
@@ -230,7 +239,7 @@ def parse_packet(packet_text):
 
 	return json.loads(packet_text)
 
-def read_line(arduino):
+def read_line(arduino, hardware_id):
 	"""arduino is the serial I/O object with the arduino. This method returns a line read from the arduino."""
 	# Get the next line of input from the arduino. It's in the form of a
 	# binary string, with /r/n characters at the end. This is a blocking
@@ -238,14 +247,24 @@ def read_line(arduino):
 	#
 	# If the volume of serial I/O for a particular port is large, sometimes readline will return
 	# just "/n" or "". I don't know why.
-	data = b""
-	while data == b"" or data == b"\n" or data == b"\r":
-		data = arduino.readline()
+	global reserved_arduino
+
+	data = ""
+	while data == "" or data == "\n" or data == "\r":
+		data = arduino.read(100)
+		data = data.decode("ascii")
+		if reserved_arduino != None:
+			(name, _) = reserved_arduino
+			if name == hardware_id:
+				raise Exception("Port is reserved; aborting read!")
 	olddata = data
 	
-	# Convert the string from binary to utf-8, if necessary.
-	data = data.decode("ascii")
 
+	# Convert the string from binary to utf-8, if necessary.
+	#data = data.decode("ascii")
+
+	assert(isinstance(data, str))
+	
 	# Remove the last newline. (\r\n or just \n)
 	if data[-1] == "\n":
 		data = data[0:-1]

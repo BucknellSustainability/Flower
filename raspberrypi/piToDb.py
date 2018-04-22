@@ -114,6 +114,11 @@ def do_sensor_data_insert(cursor, sensor_id, data_time, value):
 	# TODO: If isinstance(value, string), store it as a debug string in the database.
 	assert(isinstance(sensor_id, int))
 	assert(isinstance(data_time, datetime.datetime))
+
+	# We don't support string values yet.
+	if isinstance(value, str):
+		print("Skipping string value '" + value + "'; string values not supported yet.")
+		return	
 	assert(isinstance(value, float) or isinstance(value, int))
 	
 	# Note: Python uses a floating-point time, but we need an integer time.
@@ -335,23 +340,11 @@ def check_for_code_download(connection):
 			print("Waiting for existing download thread to finish.")
 			return
 	
-
-	# Look through the array of worker threads, and record all the id strings.
-	# We don't care about race conditions here, because this is just a rough approximation;
-	# if we miss one, we'll see it next time around. We'll get them all 99% of the time.
-	#
-	# I avoid using an iterator here, because the size of the array (and its order) may change
-	# during iteration. Instead, we keep checking indecies until we get an out-of-bounds exception.
 	print("Collecting hardware ids...")
+	ports = arduinoToPi.get_open_ports()
 	hardware_ids = []
-	try:
-		for i in range(0, len(workers) * 2):
-			worker = workers[i]
-			hardware_ids.append(worker.getId())
-	except LookupError:
-		pass
-	except:
-	 	raise Exception("Error while collecting hardware ids...?")
+	for port in ports:
+		hardware_ids.append(port.getId())
 
 	# Do we even need to check?
 	if len(hardware_ids) == 0:
