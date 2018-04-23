@@ -25,10 +25,11 @@ CREATE TABLE IF NOT EXISTS `energyhill`.`alerts` (
   `alertTime` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   `handled` TINYINT(4) NULL DEFAULT '0',
   `sensorId` INT(11) NULL DEFAULT '1',
+  `alertVal` DOUBLE NULL DEFAULT NULL,
   PRIMARY KEY (`alertId`),
   INDEX `sensorId_idx` (`sensorId` ASC))
 ENGINE = InnoDB
-AUTO_INCREMENT = 1917
+AUTO_INCREMENT = 1928
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -54,9 +55,11 @@ DEFAULT CHARACTER SET = latin1;
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `energyhill`.`project` (
   `projectId` INT(11) NOT NULL AUTO_INCREMENT,
-  `siteId` INT(11) NOT NULL,
+  `siteId` INT(11) NULL DEFAULT '7',
   `name` VARCHAR(45) NULL DEFAULT NULL,
   `description` VARCHAR(200) NULL DEFAULT NULL,
+  `isPrivate` TINYINT(1) NULL DEFAULT '1',
+  `url` VARCHAR(100) NULL DEFAULT NULL,
   PRIMARY KEY (`projectId`),
   INDEX `siteId` (`siteId` ASC),
   CONSTRAINT `siteId`
@@ -65,7 +68,7 @@ CREATE TABLE IF NOT EXISTS `energyhill`.`project` (
     ON DELETE CASCADE
     ON UPDATE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 6
+AUTO_INCREMENT = 55
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -73,10 +76,11 @@ DEFAULT CHARACTER SET = latin1;
 -- Table `energyhill`.`device`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `energyhill`.`device` (
-  `deviceId` INT(11) NOT NULL,
+  `deviceId` INT(11) NOT NULL AUTO_INCREMENT,
   `projectId` INT(11) NULL DEFAULT NULL,
   `name` VARCHAR(45) NULL DEFAULT NULL,
   `hardwareId` VARCHAR(128) NULL DEFAULT NULL,
+  `discovered` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`deviceId`),
   INDEX `projectId_idx` (`projectId` ASC),
   CONSTRAINT `projectId`
@@ -85,6 +89,28 @@ CREATE TABLE IF NOT EXISTS `energyhill`.`device` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
+AUTO_INCREMENT = 16
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `energyhill`.`codeupload`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `energyhill`.`codeupload` (
+  `uploadId` INT(11) NOT NULL AUTO_INCREMENT,
+  `deviceId` INT(11) NOT NULL,
+  `codePath` VARCHAR(100) NULL DEFAULT NULL,
+  `handled` TINYINT(4) NULL DEFAULT '0',
+  PRIMARY KEY (`uploadId`),
+  INDEX `deviceId_idx` (`deviceId` ASC),
+  INDEX `deviceId_codeupload_idx` (`deviceId` ASC),
+  CONSTRAINT `deviceId_codeupload`
+    FOREIGN KEY (`deviceId`)
+    REFERENCES `energyhill`.`device` (`deviceId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+AUTO_INCREMENT = 45
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -100,8 +126,9 @@ CREATE TABLE IF NOT EXISTS `energyhill`.`sensor` (
   `alertsEnabled` TINYINT(4) NULL DEFAULT NULL,
   `alertMinVal` DOUBLE NULL DEFAULT NULL,
   `alertMaxVal` DOUBLE NULL DEFAULT NULL,
-  `alertEmail` VARCHAR(45) NULL DEFAULT NULL,
-  `alertMessage` VARCHAR(45) NULL DEFAULT 'ALERT',
+  `minMsg` VARCHAR(75) NULL DEFAULT 'ALERT LOW',
+  `maxMsg` VARCHAR(75) NULL DEFAULT 'ALERT HIGH',
+  `displayName` VARCHAR(45) NULL DEFAULT NULL,
   PRIMARY KEY (`sensorId`),
   INDEX `deviceId_idx` (`deviceId` ASC),
   CONSTRAINT `deviceId`
@@ -110,7 +137,7 @@ CREATE TABLE IF NOT EXISTS `energyhill`.`sensor` (
     ON DELETE NO ACTION
     ON UPDATE NO ACTION)
 ENGINE = InnoDB
-AUTO_INCREMENT = 3
+AUTO_INCREMENT = 34
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -130,7 +157,27 @@ CREATE TABLE IF NOT EXISTS `energyhill`.`data` (
     ON DELETE CASCADE
     ON UPDATE CASCADE)
 ENGINE = InnoDB
-AUTO_INCREMENT = 6056913
+AUTO_INCREMENT = 11995591
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `energyhill`.`databuffer`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `energyhill`.`databuffer` (
+  `dataId` INT(11) NOT NULL AUTO_INCREMENT,
+  `sensorId` INT(11) NOT NULL,
+  `value` DOUBLE NOT NULL,
+  `dateTime` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`dataId`),
+  INDEX `databuffer_sensorId_idx` (`sensorId` ASC),
+  CONSTRAINT `databuffer_sensorId`
+    FOREIGN KEY (`sensorId`)
+    REFERENCES `energyhill`.`sensor` (`sensorId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+AUTO_INCREMENT = 1293666
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -143,6 +190,26 @@ CREATE TABLE IF NOT EXISTS `energyhill`.`datahourly` (
   `sampleRate` INT(11) NULL DEFAULT NULL,
   `dateTime` DATETIME NULL DEFAULT NULL)
 ENGINE = InnoDB
+DEFAULT CHARACTER SET = latin1;
+
+
+-- -----------------------------------------------------
+-- Table `energyhill`.`errors`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `energyhill`.`errors` (
+  `errorId` INT(11) NOT NULL AUTO_INCREMENT,
+  `deviceId` INT(11) NOT NULL,
+  `path` VARCHAR(45) NULL DEFAULT NULL,
+  `timestamp` TIMESTAMP NULL DEFAULT NULL,
+  PRIMARY KEY (`errorId`),
+  INDEX `deviceId_errors_idx` (`deviceId` ASC),
+  CONSTRAINT `deviceId_errors`
+    FOREIGN KEY (`deviceId`)
+    REFERENCES `energyhill`.`device` (`deviceId`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION)
+ENGINE = InnoDB
+AUTO_INCREMENT = 20
 DEFAULT CHARACTER SET = latin1;
 
 
@@ -167,19 +234,17 @@ DEFAULT CHARACTER SET = latin1;
 -- Table `energyhill`.`user`
 -- -----------------------------------------------------
 CREATE TABLE IF NOT EXISTS `energyhill`.`user` (
-  `userId` INT(32) NOT NULL,
+  `userId` INT(32) NOT NULL AUTO_INCREMENT,
   `email` VARCHAR(45) NULL DEFAULT NULL,
   `name` VARCHAR(45) NULL DEFAULT NULL,
-  `approved` BIT(1) NULL DEFAULT NULL,
+  `approved` TINYINT(1) NULL DEFAULT '0',
   `googleId` VARCHAR(45) NULL DEFAULT NULL,
+  `isAdmin` TINYINT(1) NULL DEFAULT '0',
   PRIMARY KEY (`userId`))
 ENGINE = InnoDB
+AUTO_INCREMENT = 43
 DEFAULT CHARACTER SET = latin1;
 
-
-SET SQL_MODE=@OLD_SQL_MODE;
-SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
-SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
 USE `energyhill`;
 
 DELIMITER $$
@@ -190,23 +255,25 @@ TRIGGER `energyhill`.`datahourly_AFTER_INSERT`
 AFTER INSERT ON `energyhill`.`datahourly`
 FOR EACH ROW
 BEGIN
+    DECLARE _alertMinVal DOUBLE;
+    DECLARE _alertMaxVal DOUBLE;
+    DECLARE _alertsEnabled TINYINT;
 
-DECLARE _alertMinVal DOUBLE;
-DECLARE _alertMaxVal DOUBLE;
-DECLARE _alertsEnabled TINYINT;
 
 SELECT alertMinVal, alertMaxVal, alertsEnabled
 INTO _alertMinVal, _alertMaxVal, _alertsEnabled
 FROM sensor
 WHERE sensor.sensorId = new.sensorId;
 
-if((_alertsEnabled = 1) AND (_alertMaxVal <= new.averageValue OR _alertMinVal >= new.averageValue))
-THEN INSERT INTO alerts (sensorId) VALUES (new.sensorId);
-
+IF((_alertsEnabled = 1) AND (_alertMaxVal <= new.averageValue OR _alertMinVal >= new.averageValue))
+THEN INSERT INTO alerts (sensorId, alertVal) VALUES (new.sensorId, new.averageValue);
 END IF;
-
-
 END$$
 
 
 DELIMITER ;
+
+SET SQL_MODE=@OLD_SQL_MODE;
+SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
+SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
