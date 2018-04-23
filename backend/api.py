@@ -169,6 +169,37 @@ def update():
     result = Db.exec_query(sql_string, tuple(values) + tuple(condition_values))
     return json.dumps(result, default = jsonconverter), 200
 
+@rest_api.route('/delete', methods = ['POST'])
+def update():
+    try:
+        validate_user(request.values.get('idtoken'))
+    except UserDeniedException as e:
+        logger.exception('User was denied access from using endpoint', exc_info=True)
+        return str(e), 403
+
+    try:
+        table = request.values.get('table')
+        validate_table_name(table)
+
+        condition_fields = split_and_validate_column_name_csv(table, request.values.get('condition_fields'))
+        condition_values = split_csv(request.values.get('condition_values'))
+        assert len(condition_fields) == len(condition_values), 'Condition Fields and Values parameters are not equal length'
+
+    except (HttpRequestParamError, AssertionError) as e:
+        logger.exception('Invalid delete endpoint parameters', exc_info=True)
+        return str(e), 400
+
+    # Build sql string with constructed fields and condition fields parts with `%s`s
+    sql_string = 'DELETE FROM {} WHERE {};'.format(
+        table,
+        build_basic_condition(condition_fields, condition_values)
+    )
+
+    # execute query with laundry list of values to sub in
+    result = Db.exec_query(sql_string, tuple(condition_values))
+    return json.dumps(result, default = jsonconverter), 200
+
+
 @rest_api.route('/get-sensor-last-reading', methods = ['GET'])
 def get_sensor_last_reading():
     sensorid = request.values.get('sensorid')
@@ -708,7 +739,7 @@ def validate_admin(id_token):
     return googleid
 
 def send_approval_email(name, email, userid):
-    link = deploy_config['APPROVAL_LINK'].format(
+    link = 'https://eg.bucknell.edu/~energyhill/Flower/web/requests/approveUser.html?userid={}'.format(
         userid
     )
 
