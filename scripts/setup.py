@@ -1,5 +1,10 @@
 import getpass
 import json
+import os.path
+
+#check if file exists
+if os.path.is_file('~/public_html/Flower/config.json'):
+    return
 
 # build db config
 config_dict = {}
@@ -10,6 +15,10 @@ config_dict['DB_PASSWORD'] = getpass.getpass("Please enter the DB password")
 
 create_config_file('../config.json', config_dict)
 
+#check if file exists
+if os.path.is_file('~/public_html/Flower/deployment.json'):
+    return
+
 # build deployment
 deployment_dict = {}
 deployment_dict['FLASK_SERVER'] = input("Please enter the url for the flask server (ex. https://eg.bucknell.edu/energyhill)")
@@ -18,7 +27,5 @@ deployment_dict['GOOGLE_CLIENT_ID'] = input("Please enter the Google client id f
 create_config_file('../deployment.json', deployment_dict)
 
 def create_config_file(file_name, content_dict):
-   # open file if one doesn't exist
-    # get json string
-    # write to file
-     
+    with open(file_name, "w") as f:
+        f.write(json.dumps(content_dict))
