@@ -31,9 +31,13 @@ def send_file_to_arduino(filename, port):
 
 	# Upload the file, and block until it has finished.
 	print("Sending hex file to arduino...")
-	child = subprocess.Popen(base_args, stderr = subprocess.PIPE)
+	child = subprocess.Popen(upload_args, stderr = subprocess.PIPE)
 	child.wait()
-	(out, err) = child.communicate()
+	(_, err) = child.communicate()
+
+	if "DOCTYPE" in open(filename).read():
+		# We got a 404 or a 500 from the server.
+		raise Exception(open(filename).read())
 
 	# Check if it was successful.
 	if child.returncode != 0:
