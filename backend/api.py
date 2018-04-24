@@ -170,7 +170,7 @@ def update():
     return json.dumps(result, default = jsonconverter), 200
 
 @rest_api.route('/delete', methods = ['POST'])
-def update():
+def delete():
     try:
         validate_user(request.values.get('idtoken'))
     except UserDeniedException as e:
