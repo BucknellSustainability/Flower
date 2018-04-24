@@ -410,6 +410,21 @@ def get_map_points():
 
     return json.dumps(map_points, default = jsonconverter), 200
 
+@rest_api.route('/get-all-others-projects', methods = ['GET'])
+def get_all_others_projects():
+    userid = request.values.get('userId')
+    user_projects_sql = 'SELECT projectId FROM owners WHERE userId = %s'
+    user_projects = Db.exec_query(user_projects_sql, (userid,))
+
+    all_projects_sql = 'SELECT projectId, name FROM project'
+    all_projects = Db.exec_query(all_projects_sql)
+
+    user_project_ids = [project['projectId'] for project in user_projects]
+    # get all projects that aren't owned by the user and and aren't "1" which is the Unclaimed project
+    not_user_projects = [project for project in all_projects if project['projectId'] not in user_project_ids and project['projectId'] is not 1]
+    
+    return json.dumps(not_user_projects, default = jsonconverter), 200
+
 def get_code_filename(uploadid):
     return str(uploadid) + '.hex'
 
