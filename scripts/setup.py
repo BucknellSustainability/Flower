@@ -2,6 +2,10 @@ import getpass
 import json
 import os.path
 
+def create_config_file(file_name, content_dict):
+    with open(file_name, "w") as f:
+        f.write(json.dumps(content_dict))
+
 #check if file exists
 if not os.path.isfile('../config.json'):
     # build db config
@@ -22,6 +26,3 @@ if os.path.isfile('../deployment.json'):
 
     create_config_file('../deployment.json', deployment_dict)
 
-def create_config_file(file_name, content_dict):
-    with open(file_name, "w") as f:
-        f.write(json.dumps(content_dict))
