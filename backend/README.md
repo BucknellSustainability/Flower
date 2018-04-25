@@ -157,3 +157,11 @@ Generally, hardcoding the URL shouldn't be in code, but instead you should use t
     - `userids`: the userids of the users to have their isAdmin status set to adminstatus
     - `adminstatus`: the status that is to be set for the users. Must be strictly either `0` or `1`
 - returns: empty string on success, 503 status if user is denied access
+
+
+## Get the project that the user doesn't own
+- `{endpoint}`: `get-all-others-projects
+- allowed http requests: `GET`
+- parameters:
+    - `userId`: the userid of the user whose projects should not be included
+- returns: list of objects that contain projectId and name that aren't owned by user
