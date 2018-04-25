@@ -8,7 +8,7 @@ module load node
 
 cd ../web/control-panel/codebase/control-panel  #open development folder
 
-npm install react react-scripts react-dom antd
+npm install react react-scripts react-dom antd react-bootstrap
 
 npm run build              #build the application
 
