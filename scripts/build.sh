@@ -4,11 +4,11 @@
 module load node
 
 # make sure everything except react is accessible
-./setup.sh
+./change_permissions.sh
 
 cd ../web/control-panel/codebase/control-panel  #open development folder
 
-npm install react react-scripts react-dom antd
+npm install react react-scripts react-dom antd react-bootstrap
 
 npm run build              #build the application
 

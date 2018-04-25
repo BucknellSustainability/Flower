@@ -25,7 +25,7 @@ function initMap() {
     var siteList = [];
 
     var xhr = new XMLHttpRequest();
-    var url = flaskURL + 'get-map-points'
+    var url = 'http://eg.bucknell.edu/energyhill/get-map-points'
     xhr.open('GET', url);
     xhr.withCredentials = true;
     xhr.responseType = 'json';
