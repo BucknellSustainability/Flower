@@ -1,11 +1,19 @@
 
 
 
+try:
+    import serial
+except:
+    print("
+    To install pyserial:
+    
+    sudo apt-get install python3-pip
+    sudo pip3 install pyserial
 
-import serial
-# To install pyserial:
-# sudo apt-get install python3-pip
-# sudo pip3 install pyserial
+    This program will now hang until force-quit, to ensure you see this message.
+    ")
+    while True:
+        pass
 
 import signal
 import datetime

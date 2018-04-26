@@ -1,11 +1,19 @@
 
 
+try:
+    import pymysql
+except:
+    print("
+    To install pymysql:
+    
+    sudo apt-get install python3-pip
+    sudo pip3 install pymysql
+    
+    This program will now hang until force-quit, to ensure you see this message.
+    ")
+    while True:
+        pass
 
-import pymysql
-# To install pymysql:
-# sudo apt-get install python3-pip
-# sudo pip3 install pymysql
-# That should fix it.
 
 import json
 from arduinoToPi import SensorReading, workers
@@ -442,6 +450,9 @@ def code_download_main(device_id, hardware_id, upload_id):
 		# TODO: Mark the code upload entry complete in the database.
 		# TODO: Delete the file that was downloaded
 		arduinoToPi.reserved_arduino = None
+
+                # Delete the file that was downloaded.
+                os.remove(path_to_hex)
 	
 	# Tell the DB that we're done.
 	curl = subprocess.Popen(["curl", "http://eg.bucknell.edu/energyhill/log-success?uploadid=" + str(upload_id)
