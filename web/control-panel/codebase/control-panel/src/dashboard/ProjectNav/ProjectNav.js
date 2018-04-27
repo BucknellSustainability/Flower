@@ -3,6 +3,7 @@ import plus from '../../images/plus.svg';
 import '../../fonts.css';
 import { Card,  Menu, Icon, Button, Row, Col, Modal} from 'antd';
 import Requests from '../../Requests.js'
+const MenuItemGroup = Menu.ItemGroup;
 const confirm = Modal.confirm;
 
 export class ProjectNav extends Component{
@@ -11,6 +12,8 @@ export class ProjectNav extends Component{
     this.handleSelect = this.handleSelect.bind(this);
     this.showDeleteConfirm = this.showDeleteConfirm.bind(this);
     this.unlinkProject = Requests.unlinkProject.bind(this);
+
+    this.deleteProject = Requests.deleteProject.bind(this);
   }
 
   componentDidMount(){
@@ -50,6 +53,7 @@ export class ProjectNav extends Component{
       cancelText: 'No',
       onOk() {
         scope.props.deleteProj(key);
+        scope.deleteProject(project.id)
         console.log('OK');
       },
       onCancel() {
@@ -64,10 +68,10 @@ export class ProjectNav extends Component{
           this.props.user.projects.map((project, i) =>
           <Menu.Item key={i} onClick={this.handleSelect}>
             <Row>
-              <Col span={18}>
+              <Col span={19}>
                 {project.name}
               </Col>
-              <Col span={6}>
+              <Col span={5}>
               <Button type="button" key={i} size="small" shape="circle" icon="delete" onClick={this.showDeleteConfirm.bind(this, i, project)}/>
               </Col>
             </Row>
@@ -82,6 +86,7 @@ export class ProjectNav extends Component{
         <Menu
           style={{ width: "100%"}}
           defaultSelectedKeys={['0']}
+          defaultOpenKeys={['myProjects']}
           mode="inline"
           theme="dark"
           onClick={this.handleSelect}

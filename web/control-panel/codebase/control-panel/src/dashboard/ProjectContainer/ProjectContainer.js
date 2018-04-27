@@ -32,25 +32,24 @@ export class ProjectContainer extends React.Component {
     let currProject = this.props.user.projects[this.props.activeProject];
     this.updateProject = Requests.updateProject.bind(this);
 
-    this.state = {
-      showVis: false,
-      showClaimDevice: false,
-      projectMode: "control",
-      iconLoading: false,
-      name: "",
-      desc: "",
-      scope: 0,
-      url: ""
-    }
+    if(currProject){
+    this.state = {  name: currProject.name,
+                    desc: currProject.desc,
+                    scope: currProject.is_private,
+                    url: currProject.url,
+                    projectMode: "control"
+                }
+              }
   }
 
   componentDidUpdate(prevProps, prevState){
-    if(prevProps.activeProject !== this.props.activeProject){
-      let currProject = this.props.user.projects[this.props.activeProject];
+    let currProject = this.props.user.projects[this.props.activeProject];
+    if((prevProps.activeProject !== this.props.activeProject) && currProject){
       this.setState({ name: currProject.name,
                       desc: currProject.desc,
                       scope: currProject.is_private,
-                      url: currProject.url})
+                      url: currProject.url,
+                      projectMode: "control"})
     }
   }
 
@@ -141,11 +140,10 @@ export class ProjectContainer extends React.Component {
                               <Option value="tower">Water Tower</Option>
                             </Select>
                           </FormItem>
-                          <Button style={{marginLeft: -60, marginTop: 30, marginBottom: 5}} icon="check-circle-o" loading={this.state.iconLoading} onClick={this.updateProjectClick.bind(this)}>
-                            Submit Info
-                          </Button>
-
                         </Col> 
+                        <Button style={{marginLeft: 0, marginTop: 30, marginBottom: 0}} icon="check-circle-o" loading={this.state.iconLoading} onClick={this.updateProjectClick.bind(this)}>
+                              Submit Info
+                        </Button>
                     </Row>
                     <Divider />
                     <DeviceContainer device={currProject.devices[this.props.activeDevice]} devices={currProject.devices} handler={this.props.handler} deleteDevice={this.props.deleteDevice}/>
