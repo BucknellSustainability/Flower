@@ -158,9 +158,16 @@ def arduino_thread(master_queue, port):
 	assert(isinstance(master_queue, Queue))
 	assert(isinstance(port, UsbPort))
 
+	# We need to discard the first line. HOWEVER, the very first thing we do MUST
+	# be to check if the port is reserved. Only arduino_threads can reserve ports;
+	# if a port is reserved in the middle of a read, then it will raise an exception,
+	# kill this thread, and then arduino_main thread will spin up a new copy.
+	has_read_first_line = False
+
 	global mainThreadAlive
 	global reserved_arduino
 	try:
+	
 		while (mainThreadAlive):
 			# Check if someone is trying to reserve this port.
 			if reserved_arduino:
@@ -172,6 +179,19 @@ def arduino_thread(master_queue, port):
 					# Exit.
 					print("Thread %s: Reserving." % port.getId())
 					return
+
+			# Check if we've gotten rid of the first line of junk.
+			if not has_read_first_line:
+				has_read_first_line = True
+				
+				# Read one line of input, and then discard it. Either it's the start of the program,
+				# and the buffer cuts off the first few chars the arduino sends; OR another thread
+				# before this one threw an exception partway through reading, and the next reading
+				# is junk.
+				try:
+					read_packet(port)
+				except:
+					pass
 
 			# Get sensor data from the arduino.
 			json = read_packet(port)
