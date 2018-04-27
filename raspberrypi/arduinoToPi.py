@@ -2,18 +2,18 @@
 
 
 try:
-    import serial
+	import serial
 except:
-    print("
-    To install pyserial:
-    
-    sudo apt-get install python3-pip
-    sudo pip3 install pyserial
+	print("""
+	To install pyserial:
+	
+	sudo apt-get install python3-pip
+	sudo pip3 install pyserial
 
-    This program will now hang until force-quit, to ensure you see this message.
-    ")
-    while True:
-        pass
+	This program will now hang until force-quit, to ensure you see this message.
+	""")
+	while True:
+		pass
 
 import signal
 import datetime
@@ -258,28 +258,18 @@ def read_line(arduino, hardware_id):
 	global reserved_arduino
 
 	data = ""
-	while data == "" or data == "\n" or data == "\r":
-		data = arduino.read(100)
-		data = data.decode("ascii")
+	while data == "" or data[-1] != "}":
+		char = arduino.read(1)
+		char = char.decode("ascii")
 		if reserved_arduino != None:
 			(name, _) = reserved_arduino
 			if name == hardware_id:
-				raise Exception("Port is reserved; aborting read!")
-	olddata = data
+				raise Exception("Port is reserved for code upload; aborting read.")
+		data += char
 	
+	# Remove the last newline and any space before the data.
+	data = data.strip()
 
-	# Convert the string from binary to utf-8, if necessary.
-	#data = data.decode("ascii")
-
-	assert(isinstance(data, str))
-	
-	# Remove the last newline. (\r\n or just \n)
-	if data[-1] == "\n":
-		data = data[0:-1]
-
-	if data[-1] == "\r":
-		data = data[0:-1]
-	
 	return data
 
 """	# Currently, this doesn't work.

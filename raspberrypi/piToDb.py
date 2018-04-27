@@ -1,18 +1,18 @@
 
 
 try:
-    import pymysql
+	import pymysql
 except:
-    print("
-    To install pymysql:
-    
-    sudo apt-get install python3-pip
-    sudo pip3 install pymysql
-    
-    This program will now hang until force-quit, to ensure you see this message.
-    ")
-    while True:
-        pass
+	print("""
+	To install pymysql:
+	
+	sudo apt-get install python3-pip
+	sudo pip3 install pymysql
+	
+	This program will now hang until force-quit, to ensure you see this message.
+	""")
+	while True:
+		pass
 
 
 import json
@@ -26,6 +26,7 @@ import math
 import sys
 from threading import Thread
 import subprocess
+import os
 
 # Ensure that we're running python3.
 if sys.version_info[0] < 3:
@@ -382,7 +383,7 @@ def check_for_code_download(connection):
 		rows = cursor.fetchall()
 		if rows and len(rows) >= 1:
 			# Grab the first row.
-	   		row = rows[0]
+			row = rows[0]
 		else:
 			# Nothing to download.
 			print("No entries in the codeupload table.")
@@ -451,8 +452,8 @@ def code_download_main(device_id, hardware_id, upload_id):
 		# TODO: Delete the file that was downloaded
 		arduinoToPi.reserved_arduino = None
 
-                # Delete the file that was downloaded.
-                os.remove(path_to_hex)
+		# Delete the file that was downloaded.
+		os.remove(path_to_hex)
 	
 	# Tell the DB that we're done.
 	curl = subprocess.Popen(["curl", "http://eg.bucknell.edu/energyhill/log-success?uploadid=" + str(upload_id)
