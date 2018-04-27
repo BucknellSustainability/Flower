@@ -271,7 +271,7 @@ def log_success():
     handle_codeupload_response(deviceid, None)
     return '', 200
 
-@rest_api.route('/log-error', methods = ['GET'])
+@rest_api.route('/log-error', methods = ['POST'])
 def log_error():
     deviceid = request.values.get('deviceid')
     uploadid = request.values.get('uploadid')
