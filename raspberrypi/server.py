@@ -2,9 +2,11 @@
 
 from arduinoToPi import *
 from piToDb import *
+import os
 
 def main():
 	print("Starting pi server...")
+        print("Current directory: " + str(os.getcwd()))
 	
 	master_queue = Queue()
 	

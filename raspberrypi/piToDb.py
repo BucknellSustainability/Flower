@@ -1,11 +1,19 @@
 
 
+try:
+    import pymysql
+except:
+    print("
+    To install pymysql:
+    
+    sudo apt-get install python3-pip
+    sudo pip3 install pymysql
+    
+    This program will now hang until force-quit, to ensure you see this message.
+    ")
+    while True:
+        pass
 
-import pymysql
-# To install pymysql:
-# sudo apt-get install python3-pip
-# sudo pip3 install pymysql
-# That should fix it.
 
 import json
 from arduinoToPi import SensorReading, workers
@@ -17,6 +25,7 @@ import datetime
 import math
 import sys
 from threading import Thread
+import subprocess
 
 # Ensure that we're running python3.
 if sys.version_info[0] < 3:
@@ -113,6 +122,11 @@ def do_sensor_data_insert(cursor, sensor_id, data_time, value):
 	# TODO: If isinstance(value, string), store it as a debug string in the database.
 	assert(isinstance(sensor_id, int))
 	assert(isinstance(data_time, datetime.datetime))
+
+	# We don't support string values yet.
+	if isinstance(value, str):
+		print("Skipping string value '" + value + "'; string values not supported yet.")
+		return	
 	assert(isinstance(value, float) or isinstance(value, int))
 	
 	# Note: Python uses a floating-point time, but we need an integer time.
@@ -334,23 +348,11 @@ def check_for_code_download(connection):
 			print("Waiting for existing download thread to finish.")
 			return
 	
-
-	# Look through the array of worker threads, and record all the id strings.
-	# We don't care about race conditions here, because this is just a rough approximation;
-	# if we miss one, we'll see it next time around. We'll get them all 99% of the time.
-	#
-	# I avoid using an iterator here, because the size of the array (and its order) may change
-	# during iteration. Instead, we keep checking indecies until we get an out-of-bounds exception.
 	print("Collecting hardware ids...")
+	ports = arduinoToPi.get_open_ports()
 	hardware_ids = []
-	try:
-		for i in range(0, len(workers) * 2):
-			worker = workers[i]
-			hardware_ids.append(worker.getId())
-	except LookupError:
-		pass
-	except:
-	 	raise Exception("Error while collecting hardware ids...?")
+	for port in ports:
+		hardware_ids.append(port.getId())
 
 	# Do we even need to check?
 	if len(hardware_ids) == 0:
@@ -365,7 +367,7 @@ def check_for_code_download(connection):
 		device_ids.append(device_id)
 
 	# Look for any downloads for these devices in the codeupload table.
-	command = "SELECT * FROM energyhill.codeupload WHERE deviceId IN ("
+	command = "SELECT * FROM energyhill.codeupload WHERE handled = 0 AND deviceId IN ("
 	for i in range(0, len(device_ids) - 1):
 		device = device_ids[i]
 		command += str(device) + ", "
@@ -393,15 +395,19 @@ def check_for_code_download(connection):
 	index = device_ids.index(device_id)
 	hardware_id = hardware_ids[index]
 
+	# Get the upload id.
+	upload_id = row["uploadId"]
+
 	# Spawn a new thread to do the downloading.
-	download_thread = Thread(target=code_download_main, args=(device_id, hardware_id))
+	download_thread = Thread(target=code_download_main, args=(device_id, hardware_id, upload_id))
 	download_thread_start_time = datetime.datetime.now()
 	download_thread.start()
 
 
-def code_download_main(device_id, hardware_id):
+def code_download_main(device_id, hardware_id, upload_id):
 	assert(isinstance(device_id, int))
 	assert(isinstance(hardware_id, str))
+	assert(isinstance(upload_id, int))
 
 	global download_thread_force_terminate
 
@@ -410,8 +416,13 @@ def code_download_main(device_id, hardware_id):
 
 	# Start downloading the code file.
 	print("Starting download for device id: " + str(device_id) + " (" + hardware_id + ")")
-	# TODO: Downloading that works...
-	path_to_hex = "BareMinimum.cpp.hex"
+	
+	path_to_hex = "code_download_" + str(upload_id) + ".hex"
+
+	curl = subprocess.Popen(["curl", "http://eg.bucknell.edu/energyhill/download-code?uploadid=" + str(upload_id),
+			"-o", path_to_hex])
+	curl.wait()	# TODO: Wait with a timeout, and monitor download_thread_force_terminate.
+
 	print("Download for device id " + str(device_id) + " complete. Reserving port...")
 
 	# Spin-loop until the arduino is reserved.
@@ -439,3 +450,12 @@ def code_download_main(device_id, hardware_id):
 		# TODO: Mark the code upload entry complete in the database.
 		# TODO: Delete the file that was downloaded
 		arduinoToPi.reserved_arduino = None
+
+                # Delete the file that was downloaded.
+                os.remove(path_to_hex)
+	
+	# Tell the DB that we're done.
+	curl = subprocess.Popen(["curl", "http://eg.bucknell.edu/energyhill/log-success?uploadid=" + str(upload_id)
+		+ "&deviceid=" + str(device_id)])
+	curl.wait() # TODO: Wait with a timeout, and monitor download_thread_force_terminate.
+	print("Code upload complete.")

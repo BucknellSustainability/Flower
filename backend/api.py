@@ -62,7 +62,10 @@ def before_request():
 
 @rest_api.after_request
 def after_request(response):
-    logger.info('Result for request: ' + str(response.get_data()))
+    try:
+        logger.info('Result for request: ' + str(response.get_data()))
+    except Exception as e:
+        logger.exception('Couldn\'t log response', exc_info=True)
     return response    
 
 @rest_api.route('/read', methods = ['GET'])
@@ -166,6 +169,37 @@ def update():
     result = Db.exec_query(sql_string, tuple(values) + tuple(condition_values))
     return json.dumps(result, default = jsonconverter), 200
 
+@rest_api.route('/delete', methods = ['POST'])
+def delete():
+    try:
+        validate_user(request.values.get('idtoken'))
+    except UserDeniedException as e:
+        logger.exception('User was denied access from using endpoint', exc_info=True)
+        return str(e), 403
+
+    try:
+        table = request.values.get('table')
+        validate_table_name(table)
+
+        condition_fields = split_and_validate_column_name_csv(table, request.values.get('condition_fields'))
+        condition_values = split_csv(request.values.get('condition_values'))
+        assert len(condition_fields) == len(condition_values), 'Condition Fields and Values parameters are not equal length'
+
+    except (HttpRequestParamError, AssertionError) as e:
+        logger.exception('Invalid delete endpoint parameters', exc_info=True)
+        return str(e), 400
+
+    # Build sql string with constructed fields and condition fields parts with `%s`s
+    sql_string = 'DELETE FROM {} WHERE {};'.format(
+        table,
+        build_basic_condition(condition_fields, condition_values)
+    )
+
+    # execute query with laundry list of values to sub in
+    result = Db.exec_query(sql_string, tuple(condition_values))
+    return json.dumps(result, default = jsonconverter), 200
+
+
 @rest_api.route('/get-sensor-last-reading', methods = ['GET'])
 def get_sensor_last_reading():
     sensorid = request.values.get('sensorid')
@@ -233,12 +267,14 @@ def approve_user():
 @rest_api.route('/log-success', methods = ['GET'])
 def log_success():
     deviceid = request.values.get('deviceid')
+    uploadid = request.values.get('uploadid')
     handle_codeupload_response(deviceid, None)
     return '', 200
 
 @rest_api.route('/log-error', methods = ['GET'])
 def log_error():
     deviceid = request.values.get('deviceid')
+    uploadid = request.values.get('uploadid')
     error_msg = request.values.get('error_msg')
     handle_codeupload_response(deviceid, error_msg)
     return '', 200
@@ -299,7 +335,8 @@ def store_code():
 
         # construct path to put code file and make upload dir if doesn't already exist
         filename = get_code_filename(uploadid)
-        path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        upload_dir_path = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
+        path = os.path.join(upload_dir_path, filename)
         if not os.path.exists(app.config['UPLOAD_FOLDER']):
             os.makedirs(app.config['UPLOAD_FOLDER'])
         file.save(path)
@@ -313,9 +350,9 @@ def store_code():
 @rest_api.route('/download-code', methods = ['GET'])
 def download_code():
     uploadid = request.values.get('uploadid')
-
     upload_dir_path = os.path.join(app.root_path, app.config['UPLOAD_FOLDER'])
-    return send_from_directory(directory=upload_dir_path, filename=get_code_filename(uploadid)), 200
+    response = send_from_directory(directory=upload_dir_path, filename=get_code_filename(uploadid))
+    return response
 
 @rest_api.route('/set-admin-status', methods=['POST'])
 def set_admin_status():
@@ -335,6 +372,58 @@ def set_admin_status():
     Db.exec_query(update_admin_status_sql, tuple([admin_status] + user_ids))
 
     return '', 200
+
+@rest_api.route('/get-map-points', methods = ['GET'])
+def get_map_points():
+    # get all sites with information
+    sites_sql = 'SELECT * FROM site'
+    sites = Db.exec_query(sites_sql)
+
+    # get all projects that have sites
+    projects_sql = 'SELECT * FROM project'
+    projects = Db.exec_query(projects_sql)
+
+    project_site_dict = {}
+    for project in projects:
+        siteid = project['siteId']
+        if siteid in project_site_dict.keys():
+            project_site_dict[siteid].append(project)
+        else:
+            project_site_dict[siteid] = [project]
+
+    map_points = []
+    for site in sites:
+        point = {'latitude': site['latitude'], 'longitude': site['longitude']}
+        
+        content = '<h1>{0}</h1><p>{1}</p><a href={2}>{2}</a><br />'.format(site['name'], site['description'], site['link'])
+        if site['siteId'] in project_site_dict.keys():
+            project_links = '<div><ul>'
+            for project in project_site_dict[site['siteId']]:
+                if not project['isPrivate']:
+                    project_links += '<li><a href={}>{}</a> - {}</li>'.format(project['url'], project['name'], project['description'])
+            project_links += '</ul></div>'
+
+            content += project_links
+        point['content'] = content
+
+        map_points.append(point)
+
+    return json.dumps(map_points, default = jsonconverter), 200
+
+@rest_api.route('/get-all-others-projects', methods = ['GET'])
+def get_all_others_projects():
+    userid = request.values.get('userId')
+    user_projects_sql = 'SELECT projectId FROM owners WHERE userId = %s'
+    user_projects = Db.exec_query(user_projects_sql, (userid,))
+
+    all_projects_sql = 'SELECT projectId, name FROM project'
+    all_projects = Db.exec_query(all_projects_sql)
+
+    user_project_ids = [project['projectId'] for project in user_projects]
+    # get all projects that aren't owned by the user and and aren't "1" which is the Unclaimed project
+    not_user_projects = [project for project in all_projects if project['projectId'] not in user_project_ids and project['projectId'] is not 1]
+    
+    return json.dumps(not_user_projects, default = jsonconverter), 200
 
 def get_code_filename(uploadid):
     return str(uploadid) + '.hex'
@@ -482,7 +571,7 @@ def construct_profile_json(google_id):
         # construct sensor dict
         sensor_dict = {
             'id': sensor['sensorId'],
-            'displayName': sensor['displayName'],
+            'displayName': sensor['displayName'] if sensor['displayName'] is not None else sensor['name'],
             'units': sensor['units'],
             'desc': sensor['description'],
             'min': sensor['alertMinVal'],
@@ -573,7 +662,7 @@ def build_all_sensors_dict():
         # construct sensor dict
         sensor_dict = {
             'id': sensor['sensorId'],
-            'displayName': sensor['displayName'],
+            'displayName': sensor['displayName'] if sensor['displayName'] is not None else sensor['name'],
             'description': sensor['description']
         }
 
@@ -665,7 +754,7 @@ def validate_admin(id_token):
     return googleid
 
 def send_approval_email(name, email, userid):
-    link = deploy_config['APPROVAL_LINK'].format(
+    link = 'https://eg.bucknell.edu/~energyhill/Flower/web/requests/approveUser.html?userid={}'.format(
         userid
     )
 
