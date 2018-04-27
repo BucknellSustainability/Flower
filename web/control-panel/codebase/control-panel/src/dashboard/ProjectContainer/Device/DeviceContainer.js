@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import './DeviceContainer.css';
 import '../../../fonts.css';
+import Requests from '../../../Requests.js';
 import {UploadCode} from './UploadCode.js';
 import {SensorContainers} from './Sensors/SensorContainers.js';
 import { Card,  Menu, Icon, Button, Row, Col, Modal, Layout} from 'antd';
@@ -12,6 +13,7 @@ export class DeviceContainer extends React.Component {
   constructor(props, context) {
     super(props, context);
     this.handleSelect = this.handleSelect.bind(this);
+    this.deleteDevice = Requests.deleteDevice.bind(this);
   }
 
   handleSelect(e) {
@@ -33,6 +35,7 @@ export class DeviceContainer extends React.Component {
       cancelText: 'No',
       onOk() {
         scope.props.deleteDevice();
+        scope.deleteDevice(device.id)
         console.log('OK');
       },
       onCancel() {

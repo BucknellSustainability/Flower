@@ -14,21 +14,27 @@ export class AddProject extends React.Component {
     this.state = {
       loading: false,
       visible: false,
+      otherProjects: [],
+      activeProjectId: -1
     }
 
     this.createProject = Requests.createProject.bind(this);
     this.linkProject = Requests.linkProject.bind(this);
-
+    this.getAllOtherProjects = Requests.getAllOtherProjects.bind(this);
+    
+    this.handleProjectChange = this.handleProjectChange.bind(this);
+    this.handleJoinProject = this.handleJoinProject.bind(this);
     this.showModal = this.showModal.bind(this);
     this.handleOk = this.handleOk.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
   }
 
+  componentWillMount(){
+    this.getAllOtherProjects()
+  }
+
   showModal() {
-    this.setState({
-      visible: true,
-      projectName: ""
-    });
+    this.setState({ visible: true, projectName: "" });
   }
 
   handleOk() {
@@ -44,6 +50,14 @@ export class AddProject extends React.Component {
 
   handleCreateProject(){
     this.createProject(this.state.projectName);
+  }
+
+  handleJoinProject(){
+    this.linkProject(this.state.activeProjectId);
+  }
+
+  handleProjectChange(value){
+    this.setState({activeProjectId: value})
   }
 
   render() {
@@ -76,7 +90,7 @@ export class AddProject extends React.Component {
                   {...formItemLayout}
                 >
                   <Input placeholder="Enter Name" onChange={this.handleNameChange.bind(this)}/>
-                  <Button type="primary" icon="plus" style={{marginTop:20}} onClick={this.handleCreateProject.bind(this)}>
+                  <Button type="primary" icon="plus" style={{marginTop:20}} onClick={this.handleCreateProject}>
                     Create Project
                   </Button>
                 </FormItem>
@@ -89,11 +103,13 @@ export class AddProject extends React.Component {
                   label="Join an Existing Project"
                   {...formItemLayout}
                 >
-                  <Select defaultValue="greenhouse" style={{ width: 200 }}>
-                    <Option value="greenhouse">Living Greenhouse</Option>
-                    <Option value="test">Test Project</Option>
+                  <Select defaultValue={this.state.activeProjectId} style={{ width: 200 }} onChange={this.handleProjectChange}>
+                  {this.state.otherProjects.map((project, i) =>
+                    <Option value={project.projectId}>{project.name}</Option>
+                    )
+                  }
                   </Select>
-                  <Button type="primary" icon="link" style={{marginTop:20}}>Join Project</Button>
+                  <Button type="primary" icon="link" style={{marginTop:20}} onClick={this.handleJoinProject}>Join Project</Button>
                 </FormItem>
               </Form>
           </Col>

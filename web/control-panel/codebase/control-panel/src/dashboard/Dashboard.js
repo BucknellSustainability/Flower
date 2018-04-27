@@ -81,7 +81,7 @@ export class Dashboard extends React.Component {
   	const projectNav = <ProjectNav user={this.state.user} handler={this.projectNavHandler} deleteProj={this.deleteProject}/>;
 
     return (
-    <Layout>
+    <Layout style={{height: "100%"}}>
       <Header>       
         <Row type="flex" justify="space-around" align="center">        
           <Col span={1}>

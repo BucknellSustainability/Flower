@@ -13,9 +13,7 @@ class Requests {
 	User to pre-load user profile w/ all projects, devices, and sensors
   */
   loadProfile(googleUser) {
-    console.log(googleUser)
     id_token = googleUser.Zi.id_token;
-
 
     var form_data = new FormData();
     form_data.append('idtoken', id_token);
@@ -30,18 +28,21 @@ class Requests {
     xhr.onload = function() {
       console.log(xhr.response)
       if (xhr.response == null) {
-        sessionStorage.setItem("signInState", 2)
-        scope.setState({researcher: null, signInState: 2, profileEmail: googleUser.w3.U3, token: id_token})
+        localStorage.setItem('isAuth', false)
+        scope.setState({isAuthenticated: false, researcher: null, gUser: googleUser})
       } else {
-        sessionStorage.setItem("signInState", 1)
         user_id = xhr.response.id
-        scope.setState({researcher: xhr.response, signInState: 1, profileEmail: googleUser.w3.U3, token: id_token})
+        localStorage.setItem('isAuth', true);
+        localStorage.setItem('gUser', JSON.stringify(googleUser));
+        localStorage.setItem('researcher', JSON.stringify(xhr.response))
+
+        scope.setState({isAuthenticated: true, researcher: xhr.response, gUser: googleUser})
       }
     };
     xhr.send(form_data);
   }
 
-  requestAcess(id_token, signOut) {
+  requestAcess() {
     var form_data = new FormData();
     form_data.append('idtoken', id_token);
 
@@ -50,6 +51,23 @@ class Requests {
     xhr.withCredentials = true;
     xhr.onload = undefined;
     xhr.send(form_data);
+  }
+
+  getAllOtherProjects(){
+      var xhr = new XMLHttpRequest();
+      const url = flaskURL + 'get-all-others-projects';
+      xhr.open('GET', url);
+      xhr.withCredentials = true;
+      xhr.responseType = 'json';
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+      const scope = this;
+      xhr.onload = function() {
+        if(xhr.response.length > 0){
+          scope.setState({otherProjects: xhr.response, activeProjectId: xhr.response[0].projectId})
+        }
+      };
+      xhr.send();
   }
 
   /*
@@ -171,8 +189,8 @@ class Requests {
     var form_data = new FormData();
     form_data.append('idtoken', id_token);
     form_data.append('table', 'sensor')
-    form_data.append('fields', 'name, units, alertMinVal, alertMaxVal')
-    form_data.append('values', this.state.name + ', ' + this.state.units + ', ' + this.state.limLow + ', ' + this.state.limHigh)
+    form_data.append('fields', 'displayName, units, alertsEnabled, alertMinVal, alertMaxVal, minMsg, maxMsg')
+    form_data.append('values', this.state.name + ', ' + this.state.units + ', ' + this.state.alerts + ', ' + this.state.min + ', ' + this.state.max + ', ' + this.state.min_msg + ', ' + this.state.max_msg)
     form_data.append('condition_fields', 'sensorId')
     form_data.append('condition_values', this.state.id)
 
@@ -181,7 +199,7 @@ class Requests {
     xhr.withCredentials = true;
 
     xhr.onload = function() {
-        //window.location.reload();
+        window.location.reload();
     };
     xhr.send(form_data);
   }
@@ -212,6 +230,8 @@ class Requests {
 
 
   createProject(projectName){
+    console.log(projectName)
+    console.log(id_token)
     var form_data = new FormData();
     form_data.append('idtoken', id_token);
     form_data.append('table', 'project')
@@ -221,7 +241,6 @@ class Requests {
     var xhr = new XMLHttpRequest();
     xhr.open('POST', flaskURL + 'insert');
     xhr.withCredentials = true;
-    xhr.responseType = 'json';
 
     let scope = this;
     xhr.onload = function() {
@@ -233,11 +252,44 @@ class Requests {
       xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
 
       xhr.onload = function() {
+        console.log(xhr.response)
         scope.linkProject(xhr.response[xhr.response.length-1].projectId)
       };
       xhr.send();
     };
     xhr.send(form_data);
+  }
+
+  deleteDevice(deviceId){
+    var form_data = new FormData();
+    form_data.append('idtoken', id_token);
+    form_data.append('table', 'device')
+    form_data.append('condition_fields', 'deviceId')
+    form_data.append('condition_values', deviceId);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', flaskURL + 'delete');
+    xhr.withCredentials = true;
+
+    xhr.onload = function() {
+    };
+    xhr.send(form_data);     
+  }
+
+  deleteProject(projectId){
+    var form_data = new FormData();
+    form_data.append('idtoken', id_token);
+    form_data.append('table', 'owners')
+    form_data.append('condition_fields', 'userId, projectId')
+    form_data.append('condition_values', user_id + ", " + projectId);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', flaskURL + 'delete');
+    xhr.withCredentials = true;
+
+    xhr.onload = function() {
+    };
+    xhr.send(form_data);    
   }
 
   linkProject(projectId){
