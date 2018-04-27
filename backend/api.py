@@ -275,7 +275,8 @@ def log_success():
 def log_error():
     deviceid = request.values.get('deviceid')
     uploadid = request.values.get('uploadid')
-    error_msg = request.values.get('error_msg')
+    request.get_data()
+    error_msg = request.data.decode('ascii')
     handle_codeupload_response(deviceid, error_msg)
     return '', 200
 
