@@ -63,7 +63,8 @@ def before_request():
 @rest_api.after_request
 def after_request(response):
     try:
-        logger.info('Result for request: ' + str(response.get_data()))
+        #logger.info(response.get_data())
+        pass
     except Exception as e:
         logger.exception('Couldn\'t log response', exc_info=True)
     return response    
@@ -284,13 +285,20 @@ def log_error():
 def check_error():
     deviceid = request.values.get('deviceid')
 
-    check_status_sql = 'SELECT handled FROM codeupload WHERE deviceId = %s'
+    # TODO: solve this race condition
+    # there is a race condition here if another code upload happens between the first one being started by the Pi, and the Pi reporting log error/success
+    # this will cause the Pi to upload the second oldest (or older) code and never upload the actual newest
+    check_status_sql = 'SELECT handled FROM codeupload WHERE deviceId = %s ORDER BY uploadId DESC LIMIT 1'
     status = Db.exec_query(check_status_sql, (deviceid,))
+
+    logger.debug(status)
 
     # if row was deleted or handled is 1, then
     if status == [] or status[0]['handled'] == True:
-        error_sql = 'SELECT errorId, path FROM errors WHERE errorId = (SELECT MAX(errorId) FROM errors WHERE  deviceId = %s)'
+        error_sql = 'SELECT errorId, path FROM errors WHERE deviceId = %s ORDER BY errorId DESC LIMIT 1'
         error = Db.exec_query(error_sql, (deviceid,))
+
+        logger.info(error)
 
         # TODO: validate that this is correct way to show Null string
         if error[0]['path'] == None:
@@ -300,6 +308,7 @@ def check_error():
             # error!
             errorid = error[0]['errorId']
             error_dir_path = os.path.join(app.root_path, ERROR_FOLDER)
+            logger.info(error_dir_path)
             return send_from_directory(directory=error_dir_path, filename=get_error_filename(errorid)), 500 
     else:
         return '', 503
@@ -437,6 +446,8 @@ def allowed_file(filename):
         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def handle_codeupload_response(deviceid, error_msg):
+    logger.debug(error_msg)
+
     handling_sql = 'INSERT INTO errors (deviceId, timestamp) VALUES (%s, %s)'
     timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d %H:%M:%S')
     Db.exec_query(handling_sql, (deviceid, timestamp))
@@ -448,11 +459,12 @@ def handle_codeupload_response(deviceid, error_msg):
         get_errorid_sql = 'SELECT errorId FROM errors WHERE errorId = (SELECT MAX(errorId) FROM errors WHERE deviceId = %s)'
         errorid = Db.exec_query(get_errorid_sql, (deviceid,))[0]['errorId']
 
-        if not os.path.exists(ERROR_FOLDER):
-            os.makedirs(ERROR_FOLDER)
+        error_dir_path = os.path.join(app.root_path, ERROR_FOLDER)
+        if not os.path.exists(error_dir_path):
+            os.makedirs(error_dir_path)
 
         filename = get_error_filename(errorid)
-        path = os.path.join(ERROR_FOLDER, filename)
+        path = os.path.join(error_dir_path, filename)
 
         #save error in file
         text_file = open(path, "w")

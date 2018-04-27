@@ -350,13 +350,17 @@ class Requests {
       if(status === 503){
         scope.checkUploadStatus()
       }
-      else if(200){
+      else if(status === 200){
         scope.setState({uploading: false})
         scope.uploadSuccess();
       }
-      else{
+      else if(status === 500){
         scope.setState({uploading: false})
         scope.uploadError();
+      } else {
+        // TODO: have some other option if none of the three are returned (something seriously bad went wrong)
+        scope.setState({uploading:false})
+        scope.uploadError(xhr.responseText);
       }
     };
     xhr.send(form_data);
