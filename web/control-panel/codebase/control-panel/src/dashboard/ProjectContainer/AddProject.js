@@ -15,7 +15,7 @@ export class AddProject extends React.Component {
       loading: false,
       visible: false,
       otherProjects: [],
-      activeProjectId: -1
+      activeProjectId: ""
     }
 
     this.createProject = Requests.createProject.bind(this);
@@ -24,6 +24,7 @@ export class AddProject extends React.Component {
     
     this.handleProjectChange = this.handleProjectChange.bind(this);
     this.handleJoinProject = this.handleJoinProject.bind(this);
+    this.handleCreateProject = this.handleCreateProject.bind(this);
     this.showModal = this.showModal.bind(this);
     this.handleOk = this.handleOk.bind(this);
     this.handleCancel = this.handleCancel.bind(this);

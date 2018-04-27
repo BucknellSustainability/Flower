@@ -55,7 +55,7 @@ class Requests {
 
   getAllOtherProjects(){
       var xhr = new XMLHttpRequest();
-      const url = flaskURL + 'get-all-others-projects';
+      const url = flaskURL + 'get-all-others-projects?userId=' + user_id;
       xhr.open('GET', url);
       xhr.withCredentials = true;
       xhr.responseType = 'json';
