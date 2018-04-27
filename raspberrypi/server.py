@@ -6,7 +6,7 @@ import os
 
 def main():
 	print("Starting pi server...")
-        print("Current directory: " + str(os.getcwd()))
+	print("Current directory: " + str(os.getcwd()))
 	
 	master_queue = Queue()
 	
