@@ -6,6 +6,7 @@ import json
 import time
 import datetime
 import os
+import subprocess
 
 # pip install --user --upgrade google-auth
 from google.oauth2 import id_token as id_token_lib
@@ -29,6 +30,7 @@ from .db import *
 from .logger import *
 Logger.init_logger('api')
 logger = Logger.logger
+
 Db.set_logger(logger)
 
 with open("deployment.json", 'r') as f:
@@ -40,7 +42,16 @@ UPLOAD_FOLDER = 'uploads/'
 # DO NOT ALLOW PHP FILES BECAUSE THEN USERS CAN EXECUTE ARBITRARY CODE
 ALLOWED_EXTENSIONS = set(['hex'])
 
+# These constants are used by csv_export_status().
+CHILD_STILL_RUNNING = 0
+CHILD_FINISHED = 1
+CHILD_CRASHED = 2
+
 rest_api = Blueprint('rest_api', __name__)
+
+# This global variable maps filenames to handles of running csv_gen.py instances.
+# See start_csv_export() for more info.
+children_handles = {}
 
 def makeApp():
     new_app = Flask(__name__)
@@ -804,9 +815,101 @@ def jsonconverter(o):
     if isinstance(o, datetime.datetime):
         return o.__str__()
 
+# sensor_ids is a list of sensor id numbers to export.
+# startDate and endDate are python datetimes, or None
+# if not specified.
+# user is the name / unique id / whatever of the person asking for
+# a csv. Only one csv per person at any given time.
+#
+# If an endDate is supplied, there MUST be a start date as well.
+def start_csv_export(user, sensor_ids, startDate, endDate): 
+    global children_handles
+
+    # Format the sensor ids.
+    pretty = ""
+    for sensor in sensor_ids[:-1]:
+        pretty = pretty + str(sensor) + ", "
+    pretty = pretty + str(sensor_ids[-1])
+
+    # These are the args for Popen.
+    args = ["python3", "csv_gen.py", pretty]
+
+    # Convert dates, if necessary.
+    if startDate:
+        args.append(datetimeToUnix(startDate))
+
+        if endDate:
+            args.append(datetimeToUnix(endDate))
+    
+    # Get the filename.
+    filename = gen_filename_for_csv(user)
+
+    # Check if we're already generating an output file for this user.
+    if filename in children_handles:
+        child = children_handles[filename]
+
+        # Is it still running?
+        if child.poll():
+            # Kill it.
+            child.terminate()
+
+    # Run the csv script.
+    child = subprocess.Popen(args)
+
+    if not child:
+        # We've failed horribly.
+        raise Exception("Failed to create a child process")
+    
+    # Save the child's handle for later.
+    children_handles[filename] = child
+
+# Checks if a child is done yet.
+# Returns:
+#   - 0 if the child is still running
+#   - 1 if the child has finished successfully
+#   - 2 if the child has failed
+def csv_export_status(user):
+    global children_handles
+
+    # Get the filename.
+    filename = gen_filename_for_csv(user)
+
+    # Check if we still have a handle to the process.
+    if not (filename in children_handles):
+        # Check if there's an output file.
+        if os.exists(filename):
+            return CHILD_FINISHED
+        else:
+            return CHILD_CRASHED
+
+    # Check if the child is done.
+    if child.poll():
+        # Clean up children_handles
+        del children_handles[filename]
+
+        # We COULD check to see if the child exited successfully.
+        # However, partial output is better than no output.
+        if os.exists(filename):
+            return CHILD_FINISHED
+        else:
+            return CHILD_CRASHED
+    else:
+        return CHILD_STILL_RUNNING
+
+# Generates a unique csv filename for a given user.
+def gen_filename_for_csv(user):
+    return "output_for_" + user + ".csv"
+
+# Converts a python datetime to a unix seconds-since-epoch for this timezone.
+def datetimeToUnix(time):
+    return int(round(time.mktime(startDate.timetuple())))
+
+class NoCsvRequested(Exception):
+    pass
 
 class UserDeniedException(Exception):
     pass
 
 class HttpRequestParamError(Exception):
     pass
+
