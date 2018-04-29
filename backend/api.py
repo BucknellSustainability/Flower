@@ -854,7 +854,7 @@ def start_csv_export(user, sensor_ids, startDate, endDate):
             child.terminate()
 
     # Run the csv script.
-    child = subprocess.Popen(args)
+    child = subprocess.Popen(args, stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
 
     if not child:
         # We've failed horribly.
@@ -898,7 +898,7 @@ def csv_export_status(user):
 
 # Generates a unique csv filename for a given user.
 def gen_filename_for_csv(user):
-    return "output_for_" + user + ".csv"
+    return "output_for_" + user + ".zip"
 
 # Converts a python datetime to a unix seconds-since-epoch for this timezone.
 def datetimeToUnix(time):

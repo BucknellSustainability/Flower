@@ -4,3 +4,4 @@ uploads/*
 alerts.log
 *.csv
 *.csv.tmp
+*.zip

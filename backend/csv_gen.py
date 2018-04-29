@@ -18,6 +18,7 @@ import csv
 import sys
 import json
 import os
+import subprocess
 
 # Ensure that we're running python3
 if sys.version_info[0] < 3:
@@ -25,7 +26,7 @@ if sys.version_info[0] < 3:
 
 # This script will expect the following params:
 # arg1: the sensor ID, OR a string of comma-separated sensor ID numbers.
-# arg2: the filename for output.
+# arg2: the filename for output (excluding file extensions).
 # arg3: the start date (optional) in unixtime, in EST timezone.
 # arg4: the end date (optional) in unixtime, in EST timezone.
 
@@ -60,15 +61,14 @@ def main():
     }
 
     # Delete any old, outdated output files.
-    print("Checking for existing " + filename)
-    if os.path.exists(filename):
-        print("removing: " + filename)
-        os.remove(filename)
+    tryDelete(filename + ".csv")
+    tryDelete(filename + ".zip")
+    tryDelete(filename + ".csv.tmp")
 
     conn = connectToDB()
     try:
         with conn.cursor(pymysql.cursors.DictCursor) as cursor:
-            with open(filename + ".tmp", 'w') as out_file:
+            with open(filename + ".csv.tmp", 'w') as out_file:
                 out_stream = csv.writer(out_file)
                 
                 # Write the header.
@@ -79,11 +79,22 @@ def main():
 
                 # Get the data.
                 getData(out_file, cursor, out_stream, config)
+
+                out_file.flush()
     finally:
         if conn:
             conn.close()
-        os.rename(filename + ".tmp", filename)
-    
+        
+        os.rename(filename + ".csv.tmp", filename + ".csv")
+        
+        # Compress the data.
+        zipCsv(filename)
+  
+def tryDelete(filename):
+    print("Checking for existing " + filename)
+    if os.path.exists(filename):
+        print("removing: " + filename)
+        os.remove(filename)
 
 def formatIds(idList):
     ret = ""
@@ -156,7 +167,14 @@ def getData(file_obj, cursor, out, config):
 
         # Flush to disk.
         file_obj.flush()
-    
+
+# The csv file will be huge, and a lot of it is just repeated strings. Zipping it
+# is going to save a TON of space (%90 or more); we'll only be storing the actual datapoints.
+def zipCsv(filename):
+    print("Zipping...")
+    child = subprocess.Popen(["zip", "-m", "-9", filename + ".zip", filename + ".csv"], stdout = subprocess.DEVNULL, stderr = subprocess.DEVNULL)
+    child.wait()
+
 def connectToDB():
     try:
         with open('../config.json', 'r') as f:
