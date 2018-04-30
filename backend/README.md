@@ -165,3 +165,30 @@ Generally, hardcoding the URL shouldn't be in code, but instead you should use t
 - parameters:
     - `userId`: the userid of the user whose projects should not be included
 - returns: list of objects that contain projectId and name that aren't owned by user
+
+
+## Start the process of csv download
+- `{endpoint}`: `trigger-csv-download`
+- allowed http requests: `GET`
+- parameters:
+    - `userId`: the userid of the user whose data you are collecting
+    - `sensorIds`: a csv of the sensors that you want collected
+    - `startDate`: the start datetime of the data you want to collect, must be in format `%a %b %d %H:%M:%S %Y`
+    - `endDate`: the end datetime of the data you want to collect, must be in format `%a %b %d %H:%M:%S %Y`
+- returns: empty string and 200 code if completed. You must still use the `/check-csv-status` and `/download-csv` endpoints to fully download csv
+
+
+## Check the status of the csv download
+- `{endpoint}`: `check-csv-status`
+- allowed http requests: `GET`
+- parameters:
+    - `userId`: the userid of the user whose data you are collecting
+- returns: empty string with one of three status codes. `200` if the file is finished downloading on the server, `500` if there was an error and the download crashed, `503` if the file is downloading but not complete yet.  Once `200` is returned, call `/download-csv`  
+
+
+## Download the csv once finished
+- `{endpoint}`: `download-csv`
+- allowed http requests: `GET`
+- parameters:
+    - `userId`: the userid of the user whose data you are collecting
+- returns: the compressed csv file that you have worked so hard for

@@ -39,6 +39,7 @@ with open("deployment.json", 'r') as f:
 CLIENT_ID = deploy_config['GOOGLE_CLIENT_ID']
 ERROR_FOLDER = 'errors/'
 UPLOAD_FOLDER = 'uploads/'
+CSV_FOLDER = 'csv/'
 # DO NOT ALLOW PHP FILES BECAUSE THEN USERS CAN EXECUTE ARBITRARY CODE
 ALLOWED_EXTENSIONS = set(['hex'])
 
@@ -441,9 +442,10 @@ def trigger_csv_download():
     user_id = request.values.get('userId')
     sensor_ids = split_csv(request.values.get('sensorIds'))
 
-    # TODO: convert these to Python date objects or whatever the func takes
-    start_date = request.values.get('startDate')
-    end_date = request.values.get('endDate')
+    start_date_raw = request.values.get('startDate')
+    end_date_raw = request.values.get('endDate')
+    start_date = datetime.datetime.strptime(start_date_raw, "%a %b %d %H:%M:%S %Y") if start_date_raw != 'None' else None
+    end_date = datetime.datetime.strptime(end_date_raw, "%a %b %d %H:%M:%S %Y") if start_date_raw != 'None' else None
     start_csv_export(user_id, sensor_ids, start_date, end_date)
     return '', 200
 
@@ -455,7 +457,6 @@ def check_csv_status():
 @rest_api.route('/download-csv', methods = ['GET'])
 def download_csv():
     user_id = request.values.get('userId')
-    # TODO: fill in legitimate directory
     return send_from_directory(directory='', filename=get_csv_filename(user_id))
 
 def get_code_filename(uploadid):
@@ -852,9 +853,12 @@ def start_csv_export(user, sensor_ids, startDate, endDate):
     for sensor in sensor_ids[:-1]:
         pretty = pretty + str(sensor) + ", "
     pretty = pretty + str(sensor_ids[-1])
+    
+    # Get the filename.
+    filename = get_csv_filename(user)
 
     # These are the args for Popen.
-    args = ["python3", "csv_gen.py", pretty]
+    args = ["python3", "csv_gen.py", pretty, filename.split('.')[0]]
 
     # Convert dates, if necessary.
     if startDate:
@@ -863,8 +867,6 @@ def start_csv_export(user, sensor_ids, startDate, endDate):
         if endDate:
             args.append(datetimeToUnix(endDate))
     
-    # Get the filename.
-    filename = gen_filename_for_csv(user)
 
     # Check if we're already generating an output file for this user.
     if filename in children_handles:
@@ -894,15 +896,18 @@ def csv_export_status(user):
     global children_handles
 
     # Get the filename.
-    filename = gen_filename_for_csv(user)
+    filename = get_csv_filename(user)
+    logger.info(filename)
 
     # Check if we still have a handle to the process.
     if not (filename in children_handles):
         # Check if there's an output file.
-        if os.exists(filename):
+        if os.path.isfile(filename):
             return CHILD_FINISHED
         else:
             return CHILD_CRASHED
+
+    child = children_handles[filename]
 
     # Check if the child is done.
     if child.poll():
@@ -911,7 +916,7 @@ def csv_export_status(user):
 
         # We COULD check to see if the child exited successfully.
         # However, partial output is better than no output.
-        if os.exists(filename):
+        if os.path.isfile(filename):
             return CHILD_FINISHED
         else:
             return CHILD_CRASHED
@@ -920,7 +925,9 @@ def csv_export_status(user):
 
 # Generates a unique csv filename for a given user.
 def get_csv_filename(user):
-    return user + ".zip"
+    # csv_dir_path = os.path.join(app.root_path, CSV_FOLDER)
+    # return str(csv_dir_path) + user + ".zip"
+    return user + '.zip'
 
 # Converts a python datetime to a unix seconds-since-epoch for this timezone.
 def datetimeToUnix(time):
