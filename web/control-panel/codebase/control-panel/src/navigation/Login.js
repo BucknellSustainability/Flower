@@ -1,4 +1,6 @@
 import React, { Component } from 'react';
+import logo from '../images/logo.svg';
+import '../App.css'
 
 
 const styles = {
@@ -48,10 +50,10 @@ class LoginPage extends React.Component {
     const { from } = this.props.location.state || { from: { pathname: '/' } };
 
     return (
-        <div style={{marginTop: '150px'}}>
-            <h1 style={{marginTop: '4px', marginBottom: '0px'}}>Bucknell Books</h1>
-            <div className="my-signin2-body">
-              <div id="my-signin2" style={{marginBottom: '8px'}}/>
+        <div>
+            <div style={{position:"absolute", top:"20%", right:"40%"}} className="my-signin2-body">
+              <h1 className="ubuntu bold">Energy Hill Dashboard</h1>
+              <div id="my-signin2" style={{position:"absolute", right:"18%"}}/>
             </div>
         </div>
     );

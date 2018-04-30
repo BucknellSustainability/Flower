@@ -31,29 +31,34 @@ export class ProjectContainer extends React.Component {
 
     let currProject = this.props.user.projects[this.props.activeProject];
     this.updateProject = Requests.updateProject.bind(this);
+    this.getSites = Requests.getAllSites.bind(this);
 
     if(currProject){
     this.state = {  name: currProject.name,
                     desc: currProject.desc,
                     scope: currProject.is_private,
                     url: currProject.url,
-                    projectMode: "control"
+                    projectMode: "control", 
+                    siteId: currProject.siteId,
+                    sites: []
                 }
               }
   }
 
   componentDidUpdate(prevProps, prevState){
     let currProject = this.props.user.projects[this.props.activeProject];
+    console.log(currProject)
     if((prevProps.activeProject !== this.props.activeProject) && currProject){
       this.setState({ name: currProject.name,
                       desc: currProject.desc,
                       scope: currProject.is_private,
                       url: currProject.url,
-                      projectMode: "control"})
+                      siteId: currProject.siteId})
     }
   }
 
   componentWillMount(){
+    this.getSites()
   }
 
   updateName(e){
@@ -76,6 +81,10 @@ export class ProjectContainer extends React.Component {
     this.setState({url: e.target.value})
   }
 
+  siteChange(val){
+    this.setState({siteId: val})
+  }
+
   updateProjectClick(){
     let projectId = this.props.user.projects[this.props.activeProject].id;
     this.updateProject(projectId);
@@ -88,7 +97,6 @@ export class ProjectContainer extends React.Component {
   getContent(currProject){
     if(this.state.projectMode === "control"){
       return (
-
                   <div style={{marginTop:25}}>
                     <Row type="flex" justify="space-around" align="top">
                         <Col span={11} style={{marginBottom:0}}>
@@ -97,7 +105,7 @@ export class ProjectContainer extends React.Component {
                                           <Icon type="question-circle-o" />
                                         </Tooltip>
                                       </span>)}>
-                              <Input onChange={this.updateName.bind(this)} placeholder={currProject.name} />
+                              <Input onChange={this.updateName.bind(this)} value={this.state.name}/>
                           </FormItem>
 
                           <FormItem {...formItemLayout} label={(<span>Description&nbsp;
@@ -105,7 +113,7 @@ export class ProjectContainer extends React.Component {
                                           <Icon type="question-circle-o" />
                                         </Tooltip>
                                       </span>)}>
-                              <TextArea rows={4} onChange={this.updateDesc.bind(this)} placeholder={currProject.desc}/>
+                              <TextArea rows={4} onChange={this.updateDesc.bind(this)} value={this.state.desc}/>
                           </FormItem>
                         </Col>
 
@@ -115,7 +123,7 @@ export class ProjectContainer extends React.Component {
                                           <Icon type="question-circle-o" />
                                         </Tooltip>
                                       </span>)}>
-                                    <RadioGroup onChange={this.updateScope.bind(this)} defaultValue={currProject.is_private}>
+                                    <RadioGroup onChange={this.updateScope.bind(this)} value={this.state.scope}>
                                       <RadioButton value={0}>Public</RadioButton>
                                       <RadioButton value={1}>Private</RadioButton>
                                     </RadioGroup>
@@ -126,7 +134,7 @@ export class ProjectContainer extends React.Component {
                                           <Icon type="question-circle-o" />
                                         </Tooltip>
                                       </span>)}>
-                              <Input onChange={this.updateUrl.bind(this)} onplaceholder={currProject.url} />
+                              <Input onChange={this.updateUrl.bind(this)} value={this.state.url}/>
                           </FormItem>
 
                           <FormItem {...formItemLayout} label={(<span>Site Selection&nbsp;
@@ -134,10 +142,14 @@ export class ProjectContainer extends React.Component {
                                           <Icon type="question-circle-o" />
                                         </Tooltip>
                                       </span>)}>
-                            <Select style={{width:200, float:"left"}} defaultValue="greenhouse">
-                              <Option value="greenhouse">Greenhouse</Option>
-                              <Option value="array">Solar Arrays</Option>
-                              <Option value="tower">Water Tower</Option>
+                            <Select onChange={this.siteChange.bind(this)} style={{width:200, float:"left"}} value={this.state.siteId}>
+
+
+                              {this.state.sites.map((site, i) =>
+                                  <Option value={site.siteId}>{site.name}</Option>
+                              )
+                            }
+
                             </Select>
                           </FormItem>
                         </Col> 
@@ -168,6 +180,7 @@ export class ProjectContainer extends React.Component {
 
   render() {
     const currProject = this.props.user.projects[this.props.activeProject];
+    console.log(currProject)
     if(currProject !== undefined){
       
       return (

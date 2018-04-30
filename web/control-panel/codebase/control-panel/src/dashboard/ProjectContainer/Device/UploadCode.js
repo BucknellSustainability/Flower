@@ -12,6 +12,7 @@ export class UploadCode extends React.Component {
 
     this.state = {
       uploading: false,
+      errorMsg: "",
       visible: false,
       fileList: []
     }
@@ -61,8 +62,8 @@ export class UploadCode extends React.Component {
     message.info('Code Upload Success!');
   };
 
-  uploadError(){
-    message.info('Code Upload FAILURE!');
+  uploadError(e){
+    message.info('Code Upload FAILURE: ' + e);
   }
 
   render() {
