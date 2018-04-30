@@ -43,9 +43,9 @@ UPLOAD_FOLDER = 'uploads/'
 ALLOWED_EXTENSIONS = set(['hex'])
 
 # These constants are used by csv_export_status().
-CHILD_STILL_RUNNING = 0
-CHILD_FINISHED = 1
-CHILD_CRASHED = 2
+CHILD_STILL_RUNNING = 503
+CHILD_FINISHED = 200
+CHILD_CRASHED = 500
 
 rest_api = Blueprint('rest_api', __name__)
 
@@ -435,6 +435,28 @@ def get_all_others_projects():
     not_user_projects = [project for project in all_projects if project['projectId'] not in user_project_ids and project['projectId'] is not 1]
     
     return json.dumps(not_user_projects, default = jsonconverter), 200
+
+@rest_api.route('/trigger-csv-download', methods = ['GET'])
+def trigger_csv_download():
+    user_id = request.values.get('userId')
+    sensor_ids = split_csv(request.values.get('sensorIds'))
+
+    # TODO: convert these to Python date objects or whatever the func takes
+    start_date = request.values.get('startDate')
+    end_date = request.values.get('endDate')
+    start_csv_export(user_id, sensor_ids, start_date, end_date)
+    return '', 200
+
+@rest_api.route('/check-csv-status', methods = ['GET'])
+def check_csv_status():
+    user_id = request.values.get('userId')
+    return '', csv_export_status(user_id)
+
+@rest_api.route('/download-csv', methods = ['GET'])
+def download_csv():
+    user_id = request.values.get('userId')
+    # TODO: fill in legitimate directory
+    return send_from_directory(directory='', filename=get_csv_filename(user_id))
 
 def get_code_filename(uploadid):
     return str(uploadid) + '.hex'
@@ -897,8 +919,8 @@ def csv_export_status(user):
         return CHILD_STILL_RUNNING
 
 # Generates a unique csv filename for a given user.
-def gen_filename_for_csv(user):
-    return "output_for_" + user + ".zip"
+def get_csv_filename(user):
+    return user + ".zip"
 
 # Converts a python datetime to a unix seconds-since-epoch for this timezone.
 def datetimeToUnix(time):
