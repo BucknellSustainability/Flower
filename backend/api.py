@@ -887,6 +887,8 @@ def start_csv_export(user, sensor_ids, startDate, endDate):
     # Save the child's handle for later.
     children_handles[filename] = child
 
+    logger.log("Child process started for filename: " + filename)
+
 # Checks if a child is done yet.
 # Returns:
 #   - 0 if the child is still running
