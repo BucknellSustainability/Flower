@@ -120,7 +120,7 @@ Generally, hardcoding the URL shouldn't be in code, but instead you should use t
 
 ## Log error message after attempt at code upload
 - `{endpoint}`: `log-error`
-- allowed http requests: `GET`
+- allowed http requests: `POST`
 - parameters:
     - `deviceid`: the deviceid from the DB that the code upload was attempted on
     - `error_msg`: the full error message to be saved and relayed

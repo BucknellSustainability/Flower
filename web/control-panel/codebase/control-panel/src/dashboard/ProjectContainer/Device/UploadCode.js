@@ -62,8 +62,8 @@ export class UploadCode extends React.Component {
     message.info('Code Upload Success!');
   };
 
-  uploadError(e){
-    message.info('Code Upload FAILURE: ' + e);
+  uploadError(errorMsg){
+    message.error('Code Upload Failure: ' + errorMsg);
   }
 
   render() {
