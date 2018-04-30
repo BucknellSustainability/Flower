@@ -2,18 +2,18 @@
 
 
 try:
-    import serial
+	import serial
 except:
-    print("
-    To install pyserial:
-    
-    sudo apt-get install python3-pip
-    sudo pip3 install pyserial
+	print("""
+	To install pyserial:
+	
+	sudo apt-get install python3-pip
+	sudo pip3 install pyserial
 
-    This program will now hang until force-quit, to ensure you see this message.
-    ")
-    while True:
-        pass
+	This program will now hang until force-quit, to ensure you see this message.
+	""")
+	while True:
+		pass
 
 import signal
 import datetime
@@ -158,9 +158,16 @@ def arduino_thread(master_queue, port):
 	assert(isinstance(master_queue, Queue))
 	assert(isinstance(port, UsbPort))
 
+	# We need to discard the first line. HOWEVER, the very first thing we do MUST
+	# be to check if the port is reserved. Only arduino_threads can reserve ports;
+	# if a port is reserved in the middle of a read, then it will raise an exception,
+	# kill this thread, and then arduino_main thread will spin up a new copy.
+	has_read_first_line = False
+
 	global mainThreadAlive
 	global reserved_arduino
 	try:
+	
 		while (mainThreadAlive):
 			# Check if someone is trying to reserve this port.
 			if reserved_arduino:
@@ -172,6 +179,19 @@ def arduino_thread(master_queue, port):
 					# Exit.
 					print("Thread %s: Reserving." % port.getId())
 					return
+
+			# Check if we've gotten rid of the first line of junk.
+			if not has_read_first_line:
+				has_read_first_line = True
+				
+				# Read one line of input, and then discard it. Either it's the start of the program,
+				# and the buffer cuts off the first few chars the arduino sends; OR another thread
+				# before this one threw an exception partway through reading, and the next reading
+				# is junk.
+				try:
+					read_packet(port)
+				except:
+					pass
 
 			# Get sensor data from the arduino.
 			json = read_packet(port)
@@ -258,28 +278,18 @@ def read_line(arduino, hardware_id):
 	global reserved_arduino
 
 	data = ""
-	while data == "" or data == "\n" or data == "\r":
-		data = arduino.read(100)
-		data = data.decode("ascii")
+	while data == "" or data[-1] != "}":
+		char = arduino.read(1)
+		char = char.decode("ascii")
 		if reserved_arduino != None:
 			(name, _) = reserved_arduino
 			if name == hardware_id:
-				raise Exception("Port is reserved; aborting read!")
-	olddata = data
+				raise Exception("Port is reserved for code upload; aborting read.")
+		data += char
 	
+	# Remove the last newline and any space before the data.
+	data = data.strip()
 
-	# Convert the string from binary to utf-8, if necessary.
-	#data = data.decode("ascii")
-
-	assert(isinstance(data, str))
-	
-	# Remove the last newline. (\r\n or just \n)
-	if data[-1] == "\n":
-		data = data[0:-1]
-
-	if data[-1] == "\r":
-		data = data[0:-1]
-	
 	return data
 
 """	# Currently, this doesn't work.

@@ -1,24 +1,24 @@
 
 
 try:
-    import pymysql
+	import pymysql
 except:
-    print("
-    To install pymysql:
-    
-    sudo apt-get install python3-pip
-    sudo pip3 install pymysql
-    
-    This program will now hang until force-quit, to ensure you see this message.
-    ")
-    while True:
-        pass
+	print("""
+	To install pymysql:
+	
+	sudo apt-get install python3-pip
+	sudo pip3 install pymysql
+	
+	This program will now hang until force-quit, to ensure you see this message.
+	""")
+	while True:
+		pass
 
 
 import json
 from arduinoToPi import SensorReading, workers
 import arduinoToPi
-from piToArduino import send_file_to_arduino
+from piToArduino import code_download_main, download_thread_force_terminate
 import queue
 import time
 import datetime
@@ -26,6 +26,7 @@ import math
 import sys
 from threading import Thread
 import subprocess
+import os
 
 # Ensure that we're running python3.
 if sys.version_info[0] < 3:
@@ -49,7 +50,6 @@ code_download_last_checked = None
 
 # State variables for the downloading thread.
 download_thread = None
-download_thread_force_terminate = False
 download_thread_start_time = None
 
 # master_queue is a queue of SensorReading objects.
@@ -105,9 +105,18 @@ def process_reading(connection, reading):
 	# TODO: Check that the project name matches the one in the database.
 
 	# Iterate over every sensor value.
-	# TODO: Exclude the project name field in the json structure.
 	sensor_tuples = []
 	for name, value in json_data.items():
+		# TODO: Use the project name field in the json structure, or remove it from the arduino
+		#       data spec.
+		# The project name field was added to the JSON spec when we were expecting any researcher
+		# to be able to plug & unplug arduinos and reprogram them themselves. It was to guard agaist
+		# the possibility that a project would upload their code to an arduino BEFORE they could CLAIM
+		# the arduino. In the current system, that is impossible.
+		# For now, we just skip over it, if it's present.
+		if name == "project":
+			continue		
+
 		# Find the sensor ID.
 		sensor_id = get_sensor_dbid(connection, device_id, name)
 		sensor_tuples.append((sensor_id, reading.getTime(), value))
@@ -184,7 +193,8 @@ def database_loop(master_queue):
 				check_for_code_download(connection)
 	finally:
 		# Do cleanup if something goes wrong.
-		connection.close()
+		if connection:
+			connection.close()
 
 def do_select_arduino(connection, cursor, id_string):
 	assert(isinstance(id_string, str))
@@ -310,9 +320,18 @@ def connectToDB():
 			config = json.load(f)
 	except ValueError:
 		# Catch and re-raise with a better error message.
-		raise Exception('Error while parsing json file "../config.json"')
+		raise Exception('Error while parsing json file "../config.json" (current dir: ' + str(os.getcwd()) + ")")
+	except:
+		raise Exception('Error while opening json file "../config.json" (current dir: ' + str(os.getcwd()) + ")")
+	
+	try:
+		connection = pymysql.connect(host=config['DB_URL'], user=config['DB_USERNAME'], password=config['DB_PASSWORD'], db=config['DB_NAME'])
+	except:
+		raise Exception("Error while connecting to the database.")
+	
+	if connection == None:
+		raise Exception("Error while connecting to the database.")
 
-	connection = pymysql.connect(host=config['DB_URL'], user=config['DB_USERNAME'], password=config['DB_PASSWORD'], db=config['DB_NAME'])
 	return connection
 
 def check_for_code_download(connection):
@@ -334,7 +353,7 @@ def check_for_code_download(connection):
 		# Check if it has taken too long.
 		elif datetime.datetime.now() - download_thread_start_time > code_download_timeout:
 			# Have we already tried to kill the thread?
-			if download_thread_force_terminate:
+			if piToArduino.download_thread_force_terminate:
 				# Give up.
 				print("Download thread unresponsive. Ignoring...")
 				download_thread = None
@@ -382,7 +401,7 @@ def check_for_code_download(connection):
 		rows = cursor.fetchall()
 		if rows and len(rows) >= 1:
 			# Grab the first row.
-	   		row = rows[0]
+			row = rows[0]
 		else:
 			# Nothing to download.
 			print("No entries in the codeupload table.")
@@ -399,63 +418,16 @@ def check_for_code_download(connection):
 	upload_id = row["uploadId"]
 
 	# Spawn a new thread to do the downloading.
-	download_thread = Thread(target=code_download_main, args=(device_id, hardware_id, upload_id))
+	download_thread = Thread(target=code_download_main, args=(device_id, hardware_id, upload_id,
+				set_reserved_arduino, get_reserved_arduino))
 	download_thread_start_time = datetime.datetime.now()
 	download_thread.start()
 
+# These helper functions are used by piToArduino.py to get around circular imports of global
+# variables. :(
+def get_reserved_arduino():
+	return arduinoToPi.reserved_arduino
 
-def code_download_main(device_id, hardware_id, upload_id):
-	assert(isinstance(device_id, int))
-	assert(isinstance(hardware_id, str))
-	assert(isinstance(upload_id, int))
+def set_reserved_arduino(value):
+	arduinoToPi.reserved_arduino = value
 
-	global download_thread_force_terminate
-
-	# Start the process of reserving the arduino.
-	arduinoToPi.reserved_arduino = (hardware_id, None)
-
-	# Start downloading the code file.
-	print("Starting download for device id: " + str(device_id) + " (" + hardware_id + ")")
-	
-	path_to_hex = "code_download_" + str(upload_id) + ".hex"
-
-	curl = subprocess.Popen(["curl", "http://eg.bucknell.edu/energyhill/download-code?uploadid=" + str(upload_id),
-			"-o", path_to_hex])
-	curl.wait()	# TODO: Wait with a timeout, and monitor download_thread_force_terminate.
-
-	print("Download for device id " + str(device_id) + " complete. Reserving port...")
-
-	# Spin-loop until the arduino is reserved.
-	while not download_thread_force_terminate:
-		print("Reservation state: " + str(arduinoToPi.reserved_arduino))
-		(_, usb_port) = arduinoToPi.reserved_arduino
-		if usb_port:
-			break
-		time.sleep(1)
-	
-	if download_thread_force_terminate:
-		arduinoToPi.reservedArduino = None
-		return
-
-	print("Port reserved for device id " + str(device_id) + ".")
-
-	# Send the file to the arduino.
-	(_, usb_port) = arduinoToPi.reserved_arduino
-	try:
-		send_file_to_arduino(path_to_hex, usb_port.getPath())
-	except e:
-		# TODO: Send error info.
-		raise Exception("Error while sending file to arduino")
-	finally:
-		# TODO: Mark the code upload entry complete in the database.
-		# TODO: Delete the file that was downloaded
-		arduinoToPi.reserved_arduino = None
-
-                # Delete the file that was downloaded.
-                os.remove(path_to_hex)
-	
-	# Tell the DB that we're done.
-	curl = subprocess.Popen(["curl", "http://eg.bucknell.edu/energyhill/log-success?uploadid=" + str(upload_id)
-		+ "&deviceid=" + str(device_id)])
-	curl.wait() # TODO: Wait with a timeout, and monitor download_thread_force_terminate.
-	print("Code upload complete.")

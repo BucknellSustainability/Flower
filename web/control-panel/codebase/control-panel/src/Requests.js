@@ -26,23 +26,21 @@ class Requests {
 
     const scope = this;
     xhr.onload = function() {
-      console.log(xhr.response)
+      localStorage.setItem('gUser', JSON.stringify(googleUser));
       if (xhr.response == null) {
         localStorage.setItem('isAuth', false)
         scope.setState({isAuthenticated: false, researcher: null, gUser: googleUser})
-      } else {
+      } 
+      else {
         user_id = xhr.response.id
         localStorage.setItem('isAuth', true);
-        localStorage.setItem('gUser', JSON.stringify(googleUser));
-        localStorage.setItem('researcher', JSON.stringify(xhr.response))
-
         scope.setState({isAuthenticated: true, researcher: xhr.response, gUser: googleUser})
       }
     };
     xhr.send(form_data);
   }
 
-  requestAcess() {
+  requestAccess() {
     var form_data = new FormData();
     form_data.append('idtoken', id_token);
 
@@ -108,6 +106,28 @@ class Requests {
       };
       xhr.send();
   }
+
+
+  /*
+    Find all devices not assigned to a project.
+  */
+  getAllSites(){
+      var xhr = new XMLHttpRequest();
+      var url = flaskURL + 'read?table=site&fields=*&condition_fields=null&condition_values=null';
+
+      xhr.open('GET', url);
+      xhr.withCredentials = true;
+      xhr.responseType = 'json';
+      xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+
+      const scope = this;
+      xhr.onload = function() {
+        scope.setState({sites: xhr.response})
+      };
+      xhr.send();
+  }
+
+
 
   getAlerts(){
     var xhr = new XMLHttpRequest();
@@ -211,8 +231,8 @@ class Requests {
 
     form_data.append('idtoken', id_token);
     form_data.append('table', 'project');
-    form_data.append('fields', 'name, description, isPrivate, url');
-    form_data.append('values', this.state.name + ', ' + this.state.desc + ', ' + this.state.scope + ', ' + this.state.url);
+    form_data.append('fields', 'siteId, name, description, isPrivate, url');
+    form_data.append('values', this.state.siteId + ', ' + this.state.name + ', ' + this.state.desc + ', ' + this.state.scope + ', ' + this.state.url);
     form_data.append('condition_fields', 'projectId')
     form_data.append('condition_values', projectId);
 
@@ -292,6 +312,43 @@ class Requests {
     xhr.send(form_data);    
   }
 
+  deleteUser(userEmail){
+    var form_data = new FormData();
+    form_data.append('idtoken', id_token);
+    form_data.append('table', 'user')
+    form_data.append('condition_fields', 'email')
+    form_data.append('condition_values', userEmail);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', flaskURL + 'delete');
+    xhr.withCredentials = true;
+
+    xhr.onload = function() {
+    };
+    xhr.send(form_data); 
+  }
+
+  updateUserAdmin(userEmail){
+    var form_data = new FormData();
+
+    form_data.append('idtoken', id_token);
+    form_data.append('table', 'project');
+    form_data.append('fields', 'isAdmin');
+    form_data.append('values', 1);
+    form_data.append('condition_fields', 'email')
+    form_data.append('condition_values', userEmail);
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', flaskURL + 'update');
+    xhr.withCredentials = true;
+
+    let scope = this;
+    xhr.onload = function() {
+    };
+    xhr.send(form_data);
+  }
+
+
   linkProject(projectId){
     var form_data = new FormData();
     form_data.append('idtoken', id_token);
@@ -346,6 +403,7 @@ class Requests {
     const scope = this;
     xhr.onload = function() {
       console.log("CHECKING STATUS OF UPLOAD")
+      console.log(xhr.response)
       let status = xhr.status;
       if(status === 503){
         scope.checkUploadStatus()

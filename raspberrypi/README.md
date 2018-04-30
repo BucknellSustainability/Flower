@@ -82,7 +82,7 @@ To set the timezone to EST:
 To setup a cron job to restart the server every reboot:
 1) `crontab -e`
 	Note: If it asks you for an editor, choose vim or nano.
-2) Add the line `@reboot cd /home/pi/Flower/raspberrypi && python3 /home/pi/Flower/raspberrypi/server.py`
+2) Add the line `@reboot cd ~/Flower/raspberrypi && python3 ~/Flower/raspberrypi/server.py`
 3) `reboot`
 
 ### Viewing Server that was Started via Boot

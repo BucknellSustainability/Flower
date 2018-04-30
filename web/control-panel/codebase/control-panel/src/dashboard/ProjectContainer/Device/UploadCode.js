@@ -12,6 +12,7 @@ export class UploadCode extends React.Component {
 
     this.state = {
       uploading: false,
+      errorMsg: "",
       visible: false,
       fileList: []
     }

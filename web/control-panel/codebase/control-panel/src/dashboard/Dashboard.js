@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import {ProjectContainer} from './ProjectContainer/ProjectContainer.js';
 import {ProjectNav} from './ProjectNav/ProjectNav.js';
 import {AdminPanel} from './AdminPanel/AdminPanel.js'
-import {Row, Col, Layout} from 'antd'
+import {Row, Col, Layout, Button} from 'antd'
 import logo from '../images/logo.svg';
 const { Header, Content, Footer, Sider } = Layout;
 
@@ -81,16 +81,17 @@ export class Dashboard extends React.Component {
   	const projectNav = <ProjectNav user={this.state.user} handler={this.projectNavHandler} deleteProj={this.deleteProject}/>;
 
     return (
-    <Layout style={{height: "100%"}}>
+    <Layout style={{height: 100}}>
       <Header>       
-        <Row type="flex" justify="space-around" align="center">        
-          <Col span={1}>
+        <Row type="flex" justify="space-between" align="right">        
+          <Col span={2}>
           <a href="#home"><img src={logo} className="App-logo" alt="logo" /></a>
           </Col>
-          <Col span={8}>
+          <Col span={10}>
           <h2 style={{margin:"auto", marginTop:15}} className="white bold ubuntu">Energy Hill Control Panel</h2>
           </Col>
-          <Col span={14}>
+          <Col span={12}>
+            <Button type="primary" icon="google" style={{position:"absolute",right:0, top: 15}} onClick={this.props.logout}> Sign Out </Button>
           </Col>
         </Row>
       </Header>
