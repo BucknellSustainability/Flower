@@ -68,7 +68,7 @@ API Keys and other deployment specific values have been removed from the repo to
 
 This `config.json` and `deployment.json` won't get committed because it is in the `.gitignore` so you will need to do this for each clone of the repo, but it should persist unless you delete the file.
 
-##Linters
+## Linters
 
 ### Python - autopep8
 To install autopep8 run
