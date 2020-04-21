@@ -6,7 +6,7 @@
   "theme": "./theme.js",
   "dependencies": {
     "antd": "^3.4.3",
-    "axios": "^0.17.1",
+    "axios": "^0.19.2",
     "mdbootstrap": "^4.4.4",
     "octicons": "^7.2.0",
     "open-iconic": "^1.1.1",
